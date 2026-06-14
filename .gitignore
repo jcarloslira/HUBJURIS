@@ -1,0 +1,22 @@
+# Ambiente — NUNCA commitar
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+*.egg-info/
+
+# Ferramentas
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# IDE
+.idea/
+.vscode/
+.claude/
+
+# Docker
+evolution-pgdata/
