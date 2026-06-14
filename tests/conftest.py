@@ -13,9 +13,8 @@ os.environ.setdefault("SUPABASE_ANON_KEY", "test-anon-key")
 os.environ.setdefault("SUPABASE_SERVICE_ROLE_KEY", "test-service-role-key")
 os.environ.setdefault("ANTHROPIC_API_KEY", "sk-ant-test")
 os.environ.setdefault("APP_ENV", "development")
-os.environ.setdefault("EVOLUTION_API_URL", "https://test-evolution.com")
-os.environ.setdefault("EVOLUTION_API_KEY", "test-evolution-key")
-os.environ.setdefault("EVOLUTION_INSTANCE", "test-instance")
+os.environ.setdefault("WAPI_BASE_URL", "https://test-wapi.com")
+os.environ.setdefault("WAPI_TOKEN", "test-wapi-token")
 
 
 @pytest.fixture

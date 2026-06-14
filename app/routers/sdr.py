@@ -134,10 +134,10 @@ async def disparar_followup(
         )
 
     from app.config import get_settings
-    from app.services.evolution import EvolutionClient
+    from app.services.whatsapp import WhatsAppClient
 
     http_client = request.app.state.http_client
-    evolution = EvolutionClient(http_client, get_settings())
+    whatsapp = WhatsAppClient(http_client, get_settings())
 
     resposta = await svc.processar_mensagem(
         detalhe.lead.telefone,
@@ -145,7 +145,7 @@ async def disparar_followup(
         detalhe.lead.nome,
     )
 
-    enviado = await evolution.enviar_texto(detalhe.lead.telefone, resposta)
+    enviado = await whatsapp.enviar_texto(detalhe.lead.telefone, resposta)
 
     if not enviado:
         raise HTTPException(

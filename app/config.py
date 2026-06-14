@@ -22,10 +22,9 @@ class Settings(BaseSettings):
     APP_ENV: Literal["development", "staging", "production"] = "development"
     SECRET_KEY: str = ""
 
-    # Evolution API (WhatsApp)
-    EVOLUTION_API_URL: str = ""
-    EVOLUTION_API_KEY: str = ""
-    EVOLUTION_INSTANCE: str = ""
+    # W-API (WhatsApp)
+    WAPI_BASE_URL: str = ""
+    WAPI_TOKEN: str = ""
 
 
 @lru_cache
