@@ -23,8 +23,10 @@ class Settings(BaseSettings):
     SECRET_KEY: str = ""
 
     # W-API (WhatsApp)
-    WAPI_BASE_URL: str = ""
+    WAPI_BASE_URL: str = "https://api.w-api.app/v1"
     WAPI_TOKEN: str = ""
+    WAPI_INSTANCE_ID: str = ""
+    WAPI_API_KEY: str = ""
 
 
 @lru_cache

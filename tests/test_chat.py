@@ -118,3 +118,32 @@ def test_index_serve_interface(client: TestClient) -> None:
 
     assert response.status_code == 200
     assert "LexHub" in response.text
+
+
+def test_proposta_acessivel_externamente(client: TestClient) -> None:
+    """A proposta deve carregar mesmo quando o host é externo (tunnel)."""
+    response = client.get("/proposta", headers={"host": "abc.trycloudflare.com"})
+
+    assert response.status_code == 200
+    assert "Wilker" in response.text
+
+
+def test_chat_bloqueado_para_host_externo(client: TestClient) -> None:
+    """Acessos de fora não podem usar o chat — proteção contra abuso de tokens."""
+    response = client.post(
+        "/api/chat",
+        headers={"host": "abc.trycloudflare.com"},
+        json={
+            "agente": "juridico-geral",
+            "mensagens": [{"role": "user", "content": "oi"}],
+        },
+    )
+
+    assert response.status_code == 404
+
+
+def test_index_bloqueado_para_host_externo(client: TestClient) -> None:
+    """A interface do hub não fica exposta no tunnel."""
+    response = client.get("/", headers={"host": "abc.trycloudflare.com"})
+
+    assert response.status_code == 404

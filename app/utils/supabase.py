@@ -17,6 +17,8 @@ async def create_supabase_client(settings: Settings) -> AsyncClient | None:
     Returns:
         Cliente Supabase assíncrono, ou None quando não configurado (modo demo).
     """
-    if not settings.SUPABASE_URL or not settings.SUPABASE_ANON_KEY:
+    if not settings.SUPABASE_URL or not settings.SUPABASE_SERVICE_ROLE_KEY:
         return None
-    return await acreate_client(settings.SUPABASE_URL, settings.SUPABASE_ANON_KEY)
+    return await acreate_client(
+        settings.SUPABASE_URL, settings.SUPABASE_SERVICE_ROLE_KEY
+    )

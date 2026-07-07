@@ -6,14 +6,26 @@ from pathlib import Path
 
 import httpx
 from anthropic import AsyncAnthropic
-from fastapi import FastAPI
-from fastapi.responses import FileResponse
+from fastapi import FastAPI, Request
+from fastapi.responses import FileResponse, Response
 
 from app.config import get_settings
 from app.routers import chat, health, sdr, webhook
 from app.utils.supabase import create_supabase_client
 
 _STATIC_DIR = Path(__file__).parent / "static"
+
+# Caminhos liberados quando a requisição chega por um host externo
+# (ex: túnel Cloudflare). Tudo o mais é bloqueado para fora — só funciona
+# em localhost durante o desenvolvimento e demos presenciais.
+_PUBLIC_PATHS: frozenset[str] = frozenset({"/proposta", "/health"})
+
+
+def _is_local_host(host_header: str | None) -> bool:
+    if not host_header:
+        return True
+    h = host_header.split(":", 1)[0].lower()
+    return h in {"localhost", "127.0.0.1", "::1"}
 
 
 @asynccontextmanager
@@ -30,6 +42,21 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
 app = FastAPI(title="LexHub — Hub Jurídico de IA", lifespan=lifespan)
 
+
+@app.middleware("http")
+async def restrict_external_access(request: Request, call_next):  # type: ignore[no-untyped-def]
+    """Para acessos vindos de fora (Cloudflare Tunnel), libera só /proposta.
+
+    Local (localhost) continua com acesso total — desenvolvimento e demo
+    presencial. Externo só vê a proposta institucional; chat e APIs ficam
+    invisíveis para evitar consumo indevido de tokens.
+    """
+    host = request.headers.get("host")
+    if not _is_local_host(host) and request.url.path not in _PUBLIC_PATHS:
+        return Response(status_code=404)
+    return await call_next(request)
+
+
 app.include_router(health.router)
 app.include_router(chat.router)
 app.include_router(webhook.router)
@@ -40,3 +67,9 @@ app.include_router(sdr.router)
 async def index() -> FileResponse:
     """Serve a interface do hub."""
     return FileResponse(_STATIC_DIR / "index.html")
+
+
+@app.get("/proposta", include_in_schema=False)
+async def proposta() -> FileResponse:
+    """Serve a proposta confidencial do projeto."""
+    return FileResponse(_STATIC_DIR / "proposta.html")

@@ -46,7 +46,15 @@ async def receber_webhook_wapi(
 
     Retorna 200 imediatamente para não bloquear o webhook.
     """
+    raw = payload.model_dump(exclude_none=True)
+    print(f"[WEBHOOK RAW] {raw}")
     dados = payload.resolver_dados()
+    texto_debug = dados.extrair_texto()
+    tel_debug = dados.extrair_telefone()
+    print(
+        f"[WEBHOOK] texto={texto_debug} telefone={tel_debug}"
+        f" fromMe={dados.eh_mensagem_propria()} grupo={dados.eh_grupo()}"
+    )
 
     if dados.eh_mensagem_propria():
         return {"status": "ignored", "reason": "from_me"}

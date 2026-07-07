@@ -15,6 +15,8 @@ os.environ.setdefault("ANTHROPIC_API_KEY", "sk-ant-test")
 os.environ.setdefault("APP_ENV", "development")
 os.environ.setdefault("WAPI_BASE_URL", "https://test-wapi.com")
 os.environ.setdefault("WAPI_TOKEN", "test-wapi-token")
+os.environ.setdefault("WAPI_INSTANCE_ID", "TEST-INSTANCE-ID")
+os.environ.setdefault("WAPI_API_KEY", "WAPI-TEST-KEY")
 
 
 @pytest.fixture
@@ -30,6 +32,8 @@ def client(monkeypatch: pytest.MonkeyPatch, supabase_mock: AsyncMock) -> Iterato
 
     monkeypatch.setattr(main, "create_supabase_client", AsyncMock(return_value=supabase_mock))
     with TestClient(main.app) as test_client:
+        # O middleware bloqueia hosts externos; nos testes simulamos acesso local.
+        test_client.headers["host"] = "localhost"
         yield test_client
 
 

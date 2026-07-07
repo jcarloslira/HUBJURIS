@@ -21,8 +21,9 @@ class WhatsAppClient:
         """
         self.http = http_client
         self.base_url = settings.WAPI_BASE_URL.rstrip("/")
+        self.instance_id = settings.WAPI_INSTANCE_ID
         self.headers = {
-            "Authorization": f"Bearer {settings.WAPI_TOKEN}",
+            "Authorization": f"Bearer {settings.WAPI_API_KEY}",
             "Content-Type": "application/json",
         }
 
@@ -36,10 +37,10 @@ class WhatsAppClient:
         Returns:
             True se enviou com sucesso, False caso contrário.
         """
-        url = f"{self.base_url}/send-text"
+        url = f"{self.base_url}/message/send-text" f"?instanceId={self.instance_id}"
         payload = {
-            "number": telefone,
-            "text": mensagem,
+            "phone": telefone,
+            "message": mensagem,
         }
 
         try:
