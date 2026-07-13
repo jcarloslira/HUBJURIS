@@ -8,9 +8,19 @@ import httpx
 from anthropic import AsyncAnthropic
 from fastapi import FastAPI, Request
 from fastapi.responses import FileResponse, Response
+from fastapi.staticfiles import StaticFiles
 
 from app.config import get_settings
-from app.routers import chat, health, sdr, webhook
+from app.routers import (
+    auth_admin,
+    chat,
+    condominios,
+    health,
+    rifas,
+    sdr,
+    webhook,
+    webhook_pix,
+)
 from app.utils.supabase import create_supabase_client
 
 _STATIC_DIR = Path(__file__).parent / "static"
@@ -18,7 +28,16 @@ _STATIC_DIR = Path(__file__).parent / "static"
 # Caminhos liberados quando a requisição chega por um host externo
 # (ex: túnel Cloudflare). Tudo o mais é bloqueado para fora — só funciona
 # em localhost durante o desenvolvimento e demos presenciais.
-_PUBLIC_PATHS: frozenset[str] = frozenset({"/proposta", "/health"})
+_PUBLIC_PATHS: frozenset[str] = frozenset(
+    {
+        "/proposta",
+        "/health",
+        "/rifas",
+        "/rifa",
+        "/rifas/admin/painel",
+        "/backend",
+    }
+)
 
 
 def _is_local_host(host_header: str | None) -> bool:
@@ -61,6 +80,12 @@ app.include_router(health.router)
 app.include_router(chat.router)
 app.include_router(webhook.router)
 app.include_router(sdr.router)
+app.include_router(rifas.router)
+app.include_router(webhook_pix.router)
+app.include_router(auth_admin.router)
+app.include_router(condominios.router)
+
+app.mount("/static", StaticFiles(directory=_STATIC_DIR), name="static")
 
 
 @app.get("/", include_in_schema=False)
@@ -73,3 +98,33 @@ async def index() -> FileResponse:
 async def proposta() -> FileResponse:
     """Serve a proposta confidencial do projeto."""
     return FileResponse(_STATIC_DIR / "proposta.html")
+
+
+@app.get("/rifas", include_in_schema=False)
+async def rifas_catalogo() -> FileResponse:
+    """Catálogo público de rifas ativas."""
+    return FileResponse(_STATIC_DIR / "catalog-rifas.html")
+
+
+@app.get("/rifa", include_in_schema=False)
+async def rifa_detalhe() -> FileResponse:
+    """Página de compra de uma rifa (precisa de ?id=<rifa_id> ou ?slug=<slug>)."""
+    return FileResponse(_STATIC_DIR / "rifa.html")
+
+
+@app.get("/rifas/{slug}", include_in_schema=False)
+async def rifa_detalhe_slug(slug: str) -> FileResponse:
+    """Página de compra por slug amigável (ex: /rifas/hilux-diesel-2024)."""
+    return FileResponse(_STATIC_DIR / "rifa.html")
+
+
+@app.get("/rifas/admin/painel", include_in_schema=False)
+async def rifas_admin() -> FileResponse:
+    """Painel admin de rifas."""
+    return FileResponse(_STATIC_DIR / "admin-rifas.html")
+
+
+@app.get("/backend", include_in_schema=False)
+async def backend_status() -> FileResponse:
+    """Página que mostra o status do backend e todos os endpoints."""
+    return FileResponse(_STATIC_DIR / "backend.html")
