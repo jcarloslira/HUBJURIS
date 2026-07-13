@@ -17,14 +17,13 @@ async def listar_agentes() -> list[AgenteInfo]:
 
 @router.post("/chat", status_code=200)
 async def conversar(payload: ChatRequest, request: Request) -> StreamingResponse:
-    """Envia o histórico ao agente escolhido e retorna a resposta em streaming."""
-    agente = chat_service.obter_agente(payload.agente, request.app.state.anthropic)
-    if agente is None:
+    """Envia o histórico ao agente escolhido (ou roteia via Supervisor) em streaming."""
+    if not chat_service.agente_existe(payload.agente):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Agente desconhecido: {payload.agente}",
         )
     return StreamingResponse(
-        chat_service.gerar_resposta_stream(agente, payload),
+        chat_service.gerar_resposta_stream(payload, request.app.state.anthropic),
         media_type="text/plain; charset=utf-8",
     )

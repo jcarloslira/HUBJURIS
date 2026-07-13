@@ -58,6 +58,11 @@ aside {
 }
 .brand h1 { font-family: 'Source Serif 4', serif; font-size: 1.25rem; letter-spacing: 0.02em; }
 .brand h1 span { color: var(--accent); }
+.ctx-box { padding: 10px 12px; margin: 0 6px; background: var(--panel-2); border: 1px solid var(--border); border-radius: 10px; display: flex; flex-direction: column; gap: 8px; }
+.ctx-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: .05em; color: var(--text-dim); }
+.ctx-select { width: 100%; background: var(--panel-3); color: var(--text-dim); border: 1px solid var(--border); border-radius: 8px; padding: 7px 8px; font-size: 0.8rem; }
+.ctx-google { font-size: 0.75rem; color: var(--text-dim); display: flex; align-items: center; gap: 6px; }
+.dot-off { width: 8px; height: 8px; border-radius: 50%; background: var(--danger); display: inline-block; }
 .new-chat {
   display: flex; align-items: center; justify-content: center; gap: 8px;
   background: var(--accent);
@@ -339,6 +344,16 @@ select {
       <h1>Lex<span>Hub</span></h1>
     </div>
 
+    <div class="ctx-box">
+      <label class="ctx-label">Condomínio ativo</label>
+      <select class="ctx-select" disabled title="Disponível quando o acervo estiver conectado (M2/M3)">
+        <option>— nenhum conectado —</option>
+      </select>
+      <div class="ctx-google" title="Conexão com o Google Drive chega na fase das Mãos (M3)">
+        <span class="dot-off"></span> Google Drive: desconectado
+      </div>
+    </div>
+
     <button class="new-chat" onclick="novaConversa()">
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
       Nova conversa
@@ -365,8 +380,8 @@ select {
     <div class="title">
       <span class="ic" id="agent-ic"></span>
       <div>
-        <b id="agent-title">Jurídico Geral</b>
-        <small id="agent-sub">Dúvidas de direito brasileiro com fundamentação legal</small>
+        <b id="agent-title">Supervisor</b>
+        <small id="agent-sub">Primeiro contato, onboarding do escritório e encaminhamento</small>
       </div>
     </div>
     <select id="modelo" title="Modelo de IA">
@@ -382,7 +397,7 @@ select {
         <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18"/><path d="M5 7l7-4 7 4"/><path d="M3 11l2-4 2 4a2.5 2.5 0 0 1-4 0z"/><path d="M17 11l2-4 2 4a2.5 2.5 0 0 1-4 0z"/><path d="M8 21h8"/></svg>
       </div>
       <h2>Como posso ajudar, doutor(a)?</h2>
-      <p>Escolha o agente especialista para a sua demanda — ou toque em um exemplo para começar.</p>
+      <p>Comece pelo <b>Supervisor</b> para o onboarding, ou escolha um especialista do escritório.</p>
       <div class="agent-grid" id="agent-grid"></div>
     </div>
     <div class="chat-inner" id="messages" style="display:none"></div>
@@ -404,18 +419,25 @@ const ICONES = {
   scale: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18"/><path d="M5 7l7-4 7 4"/><path d="M3 11l2-4 2 4a2.5 2.5 0 0 1-4 0z"/><path d="M17 11l2-4 2 4a2.5 2.5 0 0 1-4 0z"/><path d="M8 21h8"/></svg>',
   'file-text': '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8M16 17H8M10 9H8"/></svg>',
   gavel: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m14 13-7.5 7.5a2.1 2.1 0 0 1-3-3L11 10"/><path d="m16 16 6-6"/><path d="m8 8 6-6"/><path d="m9 7 8 8"/><path d="m21 11-8-8"/></svg>',
-  signature: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 19.5c-1.5 1.5-3 2-4.5.5s-1-4 1-5.5 3-1 3-1"/><path d="M2 21c4-2 5.5-5.5 6-9l1-7 2.5 5L14 4l1 9"/></svg>'
+  signature: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 19.5c-1.5 1.5-3 2-4.5.5s-1-4 1-5.5 3-1 3-1"/><path d="M2 21c4-2 5.5-5.5 6-9l1-7 2.5 5L14 4l1 9"/></svg>',
+  compass: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>',
+  bell: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>',
+  scroll: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0 0 4h3z"/><path d="M19 17V5a2 2 0 0 0-2-2H8v14"/><path d="M16 21H6a2 2 0 0 1-2-2v-2h12v2a2 2 0 0 0 2 2z"/></svg>',
+  history: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v5h5"/><path d="M3.05 13A9 9 0 1 0 6 5.3L3 8"/><path d="M12 7v5l4 2"/></svg>'
 };
 const CHECK = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>';
 const EXEMPLOS = {
-  'juridico-geral': 'Quais os requisitos da usucapião extraordinária no CC/2002?',
-  'peticoes': 'Redija uma petição inicial de cobrança de honorários advocatícios',
-  'processos': 'Recebi este andamento: "Conclusos para despacho". O que devo fazer?',
-  'contratos': 'Revise os riscos de uma cláusula de rescisão unilateral em contrato de serviços'
+  'supervisor': 'Olá! Sou novo aqui — como funciona a plataforma?',
+  'notificacoes': 'Gere uma notificação: cão fez sujeira na área comum do Bloco B, unidade 34',
+  'peticoes': 'Redija uma petição de cobrança de cotas condominiais em atraso',
+  'contratos': 'Revise os riscos de um contrato de portaria e prepare a minuta de rescisão',
+  'pareceres': 'Elabore um parecer sobre a validade de multa aplicada sem prévia notificação',
+  'consulta-historica': 'Quando foi o último reajuste da taxa condominial deste condomínio?',
+  'juridico-geral': 'Qual o quórum para alteração da convenção de condomínio?'
 };
 
 let agentes = [];
-let agenteAtual = 'juridico-geral';
+let agenteAtual = 'supervisor';
 let conversas = JSON.parse(localStorage.getItem('lexhub_conversas') || '[]');
 let conversaAtual = null;
 let gerando = false;
