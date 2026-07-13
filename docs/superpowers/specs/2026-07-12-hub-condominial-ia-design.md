@@ -1,6 +1,6 @@
 # Hub de I.A Jurídico Condominial — Design / Especificação
 
-> Data: 2026-07-12 · Rev. 2 · Status: **em revisão** · Prazo-alvo do MVP rodando: **sexta 17/07/2026**
+> Data: 2026-07-12 · Rev. 3 · Status: **em revisão** · Prazo-alvo do MVP rodando: **sexta 17/07/2026**
 
 ---
 
@@ -24,6 +24,11 @@ e a **memória do cliente** NÃO são "fase extra" — são **o produto**. O Sup
 documentos, identifica cliente por cliente e por data, organiza em pastas e vira a memória do
 escritório é exatamente o fluxo validado com o Dr. Wilker.
 
+**Diferencial (vs. ChatGPT / NotebookLM):** não é uma I.A genérica — são **agentes especialistas
+prontos** + **memória/histórico** do acervo (notificações, atas, petições anteriores) que as
+ferramentas genéricas não retêm. É um hub nichado para advogados condominialistas, com o conhecimento
+jurídico do escritório embutido.
+
 **Público primário:** advogados do escritório (registro técnico-jurídico).
 **Evolução futura:** portal do síndico (o cliente abre demanda pelo portal → chega ao escritório
 já classificada + rascunho da I.A). Fora do MVP.
@@ -39,8 +44,10 @@ já classificada + rascunho da I.A). Fora do MVP.
 | Supervisor | Orquestrador: primeiro contato + onboarding + **ingestão/organização do acervo** + roteamento |
 | Orquestração | Híbrido — Supervisor roteia via *tool use*; advogado pode escolher especialista direto |
 | Google | Single-tenant agora (OAuth modo teste, conta do escritório), arquitetado para SaaS depois |
+| Integração (Drive/Workspace) | Via **MCP** (Model Context Protocol): conector MCP lê os drives. A plataforma **também expõe endpoints MCP/API** para não ser fechada a outras ferramentas. Google primeiro; Microsoft/OneDrive depois |
+| Dados & confidencialidade | Dados permanecem **na origem** (Drive do escritório) — indexamos metadados + texto extraído, **sem duplicar** o acervo. **Isolamento estrito** entre escritórios (tenants) e por condomínio: nada vaza entre clientes (requisito de 1ª classe, é dado jurídico) |
 | Memória / acervo | **Núcleo do produto.** Índice estruturado + base documental por cliente no Supabase; leitura sob demanda. Evolui para RAG/embeddings depois |
-| Fora do escopo | Agentes voltados ao condomínio/síndico (Inadimplência, Assembleias etc.); portal do síndico; API de processos/andamentos (custosa) |
+| Fora do escopo | Agentes voltados ao condomínio/síndico (Inadimplência, Assembleias etc.); portal do síndico; API de processos/andamentos (custosa); Microsoft/OneDrive no MVP |
 
 ---
 
@@ -50,8 +57,9 @@ já classificada + rascunho da I.A). Fora do MVP.
   externa além da chave Anthropic. Primeiro build.
 - **M2 🦴 Espinha** — Supabase: escritório → condomínios → blocos → unidades + **base documental
   por cliente** + histórico de interações.
-- **M3 ✋ Mãos** — Google Drive/Workspace (OAuth modo teste). Supervisor ingere o acervo, identifica
-  cliente/data, mapeia e organiza em pastas, grava no índice + base documental.
+- **M3 ✋ Mãos** — Google Drive/Workspace via **conector MCP** (OAuth modo teste). Supervisor ingere o
+  acervo, identifica cliente/data, mapeia e organiza, grava no índice + base documental. Plataforma
+  também expõe endpoints MCP/API (sistema aberto).
 - **M4 🧬 Memória** — Cada especialista consulta o acervo + histórico do cliente antes de agir e
   produz no padrão anterior. **É onde mora a "assertividade na leitura".**
 
@@ -97,10 +105,10 @@ Todos herdam de `BaseAgent` (`app/agents/base.py`, já existe, com streaming). C
 
 | slug | nome | papel |
 |---|---|---|
-| `supervisor` | Supervisor | Primeiro contato; onboarding do escritório (nome, site, Instagram); orienta a organização do acervo e conduz a ingestão; roteia para especialistas via tool use |
-| `notificacoes` | Notificações | Redige notificações a partir das normas internas do condomínio (convenção, regimento, atas, deliberações) + legislação, para unidade/ocorrência informadas |
-| `peticoes` | Petições | Redige peças processuais condominiais no padrão do escritório |
-| `contratos` | Contratos | Análise de risco, cláusulas, garantias, responsabilidades e adequação ao caso concreto |
+| `supervisor` | Supervisor / Agente Geral | Primeiro contato; onboarding do escritório (nome, site, Instagram); **ingestão automática** do acervo (aprende e monta a base ao mesmo tempo, sem processo manual — pede acesso ao Drive e organiza por condomínio/unidade/data); roteia para especialistas via tool use |
+| `notificacoes` | Notificações | Redige notificações a partir de **comando simples em linguagem natural** (ex.: "cão fez sujeira no elevador") + normas internas do condomínio (convenção, regimento, atas, deliberações) + legislação, para a unidade/ocorrência informadas |
+| `peticoes` | Petições | Redige peças processuais condominiais (inclui cobrança) no padrão do escritório |
+| `contratos` | Contratos | Análise de risco, cláusulas, garantias, responsabilidades, adequação ao caso concreto; **alertas de vencimento** e **minutas de rescisão personalizadas** |
 | `pareceres` | Pareceres | Pareceres jurídicos fundamentados nas normas internas + legislação |
 | `consulta-historica` | Consulta Histórica | Responde fatos do acervo: síndico atual, último reajuste da taxa, deliberação sobre X — pesquisando atas/documentos |
 | `juridico-geral` | Jurídico Geral | Dúvidas amplas de direito condominial com fundamentação, para o que não cai nos especialistas |
@@ -150,14 +158,23 @@ Reaproveita `app/static/index.html` + `app.css`, re-tematizado para o escritóri
 Tabelas da seção 4 (migration em `sql/`), services de CRUD de condomínios/blocos/unidades/documentos,
 e persistência do onboarding. Endpoints admin protegidos por `ADMIN_TOKEN` até integrar Supabase Auth.
 
-## 7. M3 — Mãos / Google Drive (roadmap — valor central)
+## 7. M3 — Mãos / Google Drive via MCP (roadmap — valor central)
 
+- **Conector MCP** para o Drive/Workspace (não chamadas soltas à API): os agentes acessam o acervo por
+  ferramentas MCP. A plataforma também **expõe seus próprios endpoints MCP/API** para não ficar fechada
+  a outras ferramentas.
 - OAuth **modo teste** com a conta do escritório (escopo de leitura do Drive).
+- **Dados na origem:** o acervo permanece no Drive do escritório; a plataforma guarda só índice +
+  metadados + texto extraído. Sem duplicar arquivos.
 - Convenção de pastas: `Condomínio X / Bloco A / Unidade 101 / (documentos)`; conteúdo pode estar
-  desorganizado, o que importa é a hierarquia. O acervo real do escritório (pasta do Workspace) será
-  conectado aqui — nunca acessado fora desse fluxo autorizado.
-- Sincronizador varre o Drive, identifica cliente/data, classifica documentos por `categoria`, grava
-  em `drive_index` + `documentos`, e o Supervisor apresenta o resultado para confirmação humana.
+  desorganizado, o que importa é a hierarquia. O acervo real (link do Workspace fornecido pelo usuário)
+  só é acessado por este fluxo autorizado — nunca por fora.
+- **Ingestão automática:** o Supervisor varre o Drive, identifica cliente/data, classifica documentos
+  por `categoria`, grava em `drive_index` + `documentos` e apresenta o resultado para confirmação
+  humana — sem etapa manual de cadastro documento a documento.
+- **Isolamento:** toda leitura é escopada ao `escritorio_id` (tenant) e ao `condominio_id` da demanda;
+  nada de um cliente aparece para outro.
+- Microsoft/OneDrive: conector futuro, mesmo contrato MCP.
 - Passo-a-passo de configuração do Google Cloud entregue ao usuário nesta fase.
 
 ## 8. M4 — Memória (roadmap — "assertividade na leitura")
@@ -180,6 +197,7 @@ texto + embeddings/pgvector para busca semântica no acervo.
 - Agentes voltados ao condomínio/síndico (Inadimplência, Assembleias, Convenção-como-produto).
 - Portal do síndico (evolução futura).
 - API de processos/andamentos (custosa — depois).
+- Conectores Microsoft/OneDrive (mesmo contrato MCP, mas depois do Google).
 - RAG com embeddings (evolução do M4).
 - SaaS multi-escritório com onboarding self-service e verificação pública do app Google.
 - Pagamentos/billing/mobile. O módulo de **Rifas** do repositório é **outro projeto**, sem relação.
