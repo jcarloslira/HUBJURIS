@@ -63,6 +63,9 @@ aside {
 .ctx-select { width: 100%; background: var(--panel-3); color: var(--text-dim); border: 1px solid var(--border); border-radius: 8px; padding: 7px 8px; font-size: 0.8rem; }
 .ctx-google { font-size: 0.75rem; color: var(--text-dim); display: flex; align-items: center; gap: 6px; }
 .dot-off { width: 8px; height: 8px; border-radius: 50%; background: var(--danger); display: inline-block; }
+.dot-on { width: 8px; height: 8px; border-radius: 50%; background: #59c26b; display: inline-block; }
+.ctx-connect { width: 100%; margin-top: 2px; background: var(--accent); color: #14110a; border: none; border-radius: 8px; padding: 8px; font-size: 0.78rem; font-weight: 600; cursor: pointer; }
+.ctx-connect:disabled { opacity: .6; cursor: default; }
 .new-chat {
   display: flex; align-items: center; justify-content: center; gap: 8px;
   background: var(--accent);
@@ -349,9 +352,10 @@ select {
       <select class="ctx-select" disabled title="Disponível quando o acervo estiver conectado (M2/M3)">
         <option>— nenhum conectado —</option>
       </select>
-      <div class="ctx-google" title="Conexão com o Google Drive chega na fase das Mãos (M3)">
-        <span class="dot-off"></span> Google Drive: desconectado
+      <div class="ctx-google" id="ctx-google">
+        <span class="dot-off" id="g-dot"></span> <span id="g-label">Google Drive: verificando…</span>
       </div>
+      <button class="ctx-connect" id="g-connect" onclick="conectarGoogle()" style="display:none">Conectar Google Drive</button>
     </div>
 
     <button class="new-chat" onclick="novaConversa()">
@@ -455,6 +459,46 @@ async function init() {
   } catch { agentes = []; }
   renderAgentes();
   renderConvos();
+  checarGoogle();
+}
+
+async function checarGoogle() {
+  const dot = $('g-dot'), label = $('g-label'), btn = $('g-connect');
+  try {
+    const s = await (await fetch('/api/google/status')).json();
+    if (!s.configurado) {
+      label.textContent = 'Google Drive: indisponível';
+      dot.className = 'dot-off'; btn.style.display = 'none';
+    } else if (s.conectado) {
+      label.textContent = 'Google Drive: conectado';
+      dot.className = 'dot-on'; btn.style.display = 'none';
+    } else {
+      label.textContent = 'Google Drive: desconectado';
+      dot.className = 'dot-off'; btn.style.display = 'block';
+    }
+  } catch {
+    label.textContent = 'Google Drive: indisponível';
+    dot.className = 'dot-off'; btn.style.display = 'none';
+  }
+}
+
+async function conectarGoogle() {
+  const btn = $('g-connect');
+  btn.disabled = true; btn.textContent = 'Gerando link…';
+  try {
+    const d = await (await fetch('/api/google/conectar', { method: 'POST' })).json();
+    if (d.redirect_url) {
+      window.open(d.redirect_url, '_blank', 'noopener');
+      btn.textContent = 'Conectar Google Drive';
+      setTimeout(checarGoogle, 5000);
+    } else {
+      btn.textContent = 'Erro — tentar de novo';
+    }
+  } catch {
+    btn.textContent = 'Erro — tentar de novo';
+  } finally {
+    btn.disabled = false;
+  }
 }
 
 function renderAgentes() {
