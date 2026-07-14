@@ -328,6 +328,19 @@ select {
   color: var(--text-dim);
   padding: 8px 24px 14px;
 }
+.header-actions { display: flex; align-items: center; gap: 10px; }
+.gear-btn { background: var(--panel-2); border: 1px solid var(--border); border-radius: 10px; width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; color: var(--text-dim); cursor: pointer; flex-shrink: 0; transition: color .15s, border-color .15s; }
+.gear-btn:hover { color: var(--accent); border-color: var(--accent-border); }
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.55); display: flex; align-items: center; justify-content: center; z-index: 60; padding: 20px; }
+.modal { background: var(--panel); border: 1px solid var(--border); border-radius: 14px; width: 400px; max-width: 100%; padding: 20px; display: flex; flex-direction: column; gap: 18px; box-shadow: 0 20px 60px rgba(0,0,0,.45); }
+.modal-head { display: flex; align-items: center; justify-content: space-between; }
+.modal-head b { font-size: 1.05rem; font-family: 'Source Serif 4', serif; }
+.modal-x { background: none; border: none; color: var(--text-dim); font-size: 1.5rem; line-height: 1; cursor: pointer; }
+.modal-x:hover { color: var(--text); }
+.cfg-section { display: flex; flex-direction: column; gap: 8px; }
+.cfg-hint { font-size: 0.72rem; color: var(--text-dim); line-height: 1.4; }
+.cfg-link { color: var(--accent); font-size: 0.85rem; text-decoration: none; }
+.cfg-link:hover { text-decoration: underline; }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
 @media (max-width: 860px) {
@@ -345,17 +358,6 @@ select {
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18"/><path d="M5 7l7-4 7 4"/><path d="M3 11l2-4 2 4a2.5 2.5 0 0 1-4 0z"/><path d="M17 11l2-4 2 4a2.5 2.5 0 0 1-4 0z"/><path d="M8 21h8"/></svg>
       </div>
       <h1>Lex<span>Hub</span></h1>
-    </div>
-
-    <div class="ctx-box">
-      <label class="ctx-label">Condomínio ativo</label>
-      <select class="ctx-select" disabled title="Disponível quando o acervo estiver conectado (M2/M3)">
-        <option>— nenhum conectado —</option>
-      </select>
-      <div class="ctx-google" id="ctx-google">
-        <span class="dot-off" id="g-dot"></span> <span id="g-label">Google Drive: verificando…</span>
-      </div>
-      <button class="ctx-connect" id="g-connect" onclick="conectarGoogle()" style="display:none">Conectar Google Drive</button>
     </div>
 
     <button class="new-chat" onclick="novaConversa()">
@@ -388,11 +390,16 @@ select {
         <small id="agent-sub">Primeiro contato, onboarding do escritório e encaminhamento</small>
       </div>
     </div>
-    <select id="modelo" title="Modelo de IA">
-      <option value="claude-sonnet-4-6" selected>Padrão · Sonnet</option>
-      <option value="claude-haiku-4-5-20251001">Econômico · Haiku</option>
-      <option value="claude-opus-4-8">Avançado · Opus</option>
-    </select>
+    <div class="header-actions">
+      <select id="modelo" title="Modelo de IA">
+        <option value="claude-sonnet-4-6" selected>Padrão · Sonnet</option>
+        <option value="claude-haiku-4-5-20251001">Econômico · Haiku</option>
+        <option value="claude-opus-4-8">Avançado · Opus</option>
+      </select>
+      <button class="gear-btn" onclick="abrirConfig()" title="Configurações" aria-label="Configurações">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      </button>
+    </div>
   </header>
 
   <div class="chat" id="chat">
@@ -417,6 +424,31 @@ select {
   </div>
   <div class="disclaimer">As respostas são geradas por IA e devem ser revisadas pelo advogado responsável antes de qualquer uso processual.</div>
 </main>
+
+<div class="modal-overlay" id="cfg-modal" style="display:none" onclick="if(event.target===this)fecharConfig()">
+  <div class="modal">
+    <div class="modal-head">
+      <b>⚙️ Configurações</b>
+      <button class="modal-x" onclick="fecharConfig()" aria-label="Fechar">×</button>
+    </div>
+    <div class="cfg-section">
+      <label class="ctx-label">Condomínio ativo</label>
+      <select class="ctx-select" disabled title="Disponível quando o acervo estiver conectado">
+        <option>— nenhum conectado —</option>
+      </select>
+    </div>
+    <div class="cfg-section">
+      <label class="ctx-label">Google Drive do escritório</label>
+      <div class="ctx-google" id="ctx-google"><span class="dot-off" id="g-dot"></span> <span id="g-label">Google Drive: verificando…</span></div>
+      <button class="ctx-connect" id="g-connect" onclick="conectarGoogle()" style="display:none">Conectar Google Drive</button>
+      <div class="cfg-hint">Conecte o Drive do escritório para os agentes escreverem no padrão dos seus modelos.</div>
+    </div>
+    <div class="cfg-section">
+      <a class="cfg-link" href="/backend" target="_blank" rel="noopener">🩺 Ver status do backend →</a>
+    </div>
+  </div>
+</div>
+
 
 <script>
 const ICONES = {
@@ -500,6 +532,9 @@ async function conectarGoogle() {
     btn.disabled = false;
   }
 }
+
+function abrirConfig() { $('cfg-modal').style.display = 'flex'; checarGoogle(); }
+function fecharConfig() { $('cfg-modal').style.display = 'none'; }
 
 function renderAgentes() {
   // Sidebar: linhas compactas
