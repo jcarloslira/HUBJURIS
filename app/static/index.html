@@ -43,14 +43,14 @@ button { font-family: inherit; }
 
 /* ---------- Sidebar ---------- */
 aside {
-  width: 264px;
-  min-width: 264px;
+  width: 268px;
+  min-width: 268px;
   background: var(--panel);
   border-right: 1px solid var(--border);
   display: flex;
   flex-direction: column;
 }
-.side-top { padding: 18px 14px 0; display: flex; flex-direction: column; gap: 16px; }
+.side-top { padding: 18px 14px 0; display: flex; flex-direction: column; gap: 14px; }
 .brand { display: flex; align-items: center; gap: 10px; padding: 0 6px; }
 .brand-mark {
   width: 34px; height: 34px;
@@ -62,18 +62,10 @@ aside {
 }
 .brand h1 { font-family: 'Fraunces', serif; font-size: 1.25rem; letter-spacing: 0.02em; }
 .brand h1 span { color: var(--accent); }
-.ctx-box { padding: 10px 12px; margin: 0 6px; background: var(--panel-2); border: 1px solid var(--border); border-radius: 10px; display: flex; flex-direction: column; gap: 8px; }
-.ctx-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: .05em; color: var(--text-dim); }
-.ctx-select { width: 100%; background: var(--panel-3); color: var(--text-dim); border: 1px solid var(--border); border-radius: 8px; padding: 7px 8px; font-size: 0.8rem; }
-.ctx-google { font-size: 0.75rem; color: var(--text-dim); display: flex; align-items: center; gap: 6px; }
-.dot-off { width: 8px; height: 8px; border-radius: 50%; background: var(--danger); display: inline-block; }
-.dot-on { width: 8px; height: 8px; border-radius: 50%; background: #3E7A54; display: inline-block; }
-.ctx-connect { width: 100%; margin-top: 2px; background: var(--accent); color: #14110a; border: none; border-radius: 8px; padding: 8px; font-size: 0.78rem; font-weight: 600; cursor: pointer; }
-.ctx-connect:disabled { opacity: .6; cursor: default; }
 .new-chat {
   display: flex; align-items: center; justify-content: center; gap: 8px;
   background: var(--accent);
-  color: #14110a;
+  color: #fff;
   border: none;
   border-radius: 10px;
   padding: 11px;
@@ -82,7 +74,21 @@ aside {
   cursor: pointer;
   transition: opacity 0.15s;
 }
-.new-chat:hover { opacity: 0.88; }
+.new-chat:hover { opacity: 0.9; }
+.search-box {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--panel-3);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 8px 10px;
+  color: var(--text-dim);
+}
+.search-box input {
+  flex: 1; min-width: 0;
+  background: transparent; border: none; outline: none;
+  color: var(--text); font-family: inherit; font-size: 0.82rem;
+}
+.search-box input::placeholder { color: var(--text-dim); }
 .section-label {
   font-size: 0.65rem;
   font-weight: 600;
@@ -93,7 +99,7 @@ aside {
   margin-bottom: 6px;
 }
 
-/* Agentes: linhas compactas — só ícone + nome */
+/* Agentes: linhas compactas */
 .agents { display: flex; flex-direction: column; gap: 2px; }
 .agent-row {
   display: flex; align-items: center; gap: 10px;
@@ -101,7 +107,7 @@ aside {
   border: none;
   border-left: 2px solid transparent;
   border-radius: 0 8px 8px 0;
-  padding: 9px 10px;
+  padding: 8px 10px;
   cursor: pointer;
   color: var(--text-dim);
   font-size: 0.845rem;
@@ -118,19 +124,19 @@ aside {
 .agent-row.active .ic { color: var(--accent); }
 .agent-row .ic { display: flex; flex-shrink: 0; }
 
-/* Conversas: ganham todo o espaço restante, com scroll próprio */
+/* Recentes */
 .side-convos {
   flex: 1;
   min-height: 0;
   display: flex;
   flex-direction: column;
-  padding: 16px 14px 0;
+  padding: 14px 14px 0;
 }
 .convos { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 2px; padding-bottom: 8px; }
 .convos-empty { font-size: 0.78rem; color: var(--text-dim); padding: 10px 6px; line-height: 1.5; }
 .convo-item {
   display: flex; align-items: center; gap: 8px;
-  padding: 9px 10px;
+  padding: 8px 10px;
   border-radius: 8px;
   font-size: 0.8rem;
   color: var(--text-dim);
@@ -146,21 +152,58 @@ aside {
 }
 .convo-item:hover .del { visibility: visible; }
 .convo-item .del:hover { color: var(--danger); }
-.sidebar-foot {
-  border-top: 1px solid var(--border);
-  padding: 12px 20px;
-  font-size: 0.7rem;
-  color: var(--text-dim);
-  line-height: 1.5;
+
+/* Perfil (rodapé da sidebar, estilo claude.ai) */
+.sidebar-foot { border-top: 1px solid var(--border); padding: 10px; position: relative; }
+.profile {
+  width: 100%;
+  display: flex; align-items: center; gap: 10px;
+  background: transparent; border: none; border-radius: 10px;
+  padding: 8px; cursor: pointer; text-align: left;
+  transition: background .12s;
 }
+.profile:hover { background: var(--panel-2); }
+.avatar {
+  width: 34px; height: 34px; flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--accent); color: #fff;
+  font-weight: 700; font-size: 0.85rem;
+  display: flex; align-items: center; justify-content: center;
+}
+.pf-txt { flex: 1; min-width: 0; }
+.pf-txt b { display: block; font-size: 0.82rem; font-weight: 600; color: var(--text); }
+.pf-txt small { display: block; font-size: 0.68rem; color: var(--text-dim); }
+.profile .chev { color: var(--text-dim); flex-shrink: 0; }
+.profile-menu {
+  position: absolute; bottom: calc(100% + 6px); left: 10px; right: 10px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 14px 40px rgba(29,34,48,.18);
+  padding: 6px;
+  z-index: 50;
+  display: flex; flex-direction: column; gap: 2px;
+}
+.pm-item {
+  display: flex; align-items: center; gap: 10px;
+  background: none; border: none; border-radius: 8px;
+  padding: 9px 10px; cursor: pointer;
+  color: var(--text); font-size: 0.83rem; text-align: left; text-decoration: none;
+  transition: background .12s;
+}
+.pm-item:hover { background: var(--panel-2); }
+.pm-item:disabled { opacity: .5; cursor: default; }
+.pm-item .soon { margin-left: auto; font-size: 0.65rem; color: var(--text-dim); font-style: italic; }
+.pm-item .ic { color: var(--text-dim); display: flex; flex-shrink: 0; }
 
 /* ---------- Main ---------- */
 main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
 header {
   display: flex; align-items: center; justify-content: space-between; gap: 16px;
-  padding: 14px 28px;
+  padding: 13px 28px;
   border-bottom: 1px solid var(--border);
 }
+main.home header { display: none; }
 header .title { display: flex; align-items: center; gap: 12px; min-width: 0; }
 header .title .ic {
   width: 30px; height: 30px; flex-shrink: 0;
@@ -173,40 +216,36 @@ header .title small {
   display: block; font-weight: 400; font-size: 0.72rem; color: var(--text-dim); margin-top: 2px;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-select {
-  background: var(--panel-2);
-  color: var(--text);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 8px 12px;
-  font-family: inherit;
-  font-size: 0.8rem;
-  cursor: pointer;
-  flex-shrink: 0;
-}
+
 .chat { flex: 1; overflow-y: auto; padding: 28px 0; }
+main.home .chat { flex: 0 0 auto; overflow: visible; padding: 0; }
 .chat-inner {
   max-width: 780px; margin: 0 auto; padding: 0 24px;
-  display: flex; flex-direction: column; gap: 24px;
+  display: flex; flex-direction: column; gap: 26px;
 }
+main.home { overflow-y: auto; justify-content: safe center; padding: 5vh 0 24px; }
+main:not(.home) .empty { display: none; }
 
-/* Tela inicial: seleção de agente em destaque */
+/* Tela inicial (home): saudação → composer → agentes */
 .empty {
   max-width: 720px;
   margin: 0 auto;
-  padding: 4vh 24px 24px;
+  padding: 0 24px 6px;
   display: flex; flex-direction: column; align-items: center; gap: 10px;
   text-align: center;
 }
 .empty .mark {
-  width: 66px; height: 66px;
+  width: 62px; height: 62px;
   border: 1.5px solid var(--accent); border-radius: 50%;
   background: var(--accent-soft); color: var(--accent);
   display: flex; align-items: center; justify-content: center;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
 }
 .empty h2 { font-family: 'Fraunces', serif; font-size: 2rem; font-weight: 600; letter-spacing: -0.01em; }
-.empty > p { color: var(--text-dim); font-size: 0.9rem; max-width: 460px; line-height: 1.65; margin-bottom: 20px; }
+.empty > p { color: var(--text-dim); font-size: 0.9rem; max-width: 460px; line-height: 1.65; }
+
+#home-agents { display: none; }
+main.home #home-agents { display: block; width: 100%; max-width: 780px; margin: 22px auto 0; padding: 0 24px; }
 .agent-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -219,11 +258,11 @@ select {
   border: 1px solid var(--border);
   border-top: 2px solid var(--accent);
   border-radius: 4px 4px 11px 11px;
-  padding: 15px 16px 16px;
+  padding: 14px 16px 15px;
   text-align: left;
   cursor: pointer;
   color: var(--text);
-  display: flex; flex-direction: column; gap: 9px;
+  display: flex; flex-direction: column; gap: 8px;
   box-shadow: 0 1px 2px rgba(29,34,48,.05);
   transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
 }
@@ -231,24 +270,21 @@ select {
 .agent-card.active { border-color: var(--accent); background: var(--accent-soft); }
 .agent-card .head { display: flex; align-items: center; gap: 11px; }
 .agent-card .head .ic {
-  width: 34px; height: 34px; flex-shrink: 0;
+  width: 32px; height: 32px; flex-shrink: 0;
   border: 1.5px solid var(--accent); border-radius: 50%;
   background: var(--accent-soft); color: var(--accent);
   display: flex; align-items: center; justify-content: center;
 }
-.agent-card .head b { font-family: 'Fraunces', serif; font-size: 1.02rem; font-weight: 600; letter-spacing: .01em; }
-.agent-card .check {
-  margin-left: auto; color: var(--green); display: none;
-}
+.agent-card .head b { font-family: 'Fraunces', serif; font-size: 1rem; font-weight: 600; letter-spacing: .01em; }
+.agent-card .check { margin-left: auto; color: var(--green); display: none; }
 .agent-card.active .check { display: flex; }
-.agent-card .ds { font-size: 0.78rem; color: var(--text-dim); line-height: 1.5; }
+.agent-card .ds { font-size: 0.77rem; color: var(--text-dim); line-height: 1.5; }
 .agent-card .exemplo {
   margin-top: 2px;
-  font-size: 0.78rem; font-style: italic;
+  font-size: 0.77rem; font-style: italic;
   color: var(--text-dim);
   background: transparent;
   border: none; border-left: 2px solid var(--accent-border);
-  border-radius: 0;
   padding: 3px 0 3px 12px;
   cursor: pointer;
   text-align: left;
@@ -289,6 +325,17 @@ select {
   background: var(--panel-2); border: 1px solid var(--border);
   border-radius: 4px; padding: 1px 5px; font-size: 0.85em;
 }
+/* Ações da mensagem (copiar, refazer) — estilo claude.ai */
+.msg-acoes { display: flex; gap: 4px; margin-top: 2px; opacity: 0; transition: opacity .15s; }
+.msg.assistant:hover .msg-acoes, .msg-acoes:focus-within { opacity: 1; }
+.ma-btn {
+  display: flex; align-items: center; gap: 5px;
+  background: none; border: none; border-radius: 7px;
+  color: var(--text-dim); font-size: 0.72rem;
+  padding: 5px 8px; cursor: pointer;
+  transition: background .12s, color .12s;
+}
+.ma-btn:hover { background: var(--panel-2); color: var(--text); }
 .typing { color: var(--text-dim); font-size: 0.85rem; display: flex; align-items: center; gap: 8px; }
 .typing .dot {
   width: 7px; height: 7px; border-radius: 50%; background: var(--accent);
@@ -306,40 +353,78 @@ select {
   line-height: 1.5;
 }
 
-/* Composer */
-.composer-wrap { padding: 0 24px 10px; }
+/* Composer — estilo claude.ai: textarea em cima, barra de ações embaixo */
+.composer-wrap { padding: 0 24px 8px; }
+main.home .composer-wrap { width: 100%; max-width: 780px; margin: 14px auto 0; }
 .composer {
   max-width: 780px; margin: 0 auto;
   background: var(--panel);
   border: 1px solid var(--border);
-  border-radius: 16px;
-  padding: 6px 6px 6px 18px;
-  display: flex; align-items: flex-end; gap: 10px;
-  transition: border-color 0.15s;
+  border-radius: 20px;
+  padding: 14px 14px 10px 18px;
+  display: flex; flex-direction: column; gap: 8px;
+  box-shadow: 0 2px 10px rgba(29,34,48,.06);
+  transition: border-color 0.15s, box-shadow .15s;
 }
-.composer:focus-within { border-color: var(--accent-border); }
+.composer:focus-within { border-color: var(--accent-border); box-shadow: 0 4px 18px rgba(29,34,48,.10); }
 .composer textarea {
-  flex: 1;
+  width: 100%;
   background: transparent;
   border: none;
   outline: none;
   color: var(--text);
   font-family: inherit;
-  font-size: 0.92rem;
-  line-height: 1.5;
+  font-size: 0.94rem;
+  line-height: 1.55;
   resize: none;
-  max-height: 180px;
-  padding: 12px 0;
+  max-height: 200px;
+  padding: 2px 0;
 }
 .composer textarea::placeholder { color: var(--text-dim); }
+.composer-bar { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.cb-left { position: relative; display: flex; align-items: center; gap: 6px; }
+.plus-btn {
+  width: 34px; height: 34px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  color: var(--text-dim);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  transition: color .12s, border-color .12s, background .12s;
+}
+.plus-btn:hover { color: var(--accent); border-color: var(--accent-border); background: var(--accent-soft); }
+.plus-menu {
+  position: absolute; bottom: calc(100% + 10px); left: 0;
+  min-width: 230px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 14px 40px rgba(29,34,48,.18);
+  padding: 6px;
+  z-index: 40;
+  display: flex; flex-direction: column; gap: 2px;
+}
+.cb-right { display: flex; align-items: center; gap: 8px; }
+.composer select {
+  background: transparent;
+  color: var(--text-dim);
+  border: none;
+  border-radius: 8px;
+  padding: 6px 4px;
+  font-family: inherit;
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+.composer select:hover { color: var(--text); }
 .send {
   background: var(--accent);
   border: none;
-  border-radius: 11px;
-  width: 42px; height: 42px;
+  border-radius: 50%;
+  width: 36px; height: 36px;
   display: flex; align-items: center; justify-content: center;
   cursor: pointer;
-  color: #14110a;
+  color: #fff;
   flex-shrink: 0;
   transition: opacity 0.15s;
 }
@@ -349,26 +434,98 @@ select {
   text-align: center;
   font-size: 0.7rem;
   color: var(--text-dim);
-  padding: 8px 24px 14px;
+  padding: 8px 24px 12px;
 }
-.header-actions { display: flex; align-items: center; gap: 10px; }
-.gear-btn { background: var(--panel-2); border: 1px solid var(--border); border-radius: 10px; width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; color: var(--text-dim); cursor: pointer; flex-shrink: 0; transition: color .15s, border-color .15s; }
-.gear-btn:hover { color: var(--accent); border-color: var(--accent-border); }
-.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.55); display: flex; align-items: center; justify-content: center; z-index: 60; padding: 20px; }
-.modal { background: var(--panel); border: 1px solid var(--border); border-radius: 14px; width: 400px; max-width: 100%; padding: 20px; display: flex; flex-direction: column; gap: 18px; box-shadow: 0 24px 60px rgba(29,34,48,.22), 0 2px 8px rgba(29,34,48,.08); }
-.modal-head { display: flex; align-items: center; justify-content: space-between; }
-.modal-head b { font-size: 1.05rem; font-family: 'Fraunces', serif; }
-.modal-x { background: none; border: none; color: var(--text-dim); font-size: 1.5rem; line-height: 1; cursor: pointer; }
+
+/* Configurações — modal grande com menu lateral (estilo claude.ai) */
+.modal-overlay { position: fixed; inset: 0; background: rgba(29,34,48,.45); display: flex; align-items: center; justify-content: center; z-index: 60; padding: 20px; }
+.modal-lg {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  width: 720px; max-width: 100%;
+  min-height: 420px; max-height: 86vh;
+  display: flex; overflow: hidden;
+  box-shadow: 0 24px 60px rgba(29,34,48,.25), 0 2px 8px rgba(29,34,48,.08);
+}
+.cfg-nav {
+  width: 200px; flex-shrink: 0;
+  background: var(--panel-2);
+  border-right: 1px solid var(--border);
+  padding: 18px 10px;
+  display: flex; flex-direction: column; gap: 3px;
+}
+.cfg-title { font-family: 'Fraunces', serif; font-size: 1.05rem; padding: 0 10px 12px; }
+.cfg-tab {
+  display: flex; align-items: center; gap: 9px;
+  background: none; border: none; border-radius: 9px;
+  padding: 9px 10px; cursor: pointer;
+  color: var(--text-dim); font-size: 0.84rem; font-weight: 500; text-align: left;
+  transition: background .12s, color .12s;
+}
+.cfg-tab:hover { background: var(--panel-3); color: var(--text); }
+.cfg-tab.active { background: var(--accent-soft); color: var(--text); }
+.cfg-tab .ic { display: flex; flex-shrink: 0; }
+.cfg-pane { flex: 1; padding: 20px 24px; overflow-y: auto; position: relative; }
+.cfg-pane h3 { font-family: 'Fraunces', serif; font-size: 1.15rem; font-weight: 600; margin-bottom: 16px; }
+.modal-x {
+  position: absolute; top: 14px; right: 16px;
+  background: none; border: none; color: var(--text-dim);
+  font-size: 1.5rem; line-height: 1; cursor: pointer;
+}
 .modal-x:hover { color: var(--text); }
-.cfg-section { display: flex; flex-direction: column; gap: 8px; }
-.cfg-hint { font-size: 0.72rem; color: var(--text-dim); line-height: 1.4; }
+.cfg-section { display: flex; flex-direction: column; gap: 8px; margin-bottom: 22px; }
+.ctx-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: .05em; color: var(--text-dim); }
+.ctx-select { width: 100%; background: var(--panel-3); color: var(--text-dim); border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; font-size: 0.82rem; font-family: inherit; }
+.cfg-hint { font-size: 0.73rem; color: var(--text-dim); line-height: 1.5; }
 .cfg-link { color: var(--accent); font-size: 0.85rem; text-decoration: none; }
 .cfg-link:hover { text-decoration: underline; }
+
+/* Tabela de conectores (estilo claude.ai) */
+.conn-head, .conn-row {
+  display: grid;
+  grid-template-columns: 1fr 70px 110px;
+  align-items: center; gap: 10px;
+  padding: 11px 6px;
+}
+.conn-head {
+  font-size: 0.68rem; font-weight: 600; text-transform: uppercase; letter-spacing: .08em;
+  color: var(--text-dim);
+  border-bottom: 1px solid var(--border);
+  padding-top: 0;
+}
+.conn-row { border-bottom: 1px solid var(--border); }
+.conn-id { display: flex; align-items: center; gap: 11px; min-width: 0; }
+.conn-ic {
+  width: 32px; height: 32px; flex-shrink: 0;
+  border: 1px solid var(--border); border-radius: 9px;
+  background: #fff;
+  display: flex; align-items: center; justify-content: center;
+}
+.conn-id b { font-size: 0.86rem; font-weight: 600; display: block; }
+.conn-id small { font-size: 0.7rem; color: var(--text-dim); display: block; }
+.conn-tipo { font-size: 0.78rem; color: var(--text-dim); }
+.conn-status { display: flex; justify-content: flex-end; }
+.conn-check { color: var(--green); display: flex; align-items: center; gap: 5px; font-size: 0.76rem; font-weight: 600; }
+.vincular-btn {
+  background: var(--accent); color: #fff;
+  border: none; border-radius: 8px;
+  padding: 7px 14px; font-size: 0.78rem; font-weight: 600;
+  cursor: pointer; transition: opacity .15s;
+}
+.vincular-btn:hover { opacity: .9; }
+.vincular-btn:disabled { opacity: .55; cursor: default; }
+.dot-off { width: 8px; height: 8px; border-radius: 50%; background: var(--danger); display: inline-block; }
+.dot-on { width: 8px; height: 8px; border-radius: 50%; background: #3E7A54; display: inline-block; }
+
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
 @media (max-width: 860px) {
   aside { display: none; }
   .agent-grid { grid-template-columns: 1fr; }
+  .modal-lg { flex-direction: column; }
+  .cfg-nav { width: 100%; flex-direction: row; overflow-x: auto; padding: 12px; }
+  .cfg-title { display: none; }
 }
 </style>
 </head>
@@ -388,6 +545,11 @@ select {
       Nova conversa
     </button>
 
+    <div class="search-box">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+      <input id="busca" type="text" placeholder="Procurar conversas…" oninput="renderConvos()">
+    </div>
+
     <div>
       <div class="section-label">Agentes</div>
       <div class="agents" id="agents"></div>
@@ -395,16 +557,34 @@ select {
   </div>
 
   <div class="side-convos">
-    <div class="section-label">Conversas</div>
+    <div class="section-label">Recentes</div>
     <div class="convos" id="convos"></div>
   </div>
 
   <div class="sidebar-foot">
-    LexHub · IA jurídica para o seu escritório<br>Powered by Claude
+    <div class="profile-menu" id="profile-menu" style="display:none">
+      <button class="pm-item" onclick="abrirConfig('geral')">
+        <span class="ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>
+        Configurações
+      </button>
+      <button class="pm-item" onclick="abrirConfig('conectores')">
+        <span class="ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2v6"/><path d="M15 2v6"/><path d="M12 17v5"/><path d="M5 8h14l-1 7a4 4 0 0 1-4 3.5h-4A4 4 0 0 1 6 15z"/></svg></span>
+        Conectores
+      </button>
+      <a class="pm-item" href="/backend" target="_blank" rel="noopener">
+        <span class="ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></span>
+        Status do backend
+      </a>
+    </div>
+    <button class="profile" onclick="toggleProfile(event)">
+      <span class="avatar">E</span>
+      <span class="pf-txt"><b>Meu Escritório</b><small>LexHub · IA jurídica</small></span>
+      <span class="chev"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m7 15 5 5 5-5M7 9l5-5 5 5"/></svg></span>
+    </button>
   </div>
 </aside>
 
-<main>
+<main class="home" id="main">
   <header>
     <div class="title">
       <span class="ic" id="agent-ic"></span>
@@ -413,65 +593,110 @@ select {
         <small id="agent-sub">Primeiro contato, onboarding do escritório e encaminhamento</small>
       </div>
     </div>
-    <div class="header-actions">
-      <select id="modelo" title="Modelo de IA">
-        <option value="claude-sonnet-4-6" selected>Padrão · Sonnet</option>
-        <option value="claude-haiku-4-5-20251001">Econômico · Haiku</option>
-        <option value="claude-opus-4-8">Avançado · Opus</option>
-      </select>
-      <button class="gear-btn" onclick="abrirConfig()" title="Configurações" aria-label="Configurações">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-      </button>
-    </div>
   </header>
 
   <div class="chat" id="chat">
     <div class="empty" id="empty">
       <div class="mark">
-        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18"/><path d="M5 7l7-4 7 4"/><path d="M3 11l2-4 2 4a2.5 2.5 0 0 1-4 0z"/><path d="M17 11l2-4 2 4a2.5 2.5 0 0 1-4 0z"/><path d="M8 21h8"/></svg>
+        <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18"/><path d="M5 7l7-4 7 4"/><path d="M3 11l2-4 2 4a2.5 2.5 0 0 1-4 0z"/><path d="M17 11l2-4 2 4a2.5 2.5 0 0 1-4 0z"/><path d="M8 21h8"/></svg>
       </div>
       <h2>Como posso ajudar, doutor(a)?</h2>
       <p>Comece pelo <b>Supervisor</b> para o onboarding, ou escolha um especialista do escritório.</p>
-      <div class="agent-grid" id="agent-grid"></div>
     </div>
     <div class="chat-inner" id="messages" style="display:none"></div>
   </div>
 
   <div class="composer-wrap">
     <div class="composer">
-      <textarea id="input" rows="1" placeholder="Descreva sua demanda jurídica..."></textarea>
-      <button class="send" id="send" onclick="enviar()" title="Enviar">
-        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
-      </button>
+      <textarea id="input" rows="1" placeholder="Escreva sua demanda jurídica…"></textarea>
+      <div class="composer-bar">
+        <div class="cb-left">
+          <div class="plus-menu" id="plus-menu" style="display:none">
+            <button class="pm-item" disabled title="Em breve">
+              <span class="ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg></span>
+              Anexar arquivo <span class="soon">em breve</span>
+            </button>
+            <button class="pm-item" onclick="abrirConfig('conectores');fecharMenus()">
+              <span class="ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2v6"/><path d="M15 2v6"/><path d="M12 17v5"/><path d="M5 8h14l-1 7a4 4 0 0 1-4 3.5h-4A4 4 0 0 1 6 15z"/></svg></span>
+              Conectores
+            </button>
+          </div>
+          <button class="plus-btn" id="plus-btn" onclick="togglePlus(event)" title="Adicionar" aria-label="Adicionar">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+          </button>
+        </div>
+        <div class="cb-right">
+          <select id="modelo" title="Modelo de IA">
+            <option value="claude-sonnet-4-6" selected>Padrão · Sonnet</option>
+            <option value="claude-haiku-4-5-20251001">Econômico · Haiku</option>
+            <option value="claude-opus-4-8">Avançado · Opus</option>
+          </select>
+          <button class="send" id="send" onclick="enviar()" title="Enviar" aria-label="Enviar">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+          </button>
+        </div>
+      </div>
     </div>
   </div>
+
+  <div id="home-agents"><div class="agent-grid" id="agent-grid"></div></div>
+
   <div class="disclaimer">As respostas são geradas por IA e devem ser revisadas pelo advogado responsável antes de qualquer uso processual.</div>
 </main>
 
 <div class="modal-overlay" id="cfg-modal" style="display:none" onclick="if(event.target===this)fecharConfig()">
-  <div class="modal">
-    <div class="modal-head">
-      <b>⚙️ Configurações</b>
+  <div class="modal-lg">
+    <div class="cfg-nav">
+      <b class="cfg-title">Configurações</b>
+      <button class="cfg-tab active" id="tab-geral" onclick="cfgTab('geral')">
+        <span class="ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>
+        Geral
+      </button>
+      <button class="cfg-tab" id="tab-conectores" onclick="cfgTab('conectores')">
+        <span class="ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2v6"/><path d="M15 2v6"/><path d="M12 17v5"/><path d="M5 8h14l-1 7a4 4 0 0 1-4 3.5h-4A4 4 0 0 1 6 15z"/></svg></span>
+        Conectores
+      </button>
+    </div>
+    <div class="cfg-pane">
       <button class="modal-x" onclick="fecharConfig()" aria-label="Fechar">×</button>
-    </div>
-    <div class="cfg-section">
-      <label class="ctx-label">Condomínio ativo</label>
-      <select class="ctx-select" disabled title="Disponível quando o acervo estiver conectado">
-        <option>— nenhum conectado —</option>
-      </select>
-    </div>
-    <div class="cfg-section">
-      <label class="ctx-label">Google Drive do escritório</label>
-      <div class="ctx-google" id="ctx-google"><span class="dot-off" id="g-dot"></span> <span id="g-label">Google Drive: verificando…</span></div>
-      <button class="ctx-connect" id="g-connect" onclick="conectarGoogle()" style="display:none">Conectar Google Drive</button>
-      <div class="cfg-hint">Conecte o Drive do escritório para os agentes escreverem no padrão dos seus modelos.</div>
-    </div>
-    <div class="cfg-section">
-      <a class="cfg-link" href="/backend" target="_blank" rel="noopener">🩺 Ver status do backend →</a>
+
+      <div id="pane-geral">
+        <h3>Geral</h3>
+        <div class="cfg-section">
+          <label class="ctx-label">Condomínio ativo</label>
+          <select class="ctx-select" disabled title="Disponível quando o acervo estiver conectado">
+            <option>— nenhum conectado —</option>
+          </select>
+          <div class="cfg-hint">O seletor de cliente é ativado quando o acervo do escritório estiver sincronizado.</div>
+        </div>
+        <div class="cfg-section">
+          <a class="cfg-link" href="/backend" target="_blank" rel="noopener">Ver status do backend →</a>
+        </div>
+      </div>
+
+      <div id="pane-conectores" style="display:none">
+        <h3>Conectores</h3>
+        <div class="conn-head"><span>Conector</span><span>Tipo</span><span style="text-align:right">Status</span></div>
+        <div class="conn-row">
+          <div class="conn-id">
+            <span class="conn-ic">
+              <svg width="18" height="18" viewBox="0 0 87.3 78"><path d="m6.6 66.85 3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3l13.75-23.8h-27.5c0 1.55.4 3.1 1.2 4.5z" fill="#0066da"/><path d="m43.65 25-13.75-23.8c-1.35.8-2.5 1.9-3.3 3.3l-25.4 44a9.06 9.06 0 0 0-1.2 4.5h27.5z" fill="#00ac47"/><path d="m73.55 76.8c1.35-.8 2.5-1.9 3.3-3.3l1.6-2.75 7.65-13.25c.8-1.4 1.2-2.95 1.2-4.5h-27.502l5.852 11.5z" fill="#ea4335"/><path d="m43.65 25 13.75-23.8c-1.35-.8-2.9-1.2-4.5-1.2h-18.5c-1.6 0-3.15.45-4.5 1.2z" fill="#00832d"/><path d="m59.8 53h-32.3l-13.75 23.8c1.35.8 2.9 1.2 4.5 1.2h50.8c1.6 0 3.15-.45 4.5-1.2z" fill="#2684fc"/><path d="m73.4 26.5-12.7-22c-.8-1.4-1.95-2.5-3.3-3.3l-13.75 23.8 16.15 28h27.45c0-1.55-.4-3.1-1.2-4.5z" fill="#ffba00"/></svg>
+            </span>
+            <div><b>Google Drive</b><small id="g-label">verificando…</small></div>
+          </div>
+          <span class="conn-tipo">Web</span>
+          <span class="conn-status">
+            <span class="conn-check" id="g-check" style="display:none"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Conectado</span>
+            <button class="vincular-btn" id="g-connect" onclick="conectarGoogle()" style="display:none">Vincular</button>
+          </span>
+        </div>
+        <div class="cfg-section" style="margin-top:16px">
+          <div class="cfg-hint">Conecte o Google Drive do escritório para os agentes escreverem no padrão dos seus modelos. Mais conectores em breve (OneDrive, ADVBOX…).</div>
+        </div>
+      </div>
     </div>
   </div>
 </div>
-
 
 <script>
 const ICONES = {
@@ -485,6 +710,8 @@ const ICONES = {
   history: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v5h5"/><path d="M3.05 13A9 9 0 1 0 6 5.3L3 8"/><path d="M12 7v5l4 2"/></svg>'
 };
 const CHECK = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>';
+const IC_COPIAR = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
+const IC_REFAZER = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>';
 const EXEMPLOS = {
   'supervisor': 'Olá! Sou novo aqui — como funciona a plataforma?',
   'notificacoes': 'Gere uma notificação: cão fez sujeira na área comum do Bloco B, unidade 34',
@@ -517,23 +744,24 @@ async function init() {
   checarGoogle();
 }
 
+/* ---------- Google Drive (Conectores) ---------- */
 async function checarGoogle() {
-  const dot = $('g-dot'), label = $('g-label'), btn = $('g-connect');
+  const label = $('g-label'), btn = $('g-connect'), check = $('g-check');
   try {
     const s = await (await fetch('/api/google/status')).json();
     if (!s.configurado) {
-      label.textContent = 'Google Drive: indisponível';
-      dot.className = 'dot-off'; btn.style.display = 'none';
+      label.textContent = 'indisponível no momento';
+      btn.style.display = 'none'; check.style.display = 'none';
     } else if (s.conectado) {
-      label.textContent = 'Google Drive: conectado';
-      dot.className = 'dot-on'; btn.style.display = 'none';
+      label.textContent = 'Drive do escritório vinculado';
+      btn.style.display = 'none'; check.style.display = 'flex';
     } else {
-      label.textContent = 'Google Drive: desconectado';
-      dot.className = 'dot-off'; btn.style.display = 'block';
+      label.textContent = 'não conectado';
+      btn.style.display = 'inline-block'; check.style.display = 'none';
     }
   } catch {
-    label.textContent = 'Google Drive: indisponível';
-    dot.className = 'dot-off'; btn.style.display = 'none';
+    label.textContent = 'indisponível no momento';
+    btn.style.display = 'none'; check.style.display = 'none';
   }
 }
 
@@ -544,7 +772,7 @@ async function conectarGoogle() {
     const d = await (await fetch('/api/google/conectar', { method: 'POST' })).json();
     if (d.redirect_url) {
       window.open(d.redirect_url, '_blank', 'noopener');
-      btn.textContent = 'Conectar Google Drive';
+      btn.textContent = 'Vincular';
       setTimeout(checarGoogle, 5000);
     } else {
       btn.textContent = 'Erro — tentar de novo';
@@ -556,17 +784,46 @@ async function conectarGoogle() {
   }
 }
 
-function abrirConfig() { $('cfg-modal').style.display = 'flex'; checarGoogle(); }
-function fecharConfig() { $('cfg-modal').style.display = 'none'; }
+/* ---------- Menus e Configurações ---------- */
+function togglePlus(e) {
+  e.stopPropagation();
+  const m = $('plus-menu');
+  m.style.display = m.style.display === 'none' ? 'flex' : 'none';
+  $('profile-menu').style.display = 'none';
+}
+function toggleProfile(e) {
+  e.stopPropagation();
+  const m = $('profile-menu');
+  m.style.display = m.style.display === 'none' ? 'flex' : 'none';
+  $('plus-menu').style.display = 'none';
+}
+function fecharMenus() {
+  $('plus-menu').style.display = 'none';
+  $('profile-menu').style.display = 'none';
+}
+document.addEventListener('click', fecharMenus);
 
+function abrirConfig(tab = 'geral') {
+  fecharMenus();
+  $('cfg-modal').style.display = 'flex';
+  cfgTab(tab);
+  checarGoogle();
+}
+function fecharConfig() { $('cfg-modal').style.display = 'none'; }
+function cfgTab(nome) {
+  $('pane-geral').style.display = nome === 'geral' ? 'block' : 'none';
+  $('pane-conectores').style.display = nome === 'conectores' ? 'block' : 'none';
+  $('tab-geral').classList.toggle('active', nome === 'geral');
+  $('tab-conectores').classList.toggle('active', nome === 'conectores');
+}
+
+/* ---------- Agentes ---------- */
 function renderAgentes() {
-  // Sidebar: linhas compactas
   $('agents').innerHTML = agentes.map(a => `
     <button class="agent-row ${a.slug === agenteAtual ? 'active' : ''}" onclick="trocarAgente('${a.slug}')" title="${a.descricao}">
       <span class="ic">${ICONES[a.icone] || ICONES.scale}</span>${a.nome}
     </button>`).join('');
 
-  // Tela inicial: cards com descrição + exemplo
   $('agent-grid').innerHTML = agentes.map(a => `
     <div class="agent-card ${a.slug === agenteAtual ? 'active' : ''}" onclick="trocarAgente('${a.slug}')" role="button" tabindex="0">
       <div class="head">
@@ -578,7 +835,6 @@ function renderAgentes() {
       <button class="exemplo" onclick="event.stopPropagation();usarExemplo('${a.slug}')">“${EXEMPLOS[a.slug] || ''}”</button>
     </div>`).join('');
 
-  // Cabeçalho
   const ag = agentes.find(a => a.slug === agenteAtual);
   if (ag) {
     $('agent-title').textContent = ag.nome;
@@ -601,20 +857,28 @@ function usarExemplo(slug) {
   input.focus();
 }
 
+/* ---------- Conversas ---------- */
+function modoHome(on) { $('main').classList.toggle('home', on); }
+
 function novaConversa(rerender = true) {
   conversaAtual = null;
   $('messages').innerHTML = '';
   $('messages').style.display = 'none';
   $('empty').style.display = 'flex';
+  modoHome(true);
   if (rerender) renderConvos();
 }
 
 function renderConvos() {
-  if (!conversas.length) {
-    $('convos').innerHTML = '<div class="convos-empty">Suas conversas aparecerão aqui.</div>';
+  const termo = ($('busca').value || '').toLowerCase();
+  const lista = conversas
+    .map((c, i) => ({ c, i }))
+    .filter(({ c }) => !termo || c.titulo.toLowerCase().includes(termo));
+  if (!lista.length) {
+    $('convos').innerHTML = `<div class="convos-empty">${termo ? 'Nenhuma conversa encontrada.' : 'Suas conversas aparecerão aqui.'}</div>`;
     return;
   }
-  $('convos').innerHTML = conversas.map((c, i) => `
+  $('convos').innerHTML = lista.map(({ c, i }) => `
     <div class="convo-item ${conversaAtual === c ? 'active' : ''}" onclick="abrirConversa(${i})" title="${c.titulo}">
       <span class="ag-dot">${icone(c.agente)}</span>
       <span class="t">${c.titulo}</span>
@@ -626,6 +890,7 @@ function abrirConversa(i) {
   conversaAtual = conversas[i];
   agenteAtual = conversaAtual.agente;
   renderAgentes();
+  modoHome(false);
   $('empty').style.display = 'none';
   const box = $('messages');
   box.style.display = 'flex';
@@ -646,6 +911,7 @@ function salvar() {
   localStorage.setItem('lexhub_conversas', JSON.stringify(conversas.slice(0, 30)));
 }
 
+/* ---------- Render de mensagens ---------- */
 function md(t) {
   let h = t
     .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
@@ -671,7 +937,31 @@ function bolha(role, content) {
     : `<span class="ic">${icone(agenteAtual)}</span>${ag ? ag.nome : 'LexHub'}`;
   div.innerHTML = `<span class="label">${label}</span>
     <div class="bubble">${role === 'user' ? escapar(content) : md(content)}</div>`;
+  if (role === 'assistant' && content) addAcoes(div, content);
   return div;
+}
+
+function addAcoes(div, texto) {
+  div._raw = texto;
+  const bar = document.createElement('div');
+  bar.className = 'msg-acoes';
+  const bCopiar = document.createElement('button');
+  bCopiar.className = 'ma-btn';
+  bCopiar.innerHTML = IC_COPIAR + ' Copiar';
+  bCopiar.onclick = async () => {
+    try {
+      await navigator.clipboard.writeText(div._raw);
+      bCopiar.innerHTML = CHECK.replace('width="16" height="16"', 'width="13" height="13"') + ' Copiado';
+      setTimeout(() => { bCopiar.innerHTML = IC_COPIAR + ' Copiar'; }, 1800);
+    } catch { /* clipboard indisponível */ }
+  };
+  const bRefazer = document.createElement('button');
+  bRefazer.className = 'ma-btn';
+  bRefazer.innerHTML = IC_REFAZER + ' Refazer';
+  bRefazer.onclick = () => refazer(div);
+  bar.appendChild(bCopiar);
+  bar.appendChild(bRefazer);
+  div.appendChild(bar);
 }
 
 function escapar(t) {
@@ -680,26 +970,9 @@ function escapar(t) {
 
 function scrollFim() { const c = $('chat'); c.scrollTop = c.scrollHeight; }
 
-async function enviar() {
-  const input = $('input');
-  const texto = input.value.trim();
-  if (!texto || gerando) return;
-  input.value = '';
-  input.style.height = 'auto';
-
-  if (!conversaAtual) {
-    conversaAtual = { titulo: texto.slice(0, 42), agente: agenteAtual, mensagens: [] };
-    conversas.unshift(conversaAtual);
-  }
-  conversaAtual.mensagens.push({ role: 'user', content: texto });
-
-  $('empty').style.display = 'none';
+/* ---------- Envio e streaming ---------- */
+async function gerarResposta() {
   const box = $('messages');
-  box.style.display = 'flex';
-  box.appendChild(bolha('user', texto));
-  renderConvos();
-  scrollFim();
-
   const typing = document.createElement('div');
   typing.className = 'typing';
   typing.innerHTML = '<span class="dot"></span> Analisando...';
@@ -738,6 +1011,7 @@ async function enviar() {
       scrollFim();
     }
     conversaAtual.mensagens.push({ role: 'assistant', content: total });
+    addAcoes(div, total);
     salvar();
   } catch (e) {
     typing.remove();
@@ -753,13 +1027,48 @@ async function enviar() {
   }
 }
 
+async function enviar() {
+  const input = $('input');
+  const texto = input.value.trim();
+  if (!texto || gerando) return;
+  input.value = '';
+  input.style.height = 'auto';
+
+  if (!conversaAtual) {
+    conversaAtual = { titulo: texto.slice(0, 42), agente: agenteAtual, mensagens: [] };
+    conversas.unshift(conversaAtual);
+  }
+  conversaAtual.mensagens.push({ role: 'user', content: texto });
+
+  modoHome(false);
+  $('empty').style.display = 'none';
+  const box = $('messages');
+  box.style.display = 'flex';
+  box.appendChild(bolha('user', texto));
+  renderConvos();
+  scrollFim();
+
+  await gerarResposta();
+}
+
+async function refazer(divAntigo) {
+  if (gerando || !conversaAtual) return;
+  const msgs = conversaAtual.mensagens;
+  if (msgs.length && msgs[msgs.length - 1].role === 'assistant') {
+    msgs.pop();
+    salvar();
+  }
+  divAntigo.remove();
+  await gerarResposta();
+}
+
 const input = $('input');
 input.addEventListener('keydown', e => {
   if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); enviar(); }
 });
 input.addEventListener('input', () => {
   input.style.height = 'auto';
-  input.style.height = Math.min(input.scrollHeight, 180) + 'px';
+  input.style.height = Math.min(input.scrollHeight, 200) + 'px';
 });
 
 init();
