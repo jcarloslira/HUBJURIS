@@ -28,6 +28,16 @@ class Settings(BaseSettings):
     WAPI_INSTANCE_ID: str = ""
     WAPI_API_KEY: str = ""
 
+    # Mercado Pago (Pix para rifas)
+    MERCADO_PAGO_ACCESS_TOKEN: str = ""
+    MERCADO_PAGO_WEBHOOK_URL: str = ""
+    ADMIN_TOKEN: str = ""  # Bearer simples para /admin/* até integrar Supabase Auth
+
+    # Composio (conector do Google Drive dos escritórios — M3)
+    COMPOSIO_API_KEY: str = ""
+    COMPOSIO_GDRIVE_AUTH_CONFIG_ID: str = ""
+    COMPOSIO_BASE_URL: str = "https://backend.composio.dev/api/v3"
+
 
 @lru_cache
 def get_settings() -> Settings:

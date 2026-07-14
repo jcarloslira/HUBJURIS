@@ -1,6 +1,28 @@
 # Hub de I.A Jurídico Condominial — Design / Especificação
 
-> Data: 2026-07-12 · Rev. 3 · Status: **em revisão** · Prazo-alvo do MVP rodando: **sexta 17/07/2026**
+> Data: 2026-07-12 · Rev. 4 · Status: **em revisão** · Prazo-alvo do MVP rodando: **sexta 17/07/2026**
+
+---
+
+## 0. Rev. 4 — Pivô após validar o Drive real (13/07)
+
+Ao conectar o acervo real do Dr. Wilker (via Composio), descobrimos que ele **não** está organizado
+por condomínio → bloco → unidade, e sim **plano, por TIPO de documento** — é a **biblioteca de MODELOS
+do escritório** (Modelo de Pareceres, Contratos, Rescisão, Convenções/Regimentos, Ofícios, Comunicados,
+Petições, Notificações, Decisões/Teses…). O condomínio aparece **no nome do arquivo**.
+
+Ajustes decorrentes (substituem partes das seções abaixo onde conflitarem):
+
+- **Provedor de Drive = Composio, com OAuth GERENCIADO** (sem Google Cloud, sem verificação). O usuário
+  clica "Conectar Google Drive" no app → login Google (app verificado do Composio) → pronto. Fluxo via
+  API: criar auth config managed → gerar link `/connected_accounts/link` (por `user_id` = escritório).
+- **M3/M4 = "aterrar os agentes nos modelos":** cada especialista lê a pasta de modelos da sua categoria
+  (`mapa categoria → pasta`) e produz **no estilo do escritório**. O `mapear_acervo` (nesting
+  condomínio/bloco/unidade) **não** se aplica ao acervo real; o modelo `documentos.categoria` (M2) serve.
+- **Leitura de conteúdo:** `GOOGLEDRIVE_PARSE_FILE` → `data.file.s3url` → baixar. Só lê arquivo **da
+  própria conta** — por isso o **Dr. Wilker conecta o Drive dele** (não a pasta compartilhada com o Jean).
+- **Blocos/unidades** (M2) ficam de lado por ora; podem reentrar se houver dados por-cliente estruturados.
+- Confidencialidade: docs passam pelo Composio (aceito; confirmar com o Dr. Wilker antes de doc real).
 
 ---
 
