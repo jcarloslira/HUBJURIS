@@ -58,20 +58,24 @@ class BaseAgent:
         self,
         mensagens: list[MessageParam],
         modelo: str | None = None,
+        referencia: str = "",
     ) -> AsyncIterator[str]:
         """Gera a resposta do modelo em streaming a partir do histórico completo.
 
         Args:
             mensagens: Histórico completo da conversa, incluindo a mensagem atual.
             modelo: Modelo a usar; se None, usa o padrão do agente.
+            referencia: Bloco opcional de contexto (ex.: modelos do escritório)
+                anexado ao system prompt para o agente seguir o padrão.
 
         Yields:
             Trechos de texto da resposta conforme são gerados.
         """
+        system = f"{self.system_prompt}\n\n{referencia}" if referencia else self.system_prompt
         async with self.client.messages.stream(
             model=modelo or self.model,
             max_tokens=self.max_tokens,
-            system=self.system_prompt,
+            system=system,
             messages=mensagens,
         ) as stream:
             async for texto in stream.text_stream:

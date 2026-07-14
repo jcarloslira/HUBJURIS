@@ -15,6 +15,7 @@ from app.agents.pareceres import PareceresAgent
 from app.agents.peticoes import PeticoesAgent
 from app.agents.supervisor import SupervisorAgent
 from app.schemas.chat import AgenteInfo, ChatRequest
+from app.services.modelos import LeitorDrive, carregar_modelos, formatar_referencia
 
 _REGISTRO: dict[str, tuple[type[BaseAgent], AgenteInfo]] = {
     "supervisor": (
@@ -171,12 +172,25 @@ async def escolher_especialista(client: AsyncAnthropic, mensagens: list[MessageP
     return "supervisor"
 
 
-async def gerar_resposta_stream(payload: ChatRequest, client: AsyncAnthropic) -> AsyncIterator[str]:
+async def gerar_resposta_stream(
+    payload: ChatRequest,
+    client: AsyncAnthropic,
+    *,
+    conector: LeitorDrive | None = None,
+    acervo_raiz: str | None = None,
+) -> AsyncIterator[str]:
     """Gera a resposta em streaming, roteando quando o alvo é o Supervisor.
+
+    Quando um conector de Drive e a pasta-raiz do acervo são informados, o
+    especialista escolhido é "aterrado" nos modelos do escritório (produz no
+    padrão do escritório). Falha na leitura do Drive degrada graciosamente: o
+    agente responde mesmo sem os modelos.
 
     Args:
         payload: Requisição validada com agente, histórico e modelo.
         client: Cliente Anthropic compartilhado.
+        conector: Leitor do Drive do escritório (opcional).
+        acervo_raiz: Pasta-raiz do acervo de modelos (opcional).
 
     Yields:
         Trechos de texto da resposta do agente que efetivamente atende.
@@ -190,5 +204,16 @@ async def gerar_resposta_stream(payload: ChatRequest, client: AsyncAnthropic) ->
         slug = await escolher_especialista(client, mensagens)
     agente = obter_agente(slug, client) or obter_agente("supervisor", client)
     assert agente is not None  # supervisor está sempre registrado
-    async for trecho in agente.responder_stream(mensagens, modelo=payload.modelo):
+
+    referencia = ""
+    if conector is not None and acervo_raiz:
+        try:
+            modelos = await carregar_modelos(conector, acervo_raiz, slug, limite=2)
+            referencia = formatar_referencia(modelos)
+        except Exception:  # noqa: BLE001 - Drive indisponível não impede a resposta
+            referencia = ""
+
+    async for trecho in agente.responder_stream(
+        mensagens, modelo=payload.modelo, referencia=referencia
+    ):
         yield trecho

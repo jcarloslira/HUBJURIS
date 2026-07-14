@@ -37,6 +37,8 @@ class Settings(BaseSettings):
     COMPOSIO_API_KEY: str = ""
     COMPOSIO_GDRIVE_AUTH_CONFIG_ID: str = ""
     COMPOSIO_BASE_URL: str = "https://backend.composio.dev/api/v3"
+    # Pasta-raiz do acervo de modelos no Drive do escritório (vazio = grounding off)
+    COMPOSIO_ACERVO_FOLDER_ID: str = ""
 
 
 @lru_cache

@@ -5,6 +5,10 @@ from unittest.mock import AsyncMock, MagicMock
 
 from fastapi.testclient import TestClient
 
+from app.schemas.chat import ChatRequest, MensagemChat
+from app.services.chat import gerar_resposta_stream
+from app.services.drive import DriveEntry
+
 AGENTES_ESPERADOS = {
     "supervisor",
     "notificacoes",
@@ -219,3 +223,53 @@ def test_index_bloqueado_para_host_externo(client: TestClient) -> None:
     response = client.get("/", headers={"host": "abc.trycloudflare.com"})
 
     assert response.status_code == 404
+
+
+class _FakeDrive:
+    """Leitor de Drive fake com uma pasta de modelos de parecer."""
+
+    async def listar_filhos(self, pasta_id: str) -> list[DriveEntry]:
+        if pasta_id == "acervo":
+            return [DriveEntry(id="p1", nome="Modelo de Pareceres", is_folder=True)]
+        if pasta_id == "p1":
+            return [DriveEntry(id="a1", nome="parecer.docx", is_folder=False)]
+        return []
+
+    async def ler_texto(self, file_id: str) -> str:
+        return "Corpo do modelo de parecer do escritório."
+
+
+async def test_grounding_injeta_modelos_no_system() -> None:
+    """Com conector + acervo, o especialista recebe os modelos no system."""
+    fake = _mock_anthropic_stream(["ok"])
+    payload = ChatRequest(
+        agente="pareceres",
+        mensagens=[MensagemChat(role="user", content="faça um parecer")],
+    )
+
+    trechos = [
+        t
+        async for t in gerar_resposta_stream(
+            payload, fake, conector=_FakeDrive(), acervo_raiz="acervo"
+        )
+    ]
+
+    assert trechos == ["ok"]
+    system = fake.messages.stream.call_args.kwargs["system"]
+    assert "MODELOS DO ESCRITÓRIO" in system
+    assert "Corpo do modelo de parecer" in system
+
+
+async def test_sem_conector_nao_injeta_referencia() -> None:
+    """Sem conector, o system é apenas o prompt do agente (sem modelos)."""
+    fake = _mock_anthropic_stream(["ok"])
+    payload = ChatRequest(
+        agente="pareceres",
+        mensagens=[MensagemChat(role="user", content="faça um parecer")],
+    )
+
+    async for _ in gerar_resposta_stream(payload, fake):
+        pass
+
+    system = fake.messages.stream.call_args.kwargs["system"]
+    assert "MODELOS DO ESCRITÓRIO" not in system
