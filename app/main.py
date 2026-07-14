@@ -15,6 +15,7 @@ from app.routers import (
     auth_admin,
     chat,
     condominios,
+    google,
     health,
     rifas,
     sdr,
@@ -84,6 +85,7 @@ app.include_router(rifas.router)
 app.include_router(webhook_pix.router)
 app.include_router(auth_admin.router)
 app.include_router(condominios.router)
+app.include_router(google.router)
 
 app.mount("/static", StaticFiles(directory=_STATIC_DIR), name="static")
 
