@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/styles.css" />
+    <title>Painel Admin · Naeliton Prêmios</title>
+    <style>
+        .admin-wrap { max-width: 1100px; margin: 2rem auto; padding: 0 20px; }
+        .admin-head { display: flex; align-items: center; gap: .8rem; margin-bottom: 1.5rem; }
+        .login-card { max-width: 420px; margin: 8vh auto; background: var(--surface); border: 1px solid var(--border-strong); border-radius: 20px; padding: 2rem; }
+        .cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 2rem; }
+        .stat { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.2rem; }
+        .stat .k { font-size: .72rem; font-weight: 800; letter-spacing: .05em; color: var(--text-dim); text-transform: uppercase; }
+        .stat .v { font-size: 1.7rem; font-weight: 900; margin-top: .3rem; }
+        .stat.gold .v { color: var(--gold); }
+        .stat.green .v { color: var(--emerald-bright); }
+        .toolbar { display: flex; gap: .6rem; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; }
+        .toolbar input { flex: 1; min-width: 200px; padding: .7rem 1rem; border-radius: 10px; border: 1px solid var(--border-strong); background: var(--bg-2); color: var(--text); }
+        table { width: 100%; border-collapse: collapse; font-size: .85rem; }
+        th, td { text-align: left; padding: .7rem .8rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+        th { color: var(--text-dim); font-size: .72rem; text-transform: uppercase; letter-spacing: .04em; position: sticky; top: 0; background: var(--bg-2); }
+        tr:hover td { background: rgba(16,185,129,.04); }
+        .badge { font-size: .7rem; font-weight: 800; padding: .2rem .6rem; border-radius: 999px; }
+        .badge.pago { background: rgba(16,185,129,.15); color: var(--emerald-bright); }
+        .badge.pendente { background: rgba(251,191,36,.15); color: var(--gold-bright); }
+        .badge.expirado, .badge.cancelled, .badge.rejected { background: rgba(248,113,113,.12); color: #fca5a5; }
+        .nums-cell { max-width: 260px; font-family: monospace; font-size: .78rem; color: var(--gold-bright); }
+        .table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); }
+        .muted { color: var(--text-mut); }
+        @media (max-width: 720px){ .cards { grid-template-columns: 1fr 1fr; } }
+    </style>
+</head>
+<body>
+    <!-- Login -->
+    <div id="loginView" class="login-card">
+        <div class="brand" style="margin-bottom:1.2rem"><span class="brand-mark">N</span><span class="brand-name">Painel Admin</span></div>
+        <form id="adminLogin" class="form">
+            <label>Token de acesso
+                <input name="token" type="password" placeholder="Token do painel" required />
+            </label>
+            <button class="btn btn-gold btn-lg btn-block" type="submit">Entrar</button>
+            <p class="form-note" id="adminErr" style="color:#fca5a5"></p>
+        </form>
+    </div>
+
+    <!-- Dashboard -->
+    <div id="dashView" class="admin-wrap" hidden>
+        <div class="admin-head">
+            <span class="brand-mark">N</span>
+            <h2 style="flex:1">Painel · <span class="text-gold">Naeliton Prêmios</span></h2>
+            <button class="btn btn-outline" id="refreshBtn">↻ Atualizar</button>
+            <button class="btn btn-outline" id="csvBtn">⬇ CSV</button>
+        </div>
+
+        <div class="cards" id="cards"></div>
+
+        <div class="toolbar">
+            <input id="search" placeholder="🔎 Buscar por nome, CPF ou telefone…" />
+            <span class="muted" id="count"></span>
+        </div>
+
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Data</th><th>Comprador</th><th>CPF</th><th>WhatsApp</th>
+                        <th>Qtd</th><th>Valor</th><th>Status</th><th>Números</th>
+                    </tr>
+                </thead>
+                <tbody id="rows"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        const $ = (id) => document.getElementById(id);
+        const brl = (v) => (v || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+        let TOKEN = sessionStorage.getItem("admin_token") || "";
+        let DADOS = null;
+
+        async function carregar() {
+            const res = await fetch("/api/admin/dados", { headers: { "X-Admin-Token": TOKEN } });
+            if (res.status === 401) { sair(); throw new Error("Token inválido"); }
+            DADOS = await res.json();
+            render();
+        }
+
+        function render() {
+            const r = DADOS.resumo;
+            $("cards").innerHTML = `
+                <div class="stat gold"><div class="k">Arrecadado</div><div class="v">${brl(r.arrecadado)}</div></div>
+                <div class="stat green"><div class="k">Pedidos pagos</div><div class="v">${r.pedidos_pagos}</div></div>
+                <div class="stat"><div class="k">Pendentes</div><div class="v">${r.pedidos_pendentes}</div></div>
+                <div class="stat"><div class="k">Números vendidos (reais)</div><div class="v">${r.numeros_vendidos_reais.toLocaleString("pt-BR")}<span class="muted" style="font-size:.9rem"> / ${r.total_numeros.toLocaleString("pt-BR")}</span></div></div>
+            `;
+            filtrar();
+        }
+
+        function filtrar() {
+            const q = ($("search").value || "").toLowerCase();
+            const lista = DADOS.pedidos.filter((p) =>
+                !q || [p.nome, p.cpf, p.telefone, p.email].join(" ").toLowerCase().includes(q));
+            $("count").textContent = `${lista.length} pedido(s)`;
+            $("rows").innerHTML = lista.map((p) => {
+                const d = p.data ? new Date(p.data).toLocaleString("pt-BR") : "—";
+                const nums = p.numeros.length ? p.numeros.join(", ") : "<span class='muted'>—</span>";
+                return `<tr>
+                    <td class="muted">${d}</td>
+                    <td>${esc(p.nome)}</td>
+                    <td>${esc(p.cpf || "")}</td>
+                    <td>${esc(p.telefone || "")}</td>
+                    <td>${p.qtd}</td>
+                    <td>${brl(p.valor)}</td>
+                    <td><span class="badge ${p.status}">${p.status}</span></td>
+                    <td class="nums-cell">${nums}</td>
+                </tr>`;
+            }).join("") || `<tr><td colspan="8" class="muted" style="text-align:center;padding:2rem">Nenhum pedido ainda.</td></tr>`;
+        }
+
+        function esc(s){ return String(s).replace(/[&<>"']/g,(c)=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+
+        function baixarCSV() {
+            const head = ["data","nome","cpf","telefone","email","qtd","valor","status","numeros"];
+            const linhas = DADOS.pedidos.map((p) => [
+                p.data, p.nome, p.cpf, p.telefone, p.email || "", p.qtd, p.valor, p.status,
+                p.numeros.join(" ")
+            ].map((c) => `"${String(c ?? "").replace(/"/g, '""')}"`).join(","));
+            const csv = [head.join(","), ...linhas].join("\n");
+            const blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8" });
+            const a = document.createElement("a");
+            a.href = URL.createObjectURL(blob);
+            a.download = "pedidos-naeliton.csv";
+            a.click();
+        }
+
+        function entrar() { $("loginView").hidden = true; $("dashView").hidden = false; }
+        function sair() { sessionStorage.removeItem("admin_token"); $("loginView").hidden = false; $("dashView").hidden = true; }
+
+        $("adminLogin").addEventListener("submit", async (e) => {
+            e.preventDefault();
+            TOKEN = new FormData(e.target).get("token");
+            try {
+                await carregar();
+                sessionStorage.setItem("admin_token", TOKEN);
+                entrar();
+            } catch (err) { $("adminErr").textContent = "Token inválido."; }
+        });
+        $("refreshBtn").addEventListener("click", () => carregar().catch(() => {}));
+        $("csvBtn").addEventListener("click", baixarCSV);
+        $("search").addEventListener("input", filtrar);
+
+        // auto-login se já tem token salvo
+        if (TOKEN) { carregar().then(entrar).catch(sair); }
+    </script>
+</body>
+</html>

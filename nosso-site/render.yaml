@@ -1,0 +1,24 @@
+# Blueprint do Render — rifa Naeliton Prêmios
+# Publica o site como Web Service (Docker) com disco persistente para o banco.
+services:
+  - type: web
+    name: naeliton-premios
+    runtime: docker
+    plan: starter            # sempre no ar (~US$7/mês). "free" dorme e apaga dados.
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /api/stats
+    autoDeploy: true
+    disk:
+      name: dados            # guarda pedidos.db entre deploys/reinícios
+      mountPath: /data
+      sizeGB: 1
+    envVars:
+      - key: MERCADO_PAGO_ACCESS_TOKEN
+        sync: false          # defina no painel do Render (NÃO commitar)
+      - key: ADMIN_TOKEN
+        sync: false          # troque para um token forte no painel
+      - key: MERCADO_PAGO_WEBHOOK_URL
+        sync: false          # https://SEU-APP.onrender.com/api/webhook (opcional)
+      - key: DB_PATH
+        value: /data/pedidos.db

@@ -1,0 +1,300 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#08110e" />
+    <meta name="description" content="Rifa oficial JBL Boombox 4 — Naeliton Prêmios. Cada título por R$ 0,25. Sorteio pela Loteria Federal." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/styles.css" />
+    <title>Naeliton Prêmios · Rifa JBL Boombox 4</title>
+</head>
+<body>
+    <!-- Barra de urgência -->
+    <div class="urgency-bar">🔥 Corre que tá acabando! Últimos títulos disponíveis</div>
+
+    <!-- Header -->
+    <header class="site-header">
+        <div class="container header-inner">
+            <a class="brand" href="/">
+                <span class="brand-mark">N</span>
+                <span class="brand-name">NAELITON<span class="brand-accent"> PRÊMIOS</span></span>
+            </a>
+            <nav class="header-nav">
+                <a href="#pacotes">Participar</a>
+                <a href="#ranking">Ranking</a>
+                <a href="#regulamento">Regulamento</a>
+                <a href="#" id="meusNumerosLink">Meus números</a>
+            </nav>
+            <a href="#" id="loginBtn" class="btn btn-outline header-cta">🎟️ Meus números</a>
+            <a href="#pacotes" class="btn btn-gold header-cta">Quero participar</a>
+        </div>
+    </header>
+
+    <!-- Hero -->
+    <section class="hero">
+        <div class="container hero-grid">
+            <div class="hero-media">
+                <div class="hero-badges">
+                    <span class="chip chip-gold">PRÊMIO OFICIAL</span>
+                    <span class="chip">Produto lacrado</span>
+                </div>
+                <div class="hero-image-wrap">
+                    <img id="heroImg" src="/assets/jbl-1.jpeg" alt="JBL Boombox 4" />
+                </div>
+                <div class="hero-thumbs" id="heroThumbs">
+                    <button class="thumb is-active" data-src="/assets/jbl-1.jpeg"><img src="/assets/jbl-1.jpeg" alt=""></button>
+                    <button class="thumb" data-src="/assets/jbl-2.jpeg"><img src="/assets/jbl-2.jpeg" alt=""></button>
+                    <button class="thumb" data-src="/assets/jbl-3.jpeg"><img src="/assets/jbl-3.jpeg" alt=""></button>
+                    <button class="thumb" data-src="/assets/jbl-4.jpeg"><img src="/assets/jbl-4.jpeg" alt=""></button>
+                    <button class="thumb" data-src="/assets/jbl-5.jpeg"><img src="/assets/jbl-5.jpeg" alt=""></button>
+                </div>
+            </div>
+
+            <div class="hero-info">
+                <span class="eyebrow">🎟️ RIFA EM ANDAMENTO</span>
+                <h1 class="hero-title">JBL <span class="text-gold">BOOMBOX 4</span></h1>
+                <p class="hero-sub">Massive sound all day long — leve a caixa mais potente da JBL!</p>
+
+                <div class="progress-block">
+                    <div class="progress-head">
+                        <span>PROGRESSO DA CAMPANHA</span>
+                        <span id="progressPct" class="text-gold">6%</span>
+                    </div>
+                    <div class="progress-track"><div class="progress-fill" id="progressFill" style="width:6%"></div></div>
+                    <div class="progress-foot"><span id="vendidosTxt">— números vendidos</span> · <span id="totalNumTxt">58.000 no total</span></div>
+                </div>
+
+                <div class="hero-facts">
+                    <div class="fact">
+                        <span class="fact-label">SORTEIO</span>
+                        <span class="fact-value">12/09/2026 · 20:00</span>
+                        <span class="fact-note">Loteria Federal</span>
+                    </div>
+                    <div class="fact fact-price">
+                        <span class="fact-label">POR APENAS</span>
+                        <span class="fact-value text-gold">R$ 0,25</span>
+                        <span class="fact-note">por título</span>
+                    </div>
+                </div>
+
+                <a href="#pacotes" class="btn btn-gold btn-lg btn-block">Ver pacotes de títulos →</a>
+                <p class="hero-legal">Quanto mais títulos, mais chances de ganhar. Sorteio oficial pela Loteria Federal.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Ticker -->
+    <div class="ticker">
+        <div class="ticker-track">
+            <span>JBL BOOMBOX 4 — SOM MASSIVO</span><span class="dot">•</span>
+            <span>PRODUTO LACRADO COM NOTA FISCAL</span><span class="dot">•</span>
+            <span>SORTEIO PELA LOTERIA FEDERAL</span><span class="dot">•</span>
+            <span>CADA TÍTULO POR R$ 0,25</span><span class="dot">•</span>
+            <span>PIX RÁPIDO E SEGURO</span><span class="dot">•</span>
+            <span>JBL BOOMBOX 4 — SOM MASSIVO</span><span class="dot">•</span>
+            <span>PRODUTO LACRADO COM NOTA FISCAL</span><span class="dot">•</span>
+            <span>SORTEIO PELA LOTERIA FEDERAL</span><span class="dot">•</span>
+            <span>CADA TÍTULO POR R$ 0,25</span><span class="dot">•</span>
+            <span>PIX RÁPIDO E SEGURO</span><span class="dot">•</span>
+        </div>
+    </div>
+
+    <!-- Pacotes -->
+    <section id="pacotes" class="section">
+        <div class="container">
+            <div class="section-head">
+                <span class="eyebrow">🍀 ESCOLHA SUA SORTE</span>
+                <h2>Selecione seus títulos</h2>
+                <p>Quanto mais títulos, mais chances de ganhar!</p>
+            </div>
+
+            <div class="packages" id="packages"><!-- render via app.js --></div>
+
+            <div class="custom-qty">
+                <div class="custom-qty-info">
+                    <strong>Quantidade personalizada</strong>
+                    <span>Escolha manualmente quantos títulos deseja</span>
+                </div>
+                <div class="qty-stepper">
+                    <button id="qtyMinus" type="button" aria-label="Diminuir">−</button>
+                    <input id="qtyInput" type="number" min="1" value="100" inputmode="numeric" />
+                    <button id="qtyPlus" type="button" aria-label="Aumentar">+</button>
+                </div>
+            </div>
+
+            <div class="checkout-bar">
+                <div class="checkout-total">
+                    <span>TOTAL A PAGAR</span>
+                    <strong id="totalValue" class="text-gold">R$ 25,00</strong>
+                    <small id="totalQty">100 títulos</small>
+                </div>
+                <button id="participarBtn" class="btn btn-gold btn-lg">QUERO PARTICIPAR! 🎉</button>
+            </div>
+
+            <div class="promo-box">
+                <span class="chip chip-gold">PROMOÇÃO TOP COMPRADOR</span>
+                <p>Quem tiver <strong>mais títulos até 12/09/2026</strong> leva <strong class="text-gold">R$ 1.000 extras!</strong></p>
+                <small>O prêmio é pago via PIX no dia seguinte ao sorteio principal.</small>
+            </div>
+        </div>
+    </section>
+
+    <!-- Ranking -->
+    <section id="ranking" class="section section-alt">
+        <div class="container">
+            <div class="section-head">
+                <span class="eyebrow">🏆 RANKING</span>
+                <h2>Top compradores</h2>
+                <p>Atualizado a cada pagamento confirmado.</p>
+            </div>
+            <div class="podium" id="podium"><!-- render via app.js --></div>
+            <ol class="rank-list" id="rankList"><!-- render via app.js --></ol>
+        </div>
+    </section>
+
+    <!-- Sobre o prêmio -->
+    <section class="section">
+        <div class="container specs-grid">
+            <div class="specs-media"><img src="/assets/jbl-3.jpeg" alt="JBL Boombox 4"></div>
+            <div class="specs-info">
+                <span class="eyebrow">🎁 SOBRE O PRÊMIO</span>
+                <h2>O que você leva pra casa</h2>
+                <p>Uma JBL Boombox 4 novinha, lacrada e com nota fiscal. Som potente, resistente à água e bateria pra festa o dia inteiro.</p>
+                <ul class="spec-list">
+                    <li>Som massivo estéreo com graves profundos</li>
+                    <li>Até 28h de bateria</li>
+                    <li>Resistente à água e poeira (IP67)</li>
+                    <li>Bluetooth 5.3 + Auracast</li>
+                    <li>Alça reforçada de transporte</li>
+                    <li>Produto lacrado, com nota fiscal</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- Regulamento -->
+    <section id="regulamento" class="section section-alt">
+        <div class="container reg-wrap">
+            <span class="eyebrow">📜 DESCRIÇÃO / REGULAMENTO</span>
+            <h2>JBL Boombox 4</h2>
+            <div class="reg-block">
+                <h3>Modo de sorteio</h3>
+                <p>Através da Loteria Federal. O número sorteado será aquele que bater com o resultado dos <strong>três últimos números</strong> do 1º Prêmio, mais os <strong>dois últimos números</strong> do 2º Prêmio da Loteria Federal, em suas respectivas ordens.</p>
+            </div>
+            <div class="reg-block">
+                <h3>Exemplo</h3>
+                <p>Se o 1º Prêmio for 98239 e o 2º Prêmio for 45253, o ganhador terá a cota número 23953.</p>
+            </div>
+            <div class="reg-block">
+                <h3>Regra de aproximação</h3>
+                <p>Caso a combinação não tenha sido distribuída a um participante, será contemplado o próximo número imediatamente superior.</p>
+            </div>
+            <p class="reg-foot">Resultado no perfil <a href="https://instagram.com/naelitonpremios" target="_blank" rel="noopener">@naelitonpremios</a> no Instagram.</p>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="site-footer">
+        <div class="container footer-inner">
+            <div class="brand">
+                <span class="brand-mark">N</span>
+                <span class="brand-name">NAELITON<span class="brand-accent"> PRÊMIOS</span></span>
+            </div>
+            <p>Rifa premiada com sorteio oficial pela Loteria Federal. Pagamento seguro via PIX.</p>
+            <a href="https://instagram.com/naelitonpremios" target="_blank" rel="noopener" class="footer-ig">📷 @naelitonpremios</a>
+            <small>© <span id="year"></span> Naeliton Prêmios. Todos os direitos reservados.</small>
+        </div>
+    </footer>
+
+    <!-- Modal de checkout -->
+    <div class="modal-overlay" id="modal" hidden>
+        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+            <button class="modal-close" id="modalClose" aria-label="Fechar">✕</button>
+
+            <!-- Passo 1: dados -->
+            <div class="modal-step" id="stepForm">
+                <h3 id="modalTitle">Finalizar participação</h3>
+                <p class="modal-summary"><span id="modalQty">100</span> títulos · <strong class="text-gold" id="modalTotal">R$ 25,00</strong></p>
+                <form id="checkoutForm" class="form">
+                    <label>Nome completo
+                        <input name="nome" required autocomplete="name" placeholder="Seu nome" />
+                    </label>
+                    <label>CPF
+                        <input name="cpf" required inputmode="numeric" placeholder="000.000.000-00" maxlength="14" />
+                    </label>
+                    <label>WhatsApp
+                        <input name="telefone" required inputmode="numeric" placeholder="(00) 00000-0000" maxlength="15" />
+                    </label>
+                    <label>E-mail <span class="opt">(opcional)</span>
+                        <input name="email" type="email" autocomplete="email" placeholder="voce@email.com" />
+                    </label>
+                    <button type="submit" class="btn btn-gold btn-lg btn-block" id="gerarPixBtn">Gerar PIX 🔒</button>
+                    <p class="form-note">Pagamento processado com segurança pelo Mercado Pago.</p>
+                </form>
+            </div>
+
+            <!-- Passo 2: pix -->
+            <div class="modal-step" id="stepPix" hidden>
+                <h3>Pague com PIX pra garantir seus títulos</h3>
+                <p class="modal-summary"><span id="pixQty">100</span> títulos · <strong class="text-gold" id="pixTotal">R$ 25,00</strong></p>
+                <div class="pix-qr"><img id="pixQrImg" alt="QR Code PIX" /></div>
+                <div class="pix-copy">
+                    <input id="pixCode" readonly />
+                    <button id="copyPixBtn" class="btn btn-outline" type="button">Copiar</button>
+                </div>
+                <div class="pix-status" id="pixStatus">
+                    <span class="spinner"></span> Aguardando pagamento…
+                </div>
+                <p class="form-note">Assim que o pagamento cair, seus títulos são confirmados automaticamente. O código expira em 30 min.</p>
+            </div>
+
+            <!-- Passo 3: sucesso -->
+            <div class="modal-step" id="stepSuccess" hidden>
+                <div class="success-check">✓</div>
+                <h3>Pagamento confirmado! 🎉</h3>
+                <p class="modal-summary">Seus <strong id="successQty">100</strong> números estão garantidos. Boa sorte no sorteio!</p>
+                <div class="nums-label">SEUS NÚMEROS DA SORTE</div>
+                <div class="nums-grid" id="successNums"></div>
+                <button class="btn btn-gold btn-lg btn-block" id="successClose">Fechar</button>
+                <p class="form-note">Guarde seus números! Você também pode consultá-los a qualquer momento em “Meus números”.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Meus números (login do cliente) -->
+    <div class="modal-overlay" id="loginModal" hidden>
+        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="loginTitle">
+            <button class="modal-close" id="loginClose" aria-label="Fechar">✕</button>
+
+            <div class="modal-step" id="loginStepForm">
+                <h3 id="loginTitle">🎟️ Meus números</h3>
+                <p class="modal-summary">Entre com o CPF e o WhatsApp que você usou na compra para ver seus números.</p>
+                <form id="loginForm" class="form">
+                    <label>CPF
+                        <input name="cpf" required inputmode="numeric" placeholder="000.000.000-00" maxlength="14" />
+                    </label>
+                    <label>WhatsApp
+                        <input name="telefone" required inputmode="numeric" placeholder="(00) 00000-0000" maxlength="15" />
+                    </label>
+                    <button type="submit" class="btn btn-gold btn-lg btn-block" id="loginSubmit">Ver meus números</button>
+                    <p class="form-note" id="loginError" style="color:#fca5a5"></p>
+                </form>
+            </div>
+
+            <div class="modal-step" id="loginStepResult" hidden>
+                <h3>Olá, <span id="resNome">participante</span>! 👋</h3>
+                <p class="modal-summary">Você tem <strong class="text-gold" id="resTotal">0</strong> número(s) nesta rifa.</p>
+                <div class="nums-label">TODOS OS SEUS NÚMEROS</div>
+                <div class="nums-grid" id="resNums"></div>
+                <div id="resPedidos" class="res-pedidos"></div>
+                <button class="btn btn-outline btn-lg btn-block" id="loginBack">Voltar</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/app.js"></script>
+</body>
+</html>
