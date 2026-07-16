@@ -51,6 +51,7 @@
             <span class="brand-mark">N</span>
             <h2 style="flex:1">Painel · <span class="text-gold">Naeliton Prêmios</span></h2>
             <button class="btn btn-outline" id="refreshBtn">↻ Atualizar</button>
+            <button class="btn btn-gold" id="reconBtn" title="Confere no Mercado Pago se algum pendente já foi pago e libera os números">🔄 Conferir pagamentos</button>
             <button class="btn btn-outline" id="csvBtn">⬇ CSV</button>
         </div>
 
@@ -149,6 +150,24 @@
         });
         $("refreshBtn").addEventListener("click", () => carregar().catch(() => {}));
         $("csvBtn").addEventListener("click", baixarCSV);
+        $("reconBtn").addEventListener("click", async () => {
+            const b = $("reconBtn");
+            b.disabled = true; b.textContent = "Conferindo…";
+            try {
+                const res = await fetch("/api/admin/reconciliar", {
+                    method: "POST", headers: { "X-Admin-Token": TOKEN },
+                });
+                const j = await res.json();
+                await carregar();
+                alert(j.corrigidos
+                    ? `✅ ${j.corrigidos} pagamento(s) confirmado(s) e números liberados!`
+                    : "Tudo certo — nenhum pagamento pendente para liberar.");
+            } catch (e) {
+                alert("Não foi possível conferir agora. Tente de novo.");
+            } finally {
+                b.disabled = false; b.textContent = "🔄 Conferir pagamentos";
+            }
+        });
         $("search").addEventListener("input", filtrar);
 
         // auto-login se já tem token salvo

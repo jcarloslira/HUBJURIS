@@ -10,6 +10,8 @@ Rodar:  uv run python nosso-site/server.py
 
 from __future__ import annotations
 
+import asyncio
+import contextlib
 import os
 import random
 import sqlite3
@@ -20,7 +22,7 @@ from decimal import Decimal
 from pathlib import Path
 
 import httpx
-from fastapi import FastAPI, Header, HTTPException
+from fastapi import FastAPI, Header, HTTPException, Request
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
@@ -34,6 +36,7 @@ PRECO_TITULO = Decimal("0.25")
 TOTAL_NUMEROS = 58_000          # números disponíveis (00001–58000)
 VENDIDOS_FICTICIOS = int(TOTAL_NUMEROS * 0.06)  # 6% de prova social (3.480)
 PIX_EXPIRA_SEG = 1800           # 30 min
+RECONCILIAR_A_CADA_SEG = 60     # rede de segurança: confere pendentes no MP
 MP_API = "https://api.mercadopago.com/v1/payments"
 
 
@@ -124,6 +127,82 @@ def _atribuir_numeros(con: sqlite3.Connection, pedido: sqlite3.Row) -> list[int]
     return sorted(escolhidos)
 
 
+async def _confirmar_pedido(http: httpx.AsyncClient, payment_id: str) -> dict:
+    """Consulta o pagamento no MP e sincroniza o pedido local. Idempotente.
+
+    Aprovado -> marca pago e sorteia os números.
+    Cancelado/rejeitado -> marca expirado (para de ser reconsultado).
+    """
+    if not MP_TOKEN:
+        return {"payment_id": payment_id, "status": "sem_token", "numeros": []}
+
+    r = await http.get(
+        f"{MP_API}/{payment_id}", headers={"Authorization": f"Bearer {MP_TOKEN}"}
+    )
+    if r.status_code >= 400:
+        return {"payment_id": payment_id, "status": "nao_encontrado", "numeros": []}
+
+    status = r.json().get("status", "pending")
+    numeros: list[int] = []
+    with _db() as con:
+        ped = con.execute(
+            "SELECT * FROM pedidos WHERE mp_payment_id=?", (str(payment_id),)
+        ).fetchone()
+        if ped:
+            if status == "approved":
+                if ped["status"] != "pago":
+                    con.execute(
+                        "UPDATE pedidos SET status='pago', paid_at=? WHERE id=?",
+                        (datetime.now(UTC).isoformat(), ped["id"]),
+                    )
+                numeros = _atribuir_numeros(con, ped)
+            elif status in ("cancelled", "rejected", "refunded", "charged_back"):
+                if ped["status"] == "pendente":
+                    con.execute(
+                        "UPDATE pedidos SET status='expirado' WHERE id=?", (ped["id"],)
+                    )
+    return {
+        "payment_id": str(payment_id),
+        "status": status,
+        "numeros": [_fmt_num(n) for n in numeros],
+    }
+
+
+async def _reconciliar_pendentes(http: httpx.AsyncClient) -> list[dict]:
+    """Rede de segurança: confere no MP todos os pedidos pendentes e libera números.
+
+    Cobre o caso do cliente pagar e fechar a página antes da confirmação.
+    """
+    limite = (datetime.now(UTC) - timedelta(days=7)).isoformat()
+    with _db() as con:
+        pendentes = con.execute(
+            """SELECT mp_payment_id FROM pedidos
+               WHERE status='pendente' AND mp_payment_id IS NOT NULL
+                 AND created_at > ?""",
+            (limite,),
+        ).fetchall()
+
+    resultados = []
+    for row in pendentes:
+        try:
+            res = await _confirmar_pedido(http, row["mp_payment_id"])
+            if res["status"] == "approved" or res["numeros"]:
+                resultados.append(res)
+        except Exception:  # noqa: BLE001 — nunca derrubar o loop por causa de 1 pedido
+            continue
+    return resultados
+
+
+async def _loop_reconciliacao(app: FastAPI) -> None:
+    """Roda a reconciliação periodicamente enquanto o servidor estiver de pé."""
+    while True:
+        await asyncio.sleep(RECONCILIAR_A_CADA_SEG)
+        try:
+            await _reconciliar_pendentes(app.state.http)
+        except Exception:  # noqa: BLE001 — jamais interromper o loop
+            continue
+
+
 def _vendidos_reais(con: sqlite3.Connection) -> int:
     row = con.execute(
         "SELECT COALESCE(SUM(qtd),0) AS s FROM pedidos WHERE status='pago'"
@@ -150,7 +229,12 @@ class LoginIn(BaseModel):
 async def lifespan(app: FastAPI):
     _init_db()
     app.state.http = httpx.AsyncClient(timeout=20.0)
+    # Rede de segurança: confere pendentes no MP mesmo se o cliente fechar a página
+    tarefa = asyncio.create_task(_loop_reconciliacao(app))
     yield
+    tarefa.cancel()
+    with contextlib.suppress(asyncio.CancelledError):
+        await tarefa
     await app.state.http.aclose()
 
 
@@ -263,33 +347,41 @@ async def status_pix(payment_id: str) -> dict:
     """Consulta o status no MP; ao aprovar, marca pago e sorteia os números."""
     if not MP_TOKEN:
         raise HTTPException(status_code=503, detail="Mercado Pago não configurado.")
-
-    r = await app.state.http.get(
-        f"{MP_API}/{payment_id}",
-        headers={"Authorization": f"Bearer {MP_TOKEN}"},
-    )
-    if r.status_code >= 400:
+    res = await _confirmar_pedido(app.state.http, payment_id)
+    if res["status"] == "nao_encontrado":
         raise HTTPException(status_code=404, detail="Pagamento não encontrado.")
+    return res
 
-    status = r.json().get("status", "pending")
-    numeros: list[int] = []
-    if status == "approved":
-        with _db() as con:
-            ped = con.execute(
-                "SELECT * FROM pedidos WHERE mp_payment_id=?", (payment_id,)
-            ).fetchone()
-            if ped:
-                if ped["status"] != "pago":
-                    con.execute(
-                        "UPDATE pedidos SET status='pago', paid_at=? WHERE id=?",
-                        (datetime.now(UTC).isoformat(), ped["id"]),
-                    )
-                numeros = _atribuir_numeros(con, ped)
-    return {
-        "payment_id": payment_id,
-        "status": status,
-        "numeros": [_fmt_num(n) for n in numeros],
-    }
+
+@app.post("/api/webhook/mercadopago")
+async def webhook_mercadopago(request: Request) -> dict:
+    """Recebe o aviso do Mercado Pago quando o pagamento muda de estado.
+
+    Confirma na hora, sem depender do cliente ficar com a página aberta.
+    Aceita tanto o corpo JSON (`data.id`) quanto a query string (`data.id`).
+    """
+    payment_id: str | None = None
+    try:
+        body = await request.json()
+    except Exception:  # noqa: BLE001 — MP às vezes manda corpo vazio
+        body = {}
+
+    if isinstance(body, dict):
+        data = body.get("data")
+        if isinstance(data, dict) and data.get("id"):
+            payment_id = str(data["id"])
+        elif body.get("id"):
+            payment_id = str(body["id"])
+    payment_id = payment_id or request.query_params.get("data.id") or request.query_params.get("id")
+
+    if not payment_id:
+        return {"ok": True, "ignorado": "sem payment_id"}
+
+    try:
+        res = await _confirmar_pedido(app.state.http, payment_id)
+    except Exception:  # noqa: BLE001 — nunca devolver erro ao MP (evita reenvio infinito)
+        return {"ok": True, "erro": "falha ao consultar"}
+    return {"ok": True, "status": res["status"], "numeros": len(res["numeros"])}
 
 
 @app.post("/api/meus-numeros")
@@ -377,6 +469,7 @@ async def admin_dados(x_admin_token: str | None = Header(default=None)) -> dict:
             )
             pedidos_out.append({
                 "id": p["id"],
+                "mp_payment_id": p["mp_payment_id"],
                 "data": p["created_at"],
                 "paid_at": p["paid_at"],
                 "nome": p["nome"],
@@ -399,6 +492,20 @@ async def admin_dados(x_admin_token: str | None = Header(default=None)) -> dict:
             "ficticios": VENDIDOS_FICTICIOS,
         },
         "pedidos": pedidos_out,
+    }
+
+
+@app.post("/api/admin/reconciliar")
+async def admin_reconciliar(x_admin_token: str | None = Header(default=None)) -> dict:
+    """Confere agora todos os pendentes no Mercado Pago e libera números."""
+    _check_admin(x_admin_token)
+    corrigidos = await _reconciliar_pendentes(app.state.http)
+    return {
+        "corrigidos": len(corrigidos),
+        "detalhes": [
+            {"payment_id": c["payment_id"], "numeros": len(c["numeros"])}
+            for c in corrigidos
+        ],
     }
 
 
