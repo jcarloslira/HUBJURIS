@@ -15,6 +15,7 @@ from app.routers import (
     auth_admin,
     chat,
     condominios,
+    contas,
     google,
     health,
     rifas,
@@ -86,6 +87,7 @@ app.include_router(webhook_pix.router)
 app.include_router(auth_admin.router)
 app.include_router(condominios.router)
 app.include_router(google.router)
+app.include_router(contas.router)
 
 app.mount("/static", StaticFiles(directory=_STATIC_DIR), name="static")
 
@@ -94,6 +96,12 @@ app.mount("/static", StaticFiles(directory=_STATIC_DIR), name="static")
 async def index() -> FileResponse:
     """Serve a interface do hub."""
     return FileResponse(_STATIC_DIR / "index.html")
+
+
+@app.get("/login", include_in_schema=False)
+async def login_page() -> FileResponse:
+    """Tela de entrada: login e criação de conta do escritório."""
+    return FileResponse(_STATIC_DIR / "login.html")
 
 
 @app.get("/proposta", include_in_schema=False)

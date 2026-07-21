@@ -1,6 +1,6 @@
 """Classe base para todos os agentes de IA do projeto."""
 
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Awaitable, Callable
 
 from anthropic import AsyncAnthropic
 from anthropic.types import MessageParam
@@ -59,6 +59,7 @@ class BaseAgent:
         mensagens: list[MessageParam],
         modelo: str | None = None,
         referencia: str = "",
+        on_usage: "Callable[[int, int], Awaitable[None]] | None" = None,
     ) -> AsyncIterator[str]:
         """Gera a resposta do modelo em streaming a partir do histórico completo.
 
@@ -67,6 +68,8 @@ class BaseAgent:
             modelo: Modelo a usar; se None, usa o padrão do agente.
             referencia: Bloco opcional de contexto (ex.: modelos do escritório)
                 anexado ao system prompt para o agente seguir o padrão.
+            on_usage: Callback opcional chamado ao fim do stream com os tokens
+                de entrada e saída reais medidos pela API.
 
         Yields:
             Trechos de texto da resposta conforme são gerados.
@@ -80,3 +83,9 @@ class BaseAgent:
         ) as stream:
             async for texto in stream.text_stream:
                 yield texto
+            if on_usage is not None:
+                try:
+                    final = await stream.get_final_message()
+                    await on_usage(final.usage.input_tokens, final.usage.output_tokens)
+                except Exception:  # noqa: BLE001 - medição não pode derrubar a resposta
+                    pass

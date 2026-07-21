@@ -1,6 +1,6 @@
 """Lógica de negócio do chat: registro de agentes, roteamento e streaming."""
 
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Awaitable, Callable
 from typing import cast
 
 from anthropic import AsyncAnthropic
@@ -178,6 +178,7 @@ async def gerar_resposta_stream(
     *,
     conector: LeitorDrive | None = None,
     acervo_raiz: str | None = None,
+    on_usage: Callable[[str, str, int, int], Awaitable[None]] | None = None,
 ) -> AsyncIterator[str]:
     """Gera a resposta em streaming, roteando quando o alvo é o Supervisor.
 
@@ -191,6 +192,8 @@ async def gerar_resposta_stream(
         client: Cliente Anthropic compartilhado.
         conector: Leitor do Drive do escritório (opcional).
         acervo_raiz: Pasta-raiz do acervo de modelos (opcional).
+        on_usage: Callback opcional (agente, modelo, tokens_in, tokens_out)
+            com o consumo real medido pela API.
 
     Yields:
         Trechos de texto da resposta do agente que efetivamente atende.
@@ -213,7 +216,15 @@ async def gerar_resposta_stream(
         except Exception:  # noqa: BLE001 - Drive indisponível não impede a resposta
             referencia = ""
 
+    registrar = None
+    if on_usage is not None:
+        slug_final = slug
+        modelo_final = payload.modelo or agente.model
+
+        async def registrar(tokens_in: int, tokens_out: int) -> None:
+            await on_usage(slug_final, modelo_final, tokens_in, tokens_out)
+
     async for trecho in agente.responder_stream(
-        mensagens, modelo=payload.modelo, referencia=referencia
+        mensagens, modelo=payload.modelo, referencia=referencia, on_usage=registrar
     ):
         yield trecho
