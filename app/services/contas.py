@@ -55,13 +55,25 @@ class ContaService:
                 "Sem conexão com o servidor de autenticação — verifique a internet.",
                 status=503,
             ) from exc
-        dados = resp.json()
+        try:
+            dados = resp.json()
+        except ValueError:
+            dados = {}
         if resp.status_code >= 400:
-            msg = str(dados.get("msg") or dados.get("message") or dados)
-            if "already" in msg.lower() or resp.status_code == 422:
+            msg = str(
+                dados.get("msg")
+                or dados.get("message")
+                or dados.get("error_description")
+                or (resp.text or "").strip()
+                or dados
+            )
+            if "already" in msg.lower() or resp.status_code in (409, 422):
                 raise ContaError("E-mail já cadastrado", status=409)
             raise ContaError(f"Falha ao criar usuário: {msg}", status=502)
-        return str(dados["id"])
+        user_id = dados.get("id")
+        if not user_id:
+            raise ContaError("Resposta inesperada do servidor de autenticação", status=502)
+        return str(user_id)
 
     async def _login_auth(self, email: str, senha: str) -> str:
         """Autentica no GoTrue e retorna o access_token."""
@@ -76,7 +88,10 @@ class ContaService:
                 "Sem conexão com o servidor de autenticação — verifique a internet.",
                 status=503,
             ) from exc
-        dados = resp.json()
+        try:
+            dados = resp.json()
+        except ValueError:
+            dados = {}
         if resp.status_code >= 400 or "access_token" not in dados:
             raise ContaError("E-mail ou senha incorretos", status=401)
         return str(dados["access_token"])
