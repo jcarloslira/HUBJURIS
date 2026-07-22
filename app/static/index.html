@@ -622,6 +622,24 @@ main.home .composer-wrap { width: 100%; max-width: 780px; margin: 14px auto 0; }
 
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
+/* Seletor de especialista (gaveta) no topo do chat */
+.agente-sel { position: relative; }
+.agente-btn { display: flex; align-items: center; gap: 11px; background: none; border: none; cursor: pointer; padding: 6px 10px; border-radius: 11px; transition: background 0.12s; text-align: left; font-family: inherit; color: var(--text); }
+.agente-btn:hover { background: var(--panel-2); }
+.agente-btn .ic { color: var(--accent); display: flex; flex-shrink: 0; }
+.agente-btn-txt b { font-family: 'Fraunces', serif; font-size: 1.05rem; font-weight: 600; display: block; line-height: 1.2; }
+.agente-btn-txt small { display: block; font-size: 0.75rem; color: var(--text-dim); }
+.agente-chev { color: var(--text-dim); display: flex; }
+.agente-menu { position: absolute; top: calc(100% + 6px); left: 0; z-index: 50; background: var(--panel); border: 1px solid var(--border); border-radius: 13px; box-shadow: 0 12px 34px rgba(29,34,48,.18); padding: 6px; width: 330px; max-width: 82vw; max-height: 74vh; overflow-y: auto; }
+.agente-item { display: flex; align-items: flex-start; gap: 11px; width: 100%; text-align: left; background: none; border: none; cursor: pointer; padding: 10px 12px; border-radius: 10px; font-family: inherit; color: var(--text); }
+.agente-item:hover { background: var(--panel-2); }
+.agente-item.active { background: var(--accent-soft); }
+.agente-item .ic { color: var(--accent); flex-shrink: 0; display: flex; margin-top: 1px; }
+.agente-item .txt b { font-size: 0.86rem; display: block; }
+.agente-item .txt small { font-size: 0.74rem; color: var(--text-dim); display: block; line-height: 1.35; margin-top: 1px; }
+.empty-sel { background: none; border: none; color: var(--accent); font: inherit; cursor: pointer; padding: 0; text-decoration: underline; }
+.empty-sel:hover { opacity: 0.8; }
+
 @media (max-width: 860px) {
   aside { display: none; }
   .agent-grid { grid-template-columns: 1fr; }
@@ -652,15 +670,10 @@ main.home .composer-wrap { width: 100%; max-width: 780px; margin: 14px auto 0; }
       <input id="busca" type="text" placeholder="Procurar conversas…" oninput="renderConvos()">
     </div>
 
-    <div>
-      <div class="section-label">Agentes</div>
-      <div class="agents" id="agents"></div>
-    </div>
-
   </div>
 
   <div class="side-convos">
-    <div class="section-label">Recentes</div>
+    <div class="section-label">Conversas recentes</div>
     <div class="convos" id="convos"></div>
   </div>
 
@@ -721,12 +734,16 @@ main.home .composer-wrap { width: 100%; max-width: 780px; margin: 14px auto 0; }
 
 <main class="home" id="main">
   <header>
-    <div class="title">
-      <span class="ic" id="agent-ic"></span>
-      <div>
-        <b id="agent-title">Supervisor</b>
-        <small id="agent-sub">Primeiro contato, onboarding do escritório e encaminhamento</small>
-      </div>
+    <div class="agente-sel">
+      <button class="agente-btn" onclick="toggleAgenteMenu(event)" title="Trocar especialista">
+        <span class="ic" id="agent-ic"></span>
+        <span class="agente-btn-txt">
+          <b id="agent-title">Supervisor</b>
+          <small id="agent-sub">Primeiro contato, onboarding do escritório e encaminhamento</small>
+        </span>
+        <span class="agente-chev"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span>
+      </button>
+      <div class="agente-menu" id="agente-menu" style="display:none"></div>
     </div>
   </header>
 
@@ -736,7 +753,7 @@ main.home .composer-wrap { width: 100%; max-width: 780px; margin: 14px auto 0; }
         <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18"/><path d="M5 7l7-4 7 4"/><path d="M3 11l2-4 2 4a2.5 2.5 0 0 1-4 0z"/><path d="M17 11l2-4 2 4a2.5 2.5 0 0 1-4 0z"/><path d="M8 21h8"/></svg>
       </div>
       <h2>Como posso ajudar, doutor(a)?</h2>
-      <p>Comece pelo <b>Supervisor</b> para o onboarding, ou escolha um especialista do escritório.</p>
+      <p>Diga sua demanda que o <b>Supervisor</b> encaminha ao especialista certo — ou <button type="button" class="empty-sel" onclick="toggleAgenteMenu(event)">escolha um especialista ⌄</button></p>
     </div>
     <div class="chat-inner" id="messages" style="display:none"></div>
   </div>
@@ -777,8 +794,6 @@ main.home .composer-wrap { width: 100%; max-width: 780px; margin: 14px auto 0; }
       </div>
     </div>
   </div>
-
-  <div id="home-agents"><div class="agent-grid" id="agent-grid"></div></div>
 
   <div class="disclaimer">As respostas são geradas por IA e devem ser revisadas pelo advogado responsável antes de qualquer uso processual.</div>
 </main>
@@ -1071,6 +1086,7 @@ function toggleProfile(e) {
 function fecharMenus() {
   $('plus-menu').style.display = 'none';
   $('profile-menu').style.display = 'none';
+  const am = $('agente-menu'); if (am) am.style.display = 'none';
   document.querySelectorAll('.export-menu').forEach(m => m.style.display = 'none');
 }
 document.addEventListener('click', fecharMenus);
@@ -1391,24 +1407,16 @@ function enviarOpcao(texto) {
   enviar();
 }
 
-/* ---------- Agentes ---------- */
+/* ---------- Agentes (seletor gaveta) ---------- */
 function renderAgentes() {
-  $('agents').innerHTML = agentes.map(a => `
-    <button class="agent-row ${a.slug === agenteAtual ? 'active' : ''}" onclick="trocarAgente('${a.slug}')" title="${a.descricao}">
-      <span class="ic">${ICONES[a.icone] || ICONES.scale}</span>${a.nome}
-    </button>`).join('');
-
-  $('agent-grid').innerHTML = agentes.map(a => `
-    <div class="agent-card ${a.slug === agenteAtual ? 'active' : ''}" onclick="trocarAgente('${a.slug}')" role="button" tabindex="0">
-      <div class="head">
+  const menu = $('agente-menu');
+  if (menu) {
+    menu.innerHTML = agentes.map(a => `
+      <button class="agente-item ${a.slug === agenteAtual ? 'active' : ''}" onclick="trocarAgente('${a.slug}')">
         <span class="ic">${ICONES[a.icone] || ICONES.scale}</span>
-        <b>${a.nome}</b>
-        <span class="check">${CHECK}</span>
-      </div>
-      <div class="ds">${a.descricao}</div>
-      <button class="exemplo" onclick="event.stopPropagation();usarExemplo('${a.slug}')">“${EXEMPLOS[a.slug] || ''}”</button>
-    </div>`).join('');
-
+        <span class="txt"><b>${a.nome}</b><small>${a.descricao}</small></span>
+      </button>`).join('');
+  }
   const ag = agentes.find(a => a.slug === agenteAtual);
   if (ag) {
     $('agent-title').textContent = ag.nome;
@@ -1417,8 +1425,17 @@ function renderAgentes() {
   }
 }
 
+function toggleAgenteMenu(e) {
+  e.stopPropagation();
+  const m = $('agente-menu');
+  const aberto = m.style.display === 'block';
+  fecharMenus();
+  m.style.display = aberto ? 'none' : 'block';
+}
+
 function trocarAgente(slug) {
   agenteAtual = slug;
+  const m = $('agente-menu'); if (m) m.style.display = 'none';
   if (conversaAtual && conversaAtual.mensagens.length) novaConversa(false);
   renderAgentes();
 }
