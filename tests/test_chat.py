@@ -3,6 +3,7 @@
 from collections.abc import AsyncIterator
 from unittest.mock import AsyncMock, MagicMock
 
+import pytest
 from fastapi.testclient import TestClient
 
 from app.schemas.chat import ChatRequest, MensagemChat
@@ -225,6 +226,20 @@ def test_index_bloqueado_para_host_externo(client: TestClient) -> None:
     assert response.status_code == 404
 
 
+def test_hub_publico_libera_acesso_externo(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Com HUB_PUBLICO=true (deploy), o hub fica acessível para hosts externos."""
+    from app import main
+    from app.config import Settings
+
+    monkeypatch.setattr(main, "get_settings", lambda: Settings(HUB_PUBLICO=True))  # type: ignore[call-arg]
+    response = client.get("/", headers={"host": "lexhub.onrender.com"})
+
+    assert response.status_code == 200
+    assert "LexHub" in response.text
+
+
 class _FakeDrive:
     """Leitor de Drive fake com uma pasta de modelos de parecer."""
 
@@ -258,6 +273,21 @@ async def test_grounding_injeta_modelos_no_system() -> None:
     system = fake.messages.stream.call_args.kwargs["system"]
     assert "MODELOS DO ESCRITÓRIO" in system
     assert "Corpo do modelo de parecer" in system
+
+
+async def test_system_inclui_capacidade_de_opcoes() -> None:
+    """Todo agente recebe a instrução para oferecer opções clicáveis."""
+    fake = _mock_anthropic_stream(["ok"])
+    payload = ChatRequest(
+        agente="juridico-geral",
+        mensagens=[MensagemChat(role="user", content="oi")],
+    )
+
+    async for _ in gerar_resposta_stream(payload, fake):
+        pass
+
+    system = fake.messages.stream.call_args.kwargs["system"]
+    assert "[[OPCOES" in system
 
 
 async def test_sem_conector_nao_injeta_referencia() -> None:

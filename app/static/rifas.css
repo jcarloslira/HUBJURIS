@@ -1,0 +1,568 @@
+/* ========== Site de Rifas — Estilo RaspVip ========== */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  --bg: #1a1a1a;
+  --card: #2a2433;
+  --purple: #6b21a8;
+  --pink: #ec4899;
+  --green: #22c55e;
+  --green-dark: #16a34a;
+  --text: #f3f4f6;
+  --muted: #9ca3af;
+  --border: #374151;
+  --white-card: #ffffff;
+  --page-bg: #e5e7eb;
+}
+
+html, body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background: var(--page-bg);
+  color: #111827;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Header preto fixo ───────────────────────────────────── */
+header.top {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 100;
+  background: #000;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+
+.logo {
+  font-weight: 900;
+  font-size: 22px;
+  letter-spacing: -1px;
+  color: #fff;
+}
+.logo span {
+  color: var(--pink);
+}
+
+.menu-btn {
+  background: none;
+  border: 0;
+  color: #fff;
+  font-size: 24px;
+  cursor: pointer;
+  padding: 8px;
+}
+
+/* ── Conteúdo principal ───────────────────────────────────── */
+main {
+  padding-top: 84px;
+  padding-bottom: 100px;
+}
+
+.container {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 0 16px;
+}
+
+/* ── Hero / Card da rifa ─────────────────────────────────── */
+.hero {
+  background: linear-gradient(180deg, #1f1f1f 0%, #0a0a0a 100%);
+  border-radius: 12px;
+  overflow: hidden;
+  color: #fff;
+  position: relative;
+}
+
+.hero-img {
+  width: 100%;
+  height: 240px;
+  background: #333 center/cover no-repeat;
+  background-image: var(--hero-img, none);
+  position: relative;
+}
+.hero-img::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 40%, rgba(0,0,0,0.85) 100%);
+}
+
+.hero-info {
+  padding: 12px 18px 18px;
+  background: #000;
+}
+.hero-info .pill {
+  display: inline-block;
+  background: var(--green);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 999px;
+  margin-bottom: 8px;
+}
+.hero-info h1 {
+  font-size: 22px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.hero-info .subtitle {
+  color: var(--muted);
+  font-size: 13px;
+  margin-top: 4px;
+  text-transform: uppercase;
+}
+
+/* Faixa preta com botão Meus títulos */
+.minhas-compras {
+  background: #000;
+  border-radius: 0 0 12px 12px;
+  padding: 14px;
+  display: flex;
+  justify-content: center;
+}
+.btn-meus-titulos {
+  background: var(--green);
+  color: #fff;
+  border: 0;
+  border-radius: 8px;
+  padding: 12px 24px;
+  font-size: 14px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+/* ── Info bar (sorteio / preço) ─────────────────────────── */
+.info-bar {
+  background: #fff;
+  border-radius: 10px;
+  margin-top: 18px;
+  padding: 14px 18px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+.info-bar .item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+}
+.info-bar .label {
+  font-size: 11px;
+  color: var(--muted);
+  text-transform: uppercase;
+  font-weight: 600;
+}
+.info-bar .value {
+  font-weight: 700;
+  font-size: 14px;
+  margin-top: 2px;
+}
+.info-bar .price-pill {
+  background: #000;
+  color: #fff;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-weight: 700;
+}
+
+/* ── Slogan ──────────────────────────────────────────────── */
+.slogan {
+  background: #fff;
+  margin-top: 14px;
+  padding: 14px;
+  border-radius: 10px;
+  text-align: center;
+  color: #6b21a8;
+  font-weight: 500;
+  font-size: 14px;
+}
+
+/* ── Cards de quantidade (gradiente roxo → rosa) ────────── */
+.qty-section h3 {
+  margin: 22px 8px 12px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #111827;
+}
+.qty-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.qty-card {
+  background: linear-gradient(90deg, var(--purple) 0%, var(--pink) 100%);
+  color: #fff;
+  border-radius: 10px;
+  padding: 14px 18px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s;
+  border: 0;
+  text-align: left;
+  font: inherit;
+  width: 100%;
+}
+.qty-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 18px rgba(107,33,168,0.35);
+}
+.qty-card.selected {
+  outline: 3px solid var(--pink);
+  outline-offset: 2px;
+}
+.qty-card .left .label {
+  font-size: 11px;
+  opacity: 0.85;
+}
+.qty-card .left .num {
+  font-size: 18px;
+  font-weight: 800;
+}
+.qty-card .left .desc {
+  font-size: 11px;
+  margin-top: 4px;
+  opacity: 0.9;
+}
+.qty-card .right {
+  text-align: right;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+/* ── Seletor - / + ──────────────────────────────────────── */
+.selector {
+  background: #fff;
+  border-radius: 10px;
+  padding: 14px;
+  margin-top: 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+.selector button.step {
+  width: 36px; height: 36px;
+  border-radius: 8px;
+  background: #f3f4f6;
+  border: 0;
+  font-size: 18px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.selector input {
+  flex: 1;
+  text-align: center;
+  font-size: 18px;
+  font-weight: 700;
+  border: 0;
+  background: transparent;
+  outline: none;
+  padding: 8px;
+  border-bottom: 2px solid var(--pink);
+  color: #111827;
+}
+.btn-comprar {
+  background: var(--green);
+  color: #fff;
+  border: 0;
+  padding: 14px 18px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  flex: 1;
+  justify-content: space-between;
+}
+.btn-comprar:hover { background: var(--green-dark); }
+.btn-comprar .price {
+  font-size: 18px;
+  font-weight: 900;
+}
+
+/* ── Lista de números (chips) ──────────────────────────── */
+.numbers-section {
+  margin-top: 22px;
+}
+.numbers-section h3 {
+  margin: 0 8px 12px;
+  font-size: 15px;
+  font-weight: 700;
+}
+.numbers-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(56px, 1fr));
+  gap: 6px;
+}
+.num-chip {
+  padding: 8px 0;
+  border-radius: 6px;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 700;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  cursor: pointer;
+  color: #111827;
+  user-select: none;
+}
+.num-chip.selected {
+  background: var(--pink);
+  color: #fff;
+  border-color: var(--pink);
+}
+.num-chip.sold {
+  background: #d1d5db;
+  color: #6b7280;
+  text-decoration: line-through;
+  cursor: not-allowed;
+}
+
+/* ── Descrição / Regulamento ────────────────────────────── */
+.description {
+  background: #fff;
+  border-radius: 10px;
+  margin-top: 22px;
+  padding: 16px;
+}
+.description summary {
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  list-style: none;
+  padding: 8px;
+}
+.description summary::after {
+  content: '⇣';
+  font-weight: 400;
+  transition: transform 0.2s;
+}
+.description[open] summary::after {
+  transform: rotate(180deg);
+}
+.description .body {
+  margin-top: 12px;
+  color: #4b5563;
+  font-size: 14px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+/* ── Compartilhe ───────────────────────────────────────── */
+.share {
+  margin-top: 22px;
+  text-align: center;
+}
+.share h4 {
+  font-size: 14px;
+  font-weight: 500;
+  color: #4b5563;
+  margin-bottom: 10px;
+}
+.share-icons {
+  display: flex;
+  justify-content: center;
+  gap: 14px;
+}
+.share-icons a {
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  background: #1877f2;
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  text-decoration: none;
+}
+.share-icons .wa  { background: #25d366; }
+.share-icons .tg  { background: #26a5e4; }
+.share-icons .tw  { background: #1da1f2; }
+
+/* ── Footer ────────────────────────────────────────────── */
+footer.bot {
+  background: #000;
+  color: var(--muted);
+  text-align: center;
+  padding: 18px;
+  font-size: 12px;
+  margin-top: 40px;
+}
+footer.bot .heart { color: var(--pink); }
+
+/* ── Botões flutuantes (WhatsApp/Telefone) ─────────────── */
+.fab {
+  position: fixed;
+  right: 16px;
+  width: 48px; height: 48px;
+  border-radius: 50%;
+  background: var(--green);
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  border: 0;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+  z-index: 90;
+}
+.fab.call { bottom: 76px; }
+.fab.whatsapp { bottom: 16px; background: #25d366; }
+
+/* ── Modal Pix ─────────────────────────────────────────── */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.7);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  padding: 16px;
+}
+.modal-backdrop.open {
+  display: flex;
+}
+.modal {
+  background: #fff;
+  border-radius: 12px;
+  padding: 24px;
+  max-width: 360px;
+  width: 100%;
+  text-align: center;
+}
+.modal h3 {
+  margin-bottom: 6px;
+  color: #111827;
+  font-size: 18px;
+}
+.modal p {
+  color: #4b5563;
+  font-size: 13px;
+  margin-bottom: 14px;
+}
+.modal img.qr {
+  width: 220px;
+  height: 220px;
+  margin: 0 auto;
+  display: block;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+}
+.copy-pix {
+  margin-top: 14px;
+  display: flex;
+  gap: 8px;
+}
+.copy-pix input {
+  flex: 1;
+  padding: 8px 10px;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  font-size: 11px;
+  font-family: monospace;
+}
+.copy-pix button {
+  background: var(--green);
+  color: #fff;
+  border: 0;
+  border-radius: 6px;
+  padding: 0 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.modal .status {
+  margin-top: 14px;
+  padding: 10px;
+  border-radius: 6px;
+  background: #fef3c7;
+  color: #92400e;
+  font-size: 13px;
+}
+.modal .status.ok {
+  background: #dcfce7;
+  color: #166534;
+}
+.modal-close {
+  margin-top: 14px;
+  background: #f3f4f6;
+  border: 0;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+/* ── Banner cookies ─────────────────────────────────────── */
+.cookies {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  background: #fff;
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  z-index: 95;
+  border-top: 1px solid #e5e7eb;
+  font-size: 13px;
+}
+.cookies.hide { display: none; }
+.cookies button {
+  background: var(--green);
+  color: #fff;
+  border: 0;
+  border-radius: 6px;
+  padding: 8px 18px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.cookies button.refuse {
+  background: transparent;
+  color: #4b5563;
+  font-weight: 500;
+  padding: 8px 12px;
+}
+
+/* ── Utils ─────────────────────────────────────────────── */
+.empty {
+  text-align: center;
+  padding: 40px 18px;
+  color: var(--muted);
+}
+.spinner {
+  display: inline-block;
+  width: 18px; height: 18px;
+  border: 2px solid #fff;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}

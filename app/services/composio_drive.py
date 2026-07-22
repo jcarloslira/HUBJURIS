@@ -65,14 +65,18 @@ class ComposioClient:
         )
 
     async def conexao_ativa(self, user_id: str) -> bool:
-        """Indica se o escritório já tem uma conexão de Drive ativa."""
+        """Indica se o escritório já conectou ESTE toolkit (filtra pelo auth config)."""
         resp = await self._http.get(
             f"{self._base}/connected_accounts",
             headers=self._headers,
-            params={"user_ids": user_id},
+            params={"user_ids": user_id, "auth_config_ids": self._auth_config_id},
         )
         itens = resp.json().get("items", [])
         return any(item.get("status") == "ACTIVE" for item in itens)
+
+    async def executar_acao(self, tool: str, user_id: str, arguments: dict) -> dict:
+        """Executa uma tool do Composio (ação externa) e devolve os dados."""
+        return await self._execute(tool, user_id, arguments)
 
     async def _execute(self, tool: str, user_id: str, arguments: dict) -> dict:
         resp = await self._http.post(

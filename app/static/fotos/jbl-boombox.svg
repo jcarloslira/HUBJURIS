@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" width="800" height="600">
+  <defs>
+    <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#1a1a1a"/>
+      <stop offset="1" stop-color="#0a0a0a"/>
+    </linearGradient>
+    <linearGradient id="speaker" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stop-color="#2a2a2a"/>
+      <stop offset="0.5" stop-color="#0f0f0f"/>
+      <stop offset="1" stop-color="#1a1a1a"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#ec4899" stop-opacity="0.6"/>
+      <stop offset="1" stop-color="#ec4899" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="800" height="600" fill="url(#bg)"/>
+  <!-- Sombra embaixo da caixa -->
+  <ellipse cx="400" cy="500" rx="280" ry="30" fill="#000" opacity="0.6"/>
+  <!-- Caixa de som principal -->
+  <rect x="120" y="180" width="560" height="280" rx="40" fill="url(#speaker)" stroke="#2a2a2a" stroke-width="2"/>
+  <!-- Alça topo -->
+  <path d="M 280 180 Q 280 90, 400 90 Q 520 90, 520 180" fill="none" stroke="#2a2a2a" stroke-width="22" stroke-linecap="round"/>
+  <path d="M 280 180 Q 280 90, 400 90 Q 520 90, 520 180" fill="none" stroke="#0a0a0a" stroke-width="14" stroke-linecap="round"/>
+  <!-- Logo JBL -->
+  <text x="400" y="340" text-anchor="middle" font-family="Arial Black, sans-serif" font-size="72" fill="#3a3a3a" font-weight="900">JBL</text>
+  <text x="400" y="340" text-anchor="middle" font-family="Arial Black, sans-serif" font-size="72" fill="none" stroke="#ec4899" stroke-width="1.5" font-weight="900">JBL</text>
+  <!-- Subwoofer esquerdo -->
+  <circle cx="180" cy="320" r="60" fill="#0a0a0a" stroke="#1a1a1a" stroke-width="2"/>
+  <circle cx="180" cy="320" r="40" fill="#1a1a1a"/>
+  <circle cx="180" cy="320" r="20" fill="#ec4899" opacity="0.8"/>
+  <circle cx="180" cy="320" r="60" fill="url(#glow)" opacity="0.4"/>
+  <!-- Subwoofer direito -->
+  <circle cx="620" cy="320" r="60" fill="#0a0a0a" stroke="#1a1a1a" stroke-width="2"/>
+  <circle cx="620" cy="320" r="40" fill="#1a1a1a"/>
+  <circle cx="620" cy="320" r="20" fill="#ec4899" opacity="0.8"/>
+  <circle cx="620" cy="320" r="60" fill="url(#glow)" opacity="0.4"/>
+  <!-- LEDs -->
+  <circle cx="320" cy="220" r="3" fill="#22c55e"/>
+  <circle cx="350" cy="220" r="3" fill="#3b82f6"/>
+  <circle cx="380" cy="220" r="3" fill="#ec4899"/>
+  <circle cx="410" cy="220" r="3" fill="#fff"/>
+</svg>

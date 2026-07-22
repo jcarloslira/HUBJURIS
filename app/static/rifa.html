@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Rifa — Carregando…</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/app.css" />
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <a href="/rifas" class="logo"><span class="mark"></span>RIFA<span>VIP</span></a>
+    <nav class="nav-links">
+      <a href="/rifas">Sorteios</a>
+      <a href="#" onclick="alert('Em breve'); return false">Como funciona</a>
+      <a href="#" onclick="alert('Em breve'); return false">Ganhadores</a>
+    </nav>
+  </div>
+</header>
+
+<main class="page-rifa">
+
+  <!-- Hero da rifa -->
+  <section class="hero-rifa">
+    <div class="hero-rifa-img" id="hero-img">
+      <span class="emoji" id="hero-emoji">🎁</span>
+      <div class="photo" id="hero-photo" style="display:none"></div>
+    </div>
+    <div class="hero-rifa-info">
+      <span class="pill" id="hero-pill">🟢 AO VIVO</span>
+      <h1 id="hero-titulo">Carregando…</h1>
+      <div class="sub" id="hero-sub">PARTICIPE E CONCORRA!</div>
+    </div>
+  </section>
+
+  <!-- Info bar -->
+  <div class="info-bar">
+    <div class="info-pill">
+      <div class="label">📅 Sorteio</div>
+      <div class="value" id="info-data">—</div>
+    </div>
+    <div class="info-pill price">
+      <div class="label">🎟️ Por número</div>
+      <div class="value" id="info-preco">R$ 0,00</div>
+    </div>
+  </div>
+
+  <!-- Progresso -->
+  <div class="progress-block">
+    <div class="label-row">
+      <span>Vendidos <strong id="prog-vendidos">0/0</strong></span>
+      <strong id="prog-pct">0%</strong>
+    </div>
+    <div class="rifa-progress"><div class="rifa-progress-bar" id="prog-bar" style="width:0%"></div></div>
+  </div>
+
+  <!-- Pacotes rápidos -->
+  <h3 style="font-size:18px;margin:24px 0 12px">⚡ Pacotes com desconto</h3>
+  <div class="qty-grid" id="qty-grid">
+    <div class="qty-card" data-qty="50">
+      <div class="label">A cada</div>
+      <div class="qty">50</div>
+      <div class="bonus">🎁 <span class="bonus-emoji">+2</span> bônus</div>
+    </div>
+    <div class="qty-card" data-qty="100">
+      <div class="label">A cada</div>
+      <div class="qty">100</div>
+      <div class="bonus">🎁 <span class="bonus-emoji">+4</span> bônus</div>
+    </div>
+    <div class="qty-card" data-qty="200">
+      <div class="label">A cada</div>
+      <div class="qty">200</div>
+      <div class="bonus">🎁 <span class="bonus-emoji">+8</span> bônus</div>
+    </div>
+    <div class="qty-card" data-qty="500">
+      <div class="label">A cada</div>
+      <div class="qty">500</div>
+      <div class="bonus">🎁 <span class="bonus-emoji">+20</span> bônus</div>
+    </div>
+  </div>
+
+  <!-- Seletor -->
+  <div class="selector-row">
+    <button class="step" id="btn-minus">−</button>
+    <input type="number" id="qty" min="1" value="1" />
+    <button class="step" id="btn-plus">+</button>
+    <span class="total-pill" id="total-pill">R$ 0,00</span>
+  </div>
+
+  <button class="btn btn-primary btn-block" id="btn-buy" style="padding:16px;font-size:16px;margin-top:8px">
+    🎟️ Comprar agora
+  </button>
+
+  <!-- Grade de números -->
+  <h3 style="font-size:18px;margin:30px 0 12px">🔢 Números disponíveis</h3>
+  <div class="numbers-grid" id="numbers-grid"></div>
+
+  <!-- Descrição -->
+  <details class="disclosure" open>
+    <summary>📋 Descrição / Regulamento <span class="arrow">▾</span></summary>
+    <div class="body" id="descricao"></div>
+  </details>
+
+  <!-- Compartilhe -->
+  <div style="margin-top:24px;text-align:center">
+    <div style="font-size:13px;color:var(--muted);margin-bottom:10px">Compartilhe e ganhe números grátis</div>
+    <div class="share-row">
+      <a class="fb" href="#" onclick="compartilhar('facebook'); return false" title="Facebook">f</a>
+      <a class="tw" href="#" onclick="compartilhar('twitter'); return false" title="X (Twitter)">𝕏</a>
+      <a class="tg" href="#" onclick="compartilhar('telegram'); return false" title="Telegram">✈</a>
+      <a class="wa" href="#" onclick="compartilhar('whatsapp'); return false" title="WhatsApp">🟢</a>
+    </div>
+  </div>
+</main>
+
+<footer class="footer">
+  <div>Desenvolvido com <span class="heart">♥</span> pela equipe RifaVIP</div>
+</footer>
+
+<div class="fab-stack">
+  <a href="https://wa.me/5511999999999" class="fab wa" title="WhatsApp">💬</a>
+  <a href="tel:+5511999999999" class="fab tg" title="Telegram">📞</a>
+</div>
+
+<script src="/static/demo.js"></script>
+<script src="/static/rifa.js"></script>
+</body>
+</html>

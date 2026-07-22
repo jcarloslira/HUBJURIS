@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Admin · RifaVIP</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/app.css" />
+  <style>
+    .login-shell {
+      max-width: 420px;
+      margin: 80px auto 0;
+      padding: 0 20px;
+    }
+    .login-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 32px;
+      box-shadow: var(--shadow-sm);
+    }
+    .login-card .logo-big { font-size: 36px; margin-bottom: 8px; }
+    .login-card h1 { font-size: 22px; margin-bottom: 6px; }
+    .login-card .sub { color: var(--muted); font-size: 13px; margin-bottom: 22px; }
+    .login-card .btn { padding: 14px; font-size: 15px; }
+    .login-card .err {
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid #ef4444;
+      color: #fca5a5;
+      padding: 10px 14px;
+      border-radius: 10px;
+      font-size: 13px;
+      margin-bottom: 12px;
+    }
+    .login-hint {
+      margin-top: 16px;
+      font-size: 11px;
+      color: var(--muted);
+      text-align: center;
+      line-height: 1.5;
+    }
+    .app-shell { display: none; }
+    .app-shell.visible { display: block; }
+    .topbar-right { display: flex; gap: 10px; align-items: center; }
+    .user-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--surface);
+      padding: 6px 12px;
+      border-radius: 999px;
+      font-size: 12px;
+      border: 1px solid var(--border);
+    }
+    .user-pill .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); }
+  </style>
+</head>
+<body>
+
+<!-- TELA DE LOGIN -->
+<div id="login-shell" class="login-shell">
+  <div class="login-card">
+    <div class="logo-big">🔐</div>
+    <h1>Painel Administrativo</h1>
+    <p class="sub">Acesso restrito. Informe a senha de admin pra continuar.</p>
+
+    <div id="login-err" class="err" style="display:none"></div>
+
+    <form id="form-login">
+      <div class="input-group">
+        <label>Senha de admin</label>
+        <input type="password" name="senha" placeholder="••••••••" autofocus required />
+      </div>
+      <button class="btn btn-gradient btn-block" type="submit">Entrar</button>
+    </form>
+
+    <div class="login-hint">
+      Senha configurada em <code>ADMIN_TOKEN</code> no <code>.env</code>.<br>
+      <span style="opacity:0.7">Sem Supabase configurado, a senha demo é <code>rifavip2024</code>.</span>
+    </div>
+  </div>
+</div>
+
+<!-- APP (só aparece após login) -->
+<div id="app-shell" class="app-shell">
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a href="/rifas" class="logo"><span class="mark"></span>RIFA<span>VIP</span></a>
+      <div class="topbar-right">
+        <span class="user-pill"><span class="dot"></span> Admin logado</span>
+        <button class="btn btn-ghost" id="btn-logout" style="padding:8px 14px;font-size:13px">Sair</button>
+        <a href="/rifas" class="btn btn-gradient" style="padding:8px 14px;font-size:13px">Ver site</a>
+      </div>
+    </div>
+  </header>
+
+  <div class="dash-grid">
+    <div class="dash-card">
+      <h3><span class="dot"></span> Visão geral</h3>
+      <div class="stats-strip" style="padding:0;margin:0">
+        <div class="stat-card"><div class="icon">🎯</div><div><div class="label">Sorteios ativos</div><div class="value" id="m-ativos">0</div></div></div>
+        <div class="stat-card"><div class="icon">💰</div><div><div class="label">Arrecadado (demo)</div><div class="value" id="m-valor">R$ 0</div></div></div>
+        <div class="stat-card"><div class="icon">🎟️</div><div><div class="label">Vendidos</div><div class="value" id="m-vendidos">0</div></div></div>
+      </div>
+    </div>
+
+    <div class="dash-card">
+      <h3><span class="dot"></span> Criar nova rifa</h3>
+      <form id="form-nova">
+        <div class="input-group"><label>Título</label><input name="titulo" required placeholder="Ex: JBL Boombox 4"/></div>
+        <div class="input-group"><label>Emoji (visual)</label><input name="imagem_emoji" placeholder="🔊" maxlength="4"/></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div class="input-group"><label>Preço/número (R$)</label><input name="preco_por_numero" type="number" step="0.01" min="0.10" value="0.50" required/></div>
+          <div class="input-group"><label>Total de números</label><input name="total_numeros" type="number" min="10" max="10000" value="1000" required/></div>
+        </div>
+        <div class="input-group"><label>Data do sorteio</label><input name="data_sorteio" type="datetime-local" required/></div>
+        <div class="input-group"><label>URL da foto do produto (opcional)</label><input name="imagem_url" placeholder="/static/fotos/jbl-boombox.jpg"/></div>
+        <div class="input-group"><label>Descrição / regulamento</label><textarea name="descricao" rows="3" placeholder="Detalhes do prêmio, regras, etc."></textarea></div>
+        <button class="btn btn-gradient btn-block" type="submit">✨ Criar rifa</button>
+      </form>
+    </div>
+
+    <div class="dash-card" style="grid-column:1/-1">
+      <h3><span class="dot"></span> Rifas existentes</h3>
+      <div class="dash-list" id="lista"></div>
+    </div>
+  </div>
+</div>
+
+<script src="/static/demo.js"></script>
+<script>
+const ADMIN_SESSION_KEY = 'rifavip_admin_token';
+let TOKEN = sessionStorage.getItem(ADMIN_SESSION_KEY) || '';
+
+// ---------- LOGIN ----------
+async function tryLogin(senha) {
+  // 1. Tenta autenticar contra o backend real
+  try {
+    const r = await fetch('/api/auth/admin', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ senha }),
+    });
+    if (r.ok) {
+      const j = await r.json();
+      return j.token;
+    }
+    if (r.status === 503) {
+      // Backend existe, mas ADMIN_TOKEN não foi definido no .env
+      // Mostra mensagem específica pedindo pra configurar
+      const j = await r.json().catch(() => ({}));
+      throw new Error(j.detail || 'Backend sem ADMIN_TOKEN configurado');
+    }
+    if (r.status === 401) return null; // senha errada
+  } catch (e) {
+    if (e.message && e.message.includes('ADMIN_TOKEN')) throw e;
+    // Sem backend → tenta demo (modo offline)
+    if (senha === 'rifavip2024') return 'demo-token-rifavip2024';
+  }
+  return null;
+}
+
+function showLogin() {
+  document.getElementById('login-shell').style.display = 'block';
+  document.getElementById('app-shell').classList.remove('visible');
+  document.getElementById('form-login').senha.focus();
+}
+
+function showApp() {
+  document.getElementById('login-shell').style.display = 'none';
+  document.getElementById('app-shell').classList.add('visible');
+}
+
+document.getElementById('form-login').onsubmit = async (e) => {
+  e.preventDefault();
+  const senha = e.target.senha.value;
+  const errEl = document.getElementById('login-err');
+  errEl.style.display = 'none';
+  const btn = e.target.querySelector('button');
+  btn.disabled = true;
+  btn.textContent = 'Verificando...';
+  try {
+    const token = await tryLogin(senha);
+    if (token) {
+      TOKEN = token;
+      sessionStorage.setItem(ADMIN_SESSION_KEY, token);
+      showApp();
+      load();
+    } else {
+      errEl.textContent = '❌ Senha incorreta. Configure ADMIN_TOKEN no .env.';
+      errEl.style.display = 'block';
+      e.target.senha.value = '';
+      e.target.senha.focus();
+    }
+  } catch (err) {
+    errEl.textContent = '⚠️ ' + (err.message || 'Erro ao autenticar');
+    errEl.style.display = 'block';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Entrar';
+  }
+};
+
+document.getElementById('btn-logout').onclick = () => {
+  sessionStorage.removeItem(ADMIN_SESSION_KEY);
+  TOKEN = '';
+  showLogin();
+};
+
+// Se já tem token na sessão, tenta usar
+if (TOKEN) {
+  showApp();
+  window.addEventListener('DOMContentLoaded', load);
+}
+
+// ---------- ADMIN FUNCTIONS ----------
+function updateMetrics() {
+  const rifas = demo.rifas;
+  const ativos = rifas.filter((r) => r.status === 'ativa').length;
+  const totalVendido = rifas.reduce((s, r) => s + (r.numeros_vendidos * r.preco_por_numero), 0);
+  const totalVendidos = rifas.reduce((s, r) => s + r.numeros_vendidos, 0);
+  document.getElementById('m-ativos').textContent = ativos;
+  document.getElementById('m-valor').textContent = fmtBRL(totalVendido);
+  document.getElementById('m-vendidos').textContent = totalVendidos;
+}
+
+async function load() {
+  const lista = document.getElementById('lista');
+  try {
+    const rifas = await api.listarRifas();
+    if (!rifas.length) {
+      lista.innerHTML = '<div class="empty"><span class="big-emoji">📭</span>Nenhuma rifa ainda. Crie a primeira acima!</div>';
+    } else {
+      lista.innerHTML = rifas.map((r) => {
+        const pct = Math.round((r.numeros_vendidos / r.total_numeros) * 100);
+        return `
+        <div class="dash-row">
+          <div style="font-size:36px;flex-shrink:0;width:60px;height:60px;border-radius:12px;background:var(--surface-2);display:grid;place-items:center;overflow:hidden">
+            ${r.imagem_url
+              ? `<img src="${r.imagem_url}" alt="" style="width:100%;height:100%;object-fit:cover" onerror="this.replaceWith(document.createTextNode('${r.imagem_emoji || '🎁'}'))" />`
+              : (r.imagem_emoji || '🎁')}
+          </div>
+          <div class="meta" style="flex:1;min-width:0">
+            <b>${escapeHTML(r.titulo)}</b>
+            <span>${escapeHTML(r.subtitulo || '')} · ${fmtBRL(r.preco_por_numero)}/nº · ${r.numeros_vendidos}/${r.total_numeros} (${pct}%) · ${fmtDate(r.data_sorteio)}</span>
+          </div>
+          <div class="actions">
+            <button class="primary" data-act="ver" data-id="${r.id}">👁 Ver</button>
+            ${r.status === 'ativa'
+              ? `<button class="" data-act="sortear" data-id="${r.id}">🎲 Sortear</button>
+                 <button class="danger" data-act="cancelar" data-id="${r.id}">Cancelar</button>`
+              : r.status === 'sorteada'
+                ? `<span style="font-size:12px;color:var(--gold);font-weight:700">🏆 Nº ${fmtNum(r.numero_sorteado || 0)}</span>`
+                : `<span style="font-size:12px;color:var(--muted)">Encerrada</span>`}
+          </div>
+        </div>`;
+      }).join('');
+      lista.querySelectorAll('[data-act="ver"]').forEach((b) => {
+        b.onclick = () => window.open('/rifa?id=' + b.dataset.id, '_blank');
+      });
+      lista.querySelectorAll('[data-act="sortear"]').forEach((b) => {
+        b.onclick = async () => {
+          if (!confirm('🎲 Sortear agora? Essa ação é irreversível.')) return;
+          try {
+            const out = await api.sortearAdmin(b.dataset.id, TOKEN);
+            showConfete();
+            toast(`Sorteado: nº ${fmtNum(out.numero_sorteado)}!`, 'success');
+            load();
+            updateMetrics();
+          } catch (e) { toast(e.message, 'error'); }
+        };
+      });
+      lista.querySelectorAll('[data-act="cancelar"]').forEach((b) => {
+        b.onclick = async () => {
+          if (!confirm('Cancelar essa rifa?')) return;
+          try {
+            await api.atualizarRifaAdmin(b.dataset.id, { status: 'cancelada' }, TOKEN);
+            load(); updateMetrics();
+          } catch (e) { toast(e.message, 'error'); }
+        };
+      });
+    }
+    updateMetrics();
+  } catch (e) {
+    lista.innerHTML = `<div class="empty"><span class="big-emoji">⚠️</span>${e.message}</div>`;
+  }
+}
+
+document.getElementById('form-nova').onsubmit = async (e) => {
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  const data = Object.fromEntries(fd.entries());
+  data.preco_por_numero = Number(data.preco_por_numero);
+  data.total_numeros = Number(data.total_numeros);
+  data.data_sorteio = new Date(data.data_sorteio).toISOString();
+  data.imagem_emoji = data.imagem_emoji || '🎁';
+  data.imagem_url = data.imagem_url || null;
+  try {
+    await api.criarRifaAdmin(data, TOKEN);
+    toast('Rifa criada com sucesso! 🎉', 'success');
+    e.target.reset();
+    load();
+  } catch (e) { toast(e.message, 'error'); }
+};
+</script>
+</body>
+</html>

@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>RifaVIP — Sorteios Online</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/app.css" />
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <a href="/rifas" class="logo"><span class="mark"></span>RIFA<span>VIP</span></a>
+    <nav class="nav-links">
+      <a href="/rifas" class="active">Sorteios</a>
+      <a href="/backend">Backend</a>
+      <a href="/rifas/admin/painel" class="btn btn-gradient" style="padding:8px 14px;font-size:13px">Painel Admin</a>
+    </nav>
+  </div>
+</header>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-card">
+    <div class="hero-content">
+      <span class="hero-tag">🔊 Sorteio da JBL Boombox 4</span>
+      <h1>Concorra a uma JBL Boombox 4 zero por só R$ 0,50 o número</h1>
+      <p>A caixa de som mais desejada do Brasil — som massivo, bateria pra 24h, à prova d'água. Pague via Pix e boa sorte!</p>
+      <div class="hero-actions">
+        <a href="#rifas" class="btn btn-primary">🎟️ Quero meus números</a>
+        <a href="#" onclick="document.getElementById('rifas').scrollIntoView({behavior:'smooth'}); return false" class="btn btn-ghost">Ver detalhes →</a>
+      </div>
+    </div>
+    <div class="hero-art">
+      <div class="emoji">🔊</div>
+      <div class="badge-floating">⚡ Som massivo, o dia todo</div>
+    </div>
+  </div>
+</section>
+
+<!-- STATS -->
+<div class="stats-strip">
+  <div class="stat-card"><div class="icon">🎯</div><div><div class="label">Sorteio ativo</div><div class="value" id="stat-ativos">—</div></div></div>
+  <div class="stat-card"><div class="icon">🎟️</div><div><div class="label">Números disponíveis</div><div class="value" id="stat-nums">—</div></div></div>
+  <div class="stat-card"><div class="icon">📅</div><div><div class="label">Sorteio em</div><div class="value" id="stat-when">—</div></div></div>
+  <div class="stat-card"><div class="icon">🛡️</div><div><div class="label">Pagamento</div><div class="value" style="font-size:18px">100% seguro</div></div></div>
+</div>
+
+<!-- LISTA DE RIFAS -->
+<section class="section" id="rifas">
+  <div class="section-head">
+    <div>
+      <h2>🎁 Sorteio em destaque</h2>
+      <p>Garante já o seu número — quanto antes, mais chances!</p>
+    </div>
+  </div>
+  <div class="rifa-grid" id="grid"></div>
+</section>
+
+<footer class="footer">
+  <div>Desenvolvido com <span class="heart">♥</span> pela equipe RifaVIP · Suporte 24h via WhatsApp</div>
+</footer>
+
+<div class="fab-stack">
+  <a href="https://wa.me/5511999999999" class="fab wa" title="WhatsApp">💬</a>
+  <a href="tel:+5511999999999" class="fab tg" title="Telegram">📞</a>
+</div>
+
+<script src="/static/demo.js"></script>
+<script>
+async function load() {
+  const grid = document.getElementById('grid');
+  try {
+    const rifas = await api.listarRifas();
+    document.getElementById('stat-ativos').textContent = rifas.filter(r => r.status === 'ativa').length;
+    if (!rifas.length) {
+      grid.innerHTML = `<div class="empty" style="grid-column:1/-1"><span class="big-emoji">🎲</span>Nenhum sorteio aberto no momento. Volte em breve!</div>`;
+      return;
+    }
+    // Stats rápidos baseados na primeira rifa ativa
+    const principal = rifas.find((r) => r.status === 'ativa') || rifas[0];
+    const livres = principal.total_numeros - principal.numeros_vendidos;
+    document.getElementById('stat-nums').textContent = livres + '/' + principal.total_numeros;
+    document.getElementById('stat-when').textContent = countdown(principal.data_sorteio);
+
+    // Se só tem 1 rifa, o card vira "feature" (ocupa grid inteiro, mais alto)
+    if (rifas.length === 1) grid.style.gridTemplateColumns = '1fr';
+    grid.innerHTML = rifas.map((r) => {
+      const pct = Math.round((r.numeros_vendidos / r.total_numeros) * 100);
+      const featured = rifas.length === 1;
+      const link = r.slug
+        ? `/rifas/${encodeURIComponent(r.slug)}`
+        : `/rifa?id=${encodeURIComponent(r.id)}`;
+      return `
+        <a class="rifa-card reveal ${featured ? 'featured' : ''}" href="${link}">
+          <div class="rifa-card-img" style="${r.imagem_url ? '' : `background:linear-gradient(135deg, ${cor(r.id)}, ${cor(r.id, 1)})`}">
+            ${r.imagem_url
+              ? `<div class="photo" style="background-image:url('${r.imagem_url}'); background-color:#1a1a1a"></div>`
+              : `<span class="emoji">${r.imagem_emoji || '🎁'}</span>`}
+            <span class="badge">${r.status === 'sorteada' ? '🏆 Sorteada' : r.status === 'ativa' ? '🟢 Ao vivo' : '⏸ Encerrada'}</span>
+            <span class="countdown">⏱ ${countdown(r.data_sorteio)}</span>
+          </div>
+          <div class="rifa-card-body">
+            <h3 ${featured ? 'style="font-size:24px"' : ''}>${escapeHTML(r.titulo)}</h3>
+            <div class="meta">${escapeHTML(r.subtitulo || '')}</div>
+            <div>
+              <div class="rifa-progress"><div class="rifa-progress-bar" style="width:${pct}%"></div></div>
+              <div class="meta" style="margin-top:6px;display:flex;justify-content:space-between">
+                <span>${r.numeros_vendidos}/${r.total_numeros} vendidos</span>
+                <b style="color:var(--accent)">${pct}%</b>
+              </div>
+            </div>
+            <div class="rifa-card-foot">
+              <div class="rifa-price"><span class="label">Por número</span><span class="value">${fmtBRL(r.preco_por_numero)}</span></div>
+              <span class="btn btn-gradient" ${featured ? 'style="padding:14px 22px;font-size:15px"' : ''}>Participar →</span>
+            </div>
+          </div>
+        </a>`;
+    }).join('');
+    revealOnScroll();
+  } catch (e) {
+    grid.innerHTML = `<div class="empty" style="grid-column:1/-1"><span class="big-emoji">⚠️</span>Erro: ${e.message}</div>`;
+  }
+}
+
+function cor(seed, idx = 0) {
+  // Gradiente determinístico por id
+  const palette = [
+    ['#6b21a8', '#ec4899'],
+    ['#0ea5e9', '#a855f7'],
+    ['#f97316', '#ec4899'],
+    ['#10b981', '#0ea5e9'],
+    ['#fbbf24', '#f97316'],
+  ];
+  const h = [...seed].reduce((a, c) => a + c.charCodeAt(0), 0) % palette.length;
+  return palette[h][idx];
+}
+
+load();
+showModoBanner();
+document.body.classList.add('has-modo-banner');
+</script>
+</body>
+</html>

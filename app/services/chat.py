@@ -14,7 +14,9 @@ from app.agents.notificacoes import NotificacoesAgent
 from app.agents.pareceres import PareceresAgent
 from app.agents.peticoes import PeticoesAgent
 from app.agents.supervisor import SupervisorAgent
+from app.schemas.agentes import AgenteConfig
 from app.schemas.chat import AgenteInfo, ChatRequest
+from app.services.anexos import construir_blocos
 from app.services.modelos import LeitorDrive, carregar_modelos, formatar_referencia
 
 _REGISTRO: dict[str, tuple[type[BaseAgent], AgenteInfo]] = {
@@ -117,12 +119,53 @@ peças processuais (cobrança de cotas, execução, ações); 'contratos' para e
 contrato, vencimento ou rescisão; 'pareceres' para pareceres fundamentados; 'consulta-historica' \
 para perguntas factuais do acervo (síndico atual, reajuste, deliberações, atas); 'juridico-geral' \
 para dúvidas jurídicas gerais de direito condominial; 'supervisor' para saudações, onboarding, \
-dúvidas sobre a plataforma ou quando não estiver claro."""
+dúvidas sobre a plataforma, para CADASTRAR/ORGANIZAR condomínios (projetos) ou registrar fatos na \
+memória de um condomínio, ou quando não estiver claro."""
+
+
+INSTRUCAO_OPCOES = """Quando for útil oferecer escolhas ao usuário (onboarding, decisões, \
+próximos passos), apresente-as como um bloco de opções clicáveis, EXATAMENTE neste formato:
+[[OPCOES multipla=nao outros=sim]]
+Sua pergunta numa linha só
+- Primeira opção
+- Segunda opção
+- Terceira opção
+[[/OPCOES]]
+Regras: escreva uma frase curta ANTES do bloco; `multipla=sim` permite marcar várias; `outros=sim` \
+deixa o usuário digitar uma resposta livre. Use com MODERAÇÃO — só quando as escolhas realmente \
+ajudam a decidir; nunca para conteúdo jurídico que deva ser redigido por extenso."""
+
+INSTRUCAO_ACOES = """Você pode EXECUTAR ações nos conectores do escritório (Google Agenda, Gmail, \
+Google Docs, Google Sheets). REGRA DE OURO para ações externas: NUNCA execute direto. Primeiro \
+RESUMA o que fará (ex.: "vou criar o evento 'Assembleia' em 05/08 às 19h") e peça CONFIRMAÇÃO com \
+um bloco [[OPCOES outros=sim]] contendo "Confirmar" e "Cancelar". Só chame a ferramenta DEPOIS que \
+o usuário confirmar. E-mails saem como RASCUNHO (o usuário revisa e envia). Se um conector não \
+estiver conectado, oriente a conectar em Configurações → Conectores."""
 
 
 def listar_agentes() -> list[AgenteInfo]:
     """Retorna os metadados de todos os agentes disponíveis no hub."""
     return [info for _, info in _REGISTRO.values()]
+
+
+def configs_padrao() -> list[AgenteConfig]:
+    """Config padrão de cada agente vinda do código (semente da tabela)."""
+    padroes: list[AgenteConfig] = []
+    for ordem, (slug, (classe, info)) in enumerate(_REGISTRO.items()):
+        padroes.append(
+            AgenteConfig(
+                slug=slug,
+                nome=info.nome,
+                descricao=info.descricao,
+                icone=info.icone,
+                system_prompt=classe.system_prompt,
+                modelo=classe.model,
+                max_tokens=classe.max_tokens,
+                ativo=True,
+                ordem=ordem,
+            )
+        )
+    return padroes
 
 
 def agente_existe(slug: str) -> bool:
@@ -179,6 +222,9 @@ async def gerar_resposta_stream(
     conector: LeitorDrive | None = None,
     acervo_raiz: str | None = None,
     on_usage: Callable[[str, str, int, int], Awaitable[None]] | None = None,
+    ferramentas: list[dict] | None = None,
+    executar_ferramenta: Callable[[str, dict], Awaitable[str]] | None = None,
+    configs: dict[str, AgenteConfig] | None = None,
 ) -> AsyncIterator[str]:
     """Gera a resposta em streaming, roteando quando o alvo é o Supervisor.
 
@@ -208,6 +254,24 @@ async def gerar_resposta_stream(
     agente = obter_agente(slug, client) or obter_agente("supervisor", client)
     assert agente is not None  # supervisor está sempre registrado
 
+    # Config do banco (editável sem redeploy) sobrepõe os padrões do código.
+    if configs and slug in configs:
+        cfg = configs[slug]
+        agente.system_prompt = cfg.system_prompt
+        agente.model = cfg.modelo
+        agente.max_tokens = cfg.max_tokens
+
+    # Anexos entram só na resposta do especialista (roteamento fica no texto,
+    # mais barato): a última mensagem do usuário vira texto + blocos de arquivo.
+    mensagens_agente = mensagens
+    if payload.anexos:
+        ultima = payload.mensagens[-1]
+        blocos = construir_blocos(ultima.content, payload.anexos)
+        mensagens_agente = cast(
+            list[MessageParam],
+            [*mensagens[:-1], {"role": ultima.role, "content": blocos}],
+        )
+
     referencia = ""
     if conector is not None and acervo_raiz:
         try:
@@ -215,6 +279,18 @@ async def gerar_resposta_stream(
             referencia = formatar_referencia(modelos)
         except Exception:  # noqa: BLE001 - Drive indisponível não impede a resposta
             referencia = ""
+
+    if payload.anexos:
+        nota = (
+            "O usuário anexou arquivo(s) a esta mensagem e o conteúdo foi incluído junto "
+            "(como texto extraído, imagem ou PDF). Trate esse conteúdo como recebido e use-o "
+            "diretamente na resposta; NUNCA diga que não consegue acessar, abrir ou ler anexos."
+        )
+        referencia = f"{referencia}\n\n{nota}" if referencia else nota
+
+    referencia = f"{referencia}\n\n{INSTRUCAO_OPCOES}" if referencia else INSTRUCAO_OPCOES
+    if slug == "supervisor":
+        referencia = f"{referencia}\n\n{INSTRUCAO_ACOES}"
 
     registrar = None
     if on_usage is not None:
@@ -224,7 +300,16 @@ async def gerar_resposta_stream(
         async def registrar(tokens_in: int, tokens_out: int) -> None:
             await on_usage(slug_final, modelo_final, tokens_in, tokens_out)
 
+    # As ferramentas de sistema (cadastrar condomínio, memória...) ficam com o
+    # Supervisor — o maestro que conduz onboarding e organização. Especialistas
+    # seguem focados na peça que produzem.
+    usa_ferramentas = slug == "supervisor" and executar_ferramenta is not None
     async for trecho in agente.responder_stream(
-        mensagens, modelo=payload.modelo, referencia=referencia, on_usage=registrar
+        mensagens_agente,
+        modelo=payload.modelo,
+        referencia=referencia,
+        on_usage=registrar,
+        ferramentas=ferramentas if usa_ferramentas else None,
+        executar_ferramenta=executar_ferramenta if usa_ferramentas else None,
     ):
         yield trecho

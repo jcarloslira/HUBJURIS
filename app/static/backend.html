@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Backend · RifaVIP</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/app.css" />
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <a href="/rifas" class="logo"><span class="mark"></span>RIFA<span>VIP</span></a>
+    <nav class="nav-links">
+      <a href="/rifas">Sorteios</a>
+      <a href="#" class="active">Backend</a>
+      <a href="/rifas/admin/painel">Painel Admin</a>
+    </nav>
+  </div>
+</header>
+
+<div class="dash-grid" style="max-width:900px">
+  <div class="dash-card">
+    <h3><span class="dot"></span> 🩺 Status do sistema</h3>
+    <div id="status" class="dash-list"><div class="empty">Verificando...</div></div>
+    <button class="btn btn-ghost" onclick="loadStatus()" style="margin-top:14px">🔄 Atualizar</button>
+  </div>
+
+  <div class="dash-card">
+    <h3><span class="dot"></span> 🔌 Endpoints REST (FastAPI)</h3>
+    <p style="color:var(--muted);font-size:13px;margin-bottom:14px">
+      Toda a lógica do site roda neste backend. O frontend só consome via fetch().
+    </p>
+    <div class="dash-list">
+      <div class="dash-row">
+        <div class="meta"><b>GET /api/rifas</b><span>Lista rifas ativas/encerradas/sorteadas (público)</span></div>
+        <span class="actions"><span class="user-pill"><span class="dot" style="background:#22c55e"></span> público</span></span>
+      </div>
+      <div class="dash-row">
+        <div class="meta"><b>GET /api/rifas/{id}</b><span>Detalhes de uma rifa específica</span></div>
+        <span class="actions"><span class="user-pill"><span class="dot" style="background:#22c55e"></span> público</span></span>
+      </div>
+      <div class="dash-row">
+        <div class="meta"><b>GET /api/rifas/{id}/numeros</b><span>Grade completa de números com status</span></div>
+        <span class="actions"><span class="user-pill"><span class="dot" style="background:#22c55e"></span> público</span></span>
+      </div>
+      <div class="dash-row">
+        <div class="meta"><b>POST /api/rifas/comprar</b><span>Cria pedido, reserva números, gera Pix</span></div>
+        <span class="actions"><span class="user-pill"><span class="dot" style="background:#22c55e"></span> público</span></span>
+      </div>
+      <div class="dash-row">
+        <div class="meta"><b>POST /api/rifas/admin</b><span>Cria rifa (protegido por Bearer)</span></div>
+        <span class="actions"><span class="user-pill"><span class="dot" style="background:#ef4444"></span> admin</span></span>
+      </div>
+      <div class="dash-row">
+        <div class="meta"><b>PATCH /api/rifas/admin/{id}</b><span>Atualiza rifa parcialmente</span></div>
+        <span class="actions"><span class="user-pill"><span class="dot" style="background:#ef4444"></span> admin</span></span>
+      </div>
+      <div class="dash-row">
+        <div class="meta"><b>POST /api/rifas/admin/sortear</b><span>Sorteia aleatoriamente entre pagos</span></div>
+        <span class="actions"><span class="user-pill"><span class="dot" style="background:#ef4444"></span> admin</span></span>
+      </div>
+      <div class="dash-row">
+        <div class="meta"><b>POST /api/auth/admin</b><span>Login com senha → devolve token Bearer</span></div>
+        <span class="actions"><span class="user-pill"><span class="dot" style="background:#fbbf24"></span> admin</span></span>
+      </div>
+      <div class="dash-row">
+        <div class="meta"><b>POST /webhook/mercadopago</b><span>Recebe notificação de pagamento Pix</span></div>
+        <span class="actions"><span class="user-pill"><span class="dot" style="background:#26a5e4"></span> MP</span></span>
+      </div>
+      <div class="dash-row">
+        <div class="meta"><b>GET /api/health/full</b><span>Status detalhado (você está vendo)</span></div>
+        <span class="actions"><span class="user-pill"><span class="dot" style="background:#22c55e"></span> público</span></span>
+      </div>
+      <div class="dash-row">
+        <div class="meta"><b>GET /docs</b><span>Swagger UI interativo com todos endpoints</span></div>
+        <span class="actions"><a class="btn btn-ghost" href="/docs" target="_blank">Abrir →</a></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="dash-card">
+    <h3><span class="dot"></span> 🗄️ Banco de dados (Supabase / Postgres)</h3>
+    <div class="dash-list">
+      <div class="dash-row"><div class="meta"><b>rifas</b><span>id, titulo, descricao, preco_por_numero, total_numeros, data_sorteio, status, ganhador_*</span></div></div>
+      <div class="dash-row"><div class="meta"><b>numeros_rifa</b><span>id, rifa_id, numero, status (disponivel|reservado|pago), pedido_id, comprador_*</span></div></div>
+      <div class="dash-row"><div class="meta"><b>pedidos_rifa</b><span>id, rifa_id, total_numeros, valor_total, comprador_*, status, mp_payment_id, mp_qr_code</span></div></div>
+    </div>
+    <p style="color:var(--muted);font-size:12px;margin-top:10px">Schema versionado em <code>sql/002_rifas_tables.sql</code> + RLS + índices.</p>
+  </div>
+
+  <div class="dash-card">
+    <h3><span class="dot"></span> 🧪 Testes</h3>
+    <p style="color:var(--muted);font-size:13px">52 testes passando (10 do módulo de rifas, incluindo schemas, MP, OpenAPI e 503 sem Supabase).</p>
+    <p style="color:var(--muted);font-size:12px;margin-top:8px">Suite roda com <code>uv run pytest</code> · Lint com <code>uv run ruff check app/</code></p>
+  </div>
+</div>
+
+<footer class="footer"><div>Desenvolvido com <span class="heart">♥</span> · FastAPI 0.115 + Supabase + Mercado Pago Pix</div></footer>
+
+<script>
+async function loadStatus() {
+  const el = document.getElementById('status');
+  el.innerHTML = '<div class="empty">Verificando...</div>';
+  try {
+    const s = await fetch('/api/health/full').then(r => r.json());
+    const badge = (ok) => ok
+      ? `<span class="user-pill"><span class="dot" style="background:#22c55e"></span> OK</span>`
+      : `<span class="user-pill"><span class="dot" style="background:#ef4444"></span> faltando</span>`;
+    el.innerHTML = `
+      <div class="dash-row"><div class="meta"><b>🟢 App</b><span>FastAPI rodando · env=${s.env}</span></div>${badge(true)}</div>
+      <div class="dash-row"><div class="meta"><b>🗄️ Supabase</b><span>${s.supabase.configurado ? s.supabase.url : 'não configurado'}</span></div>${badge(s.supabase.configurado)}</div>
+      <div class="dash-row"><div class="meta"><b>🤖 Anthropic (LLM)</b><span>SDK python instalado</span></div>${badge(s.anthropic)}</div>
+      <div class="dash-row"><div class="meta"><b>💸 Mercado Pago (Pix)</b><span>${s.mercado_pago.token_configurado ? 'token configurado' : 'sem token — pagamento em modo demo'}</span></div>${badge(s.mercado_pago.token_configurado)}</div>
+      <div class="dash-row"><div class="meta"><b>🔐 Admin token</b><span>${s.admin_token ? 'definido no .env' : 'falta ADMIN_TOKEN no .env'}</span></div>${badge(s.admin_token)}</div>
+      <div class="dash-row"><div class="meta"><b>📱 WhatsApp (W-API)</b><span>${s.whatsapp_wapi ? 'configurado' : 'não configurado'}</span></div>${badge(s.whatsapp_wapi)}</div>
+    `;
+  } catch (e) {
+    el.innerHTML = `<div class="empty"><span class="big-emoji">⚠️</span>${e.message}</div>`;
+  }
+}
+loadStatus();
+</script>
+</body>
+</html>

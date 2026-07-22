@@ -12,17 +12,22 @@ from fastapi.staticfiles import StaticFiles
 
 from app.config import get_settings
 from app.routers import (
+    admin_agentes,
     auth_admin,
     chat,
     condominios,
     contas,
+    documentos,
     google,
     health,
+    projetos,
     rifas,
     sdr,
     webhook,
     webhook_pix,
 )
+from app.services.agentes_config import AgenteConfigService
+from app.services.chat import configs_padrao
 from app.utils.supabase import create_supabase_client
 
 _STATIC_DIR = Path(__file__).parent / "static"
@@ -56,6 +61,12 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     app.state.supabase = await create_supabase_client(settings)
     app.state.anthropic = AsyncAnthropic(api_key=settings.ANTHROPIC_API_KEY)
     app.state.http_client = httpx.AsyncClient(timeout=30.0)
+    # Semeia a config dos agentes (só os que faltam) — treinar sem redeploy.
+    if app.state.supabase is not None:
+        try:
+            await AgenteConfigService(app.state.supabase).seed_defaults(configs_padrao())
+        except Exception:  # noqa: BLE001 - seed é best-effort, não bloqueia o boot
+            pass
     yield
     await app.state.http_client.aclose()
     await app.state.anthropic.close()
@@ -66,14 +77,17 @@ app = FastAPI(title="LexHub — Hub Jurídico de IA", lifespan=lifespan)
 
 @app.middleware("http")
 async def restrict_external_access(request: Request, call_next):  # type: ignore[no-untyped-def]
-    """Para acessos vindos de fora (Cloudflare Tunnel), libera só /proposta.
+    """Controla o acesso externo (fora de localhost).
 
-    Local (localhost) continua com acesso total — desenvolvimento e demo
-    presencial. Externo só vê a proposta institucional; chat e APIs ficam
-    invisíveis para evitar consumo indevido de tokens.
+    - Local (localhost): acesso total sempre — desenvolvimento e demo presencial.
+    - Deploy com HUB_PUBLICO=true: acesso total também — os assinantes usam o hub.
+    - Caso contrário (ex.: túnel só para a proposta): externo vê apenas a
+      proposta institucional; chat e APIs ficam invisíveis para evitar consumo
+      indevido de tokens.
     """
-    host = request.headers.get("host")
-    if not _is_local_host(host) and request.url.path not in _PUBLIC_PATHS:
+    if _is_local_host(request.headers.get("host")) or get_settings().HUB_PUBLICO:
+        return await call_next(request)
+    if request.url.path not in _PUBLIC_PATHS:
         return Response(status_code=404)
     return await call_next(request)
 
@@ -88,6 +102,9 @@ app.include_router(auth_admin.router)
 app.include_router(condominios.router)
 app.include_router(google.router)
 app.include_router(contas.router)
+app.include_router(projetos.router)
+app.include_router(admin_agentes.router)
+app.include_router(documentos.router)
 
 app.mount("/static", StaticFiles(directory=_STATIC_DIR), name="static")
 

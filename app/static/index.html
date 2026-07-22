@@ -124,6 +124,83 @@ aside {
 .agent-row.active .ic { color: var(--accent); }
 .agent-row .ic { display: flex; flex-shrink: 0; }
 
+/* Condomínios (projetos) */
+.side-proj { margin-top: 16px; }
+.section-head { display: flex; align-items: center; justify-content: space-between; padding-right: 4px; }
+.proj-add {
+  background: transparent; border: none; color: var(--text-dim); cursor: pointer;
+  display: flex; padding: 3px; border-radius: 6px; margin-bottom: 6px;
+}
+.proj-add:hover { color: var(--accent); background: var(--accent-soft); }
+.projetos { display: flex; flex-direction: column; gap: 2px; max-height: 172px; overflow-y: auto; }
+.proj-item {
+  display: flex; align-items: center; gap: 9px; width: 100%;
+  background: transparent; border: none; cursor: pointer; text-align: left;
+  padding: 7px 10px; border-radius: 8px;
+  color: var(--text-dim); font-size: 0.82rem; font-family: inherit;
+}
+.proj-item:hover { background: var(--panel-2); color: var(--text); }
+.proj-item .pi-ic { color: var(--accent); opacity: 0.75; flex-shrink: 0; display: flex; }
+.proj-item .pi-nome { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.proj-item .pi-badge { font-size: 0.65rem; font-weight: 600; color: var(--accent); background: var(--accent-soft); border-radius: 20px; padding: 1px 7px; }
+.proj-empty { font-size: 0.75rem; color: var(--text-dim); padding: 6px; line-height: 1.5; }
+
+/* Modal do projeto (memória) */
+.proj-card { background: var(--panel); border: 1px solid var(--border); border-radius: 16px; width: min(480px, 100%); max-height: 82vh; display: flex; flex-direction: column; overflow: hidden; }
+.proj-top { display: flex; align-items: flex-start; justify-content: space-between; padding: 20px 22px 6px; }
+.proj-top h3 { font-family: 'Fraunces', serif; font-size: 1.15rem; font-weight: 600; }
+.proj-top small { display: block; color: var(--text-dim); font-size: 0.75rem; margin-top: 3px; }
+.proj-body { padding: 4px 22px 20px; overflow-y: auto; }
+.mem-label { font-size: 0.65rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.12em; color: var(--text-dim); margin: 14px 0 8px; }
+.fato { background: var(--panel-2); border: 1px solid var(--border); border-radius: 10px; padding: 9px 12px; font-size: 0.83rem; line-height: 1.45; margin-bottom: 6px; }
+.fato .fo { display: block; font-size: 0.62rem; color: var(--accent); text-transform: uppercase; letter-spacing: 0.08em; margin-top: 4px; opacity: 0.85; }
+.fato-form { display: flex; gap: 8px; margin-top: 14px; }
+.fato-form input { flex: 1; background: var(--panel-3); border: 1px solid var(--border); border-radius: 8px; padding: 9px 11px; font-size: 0.82rem; font-family: inherit; color: var(--text); }
+.fato-form button { background: var(--accent); color: #fff; border: none; border-radius: 8px; padding: 0 15px; font-size: 0.8rem; font-weight: 600; cursor: pointer; }
+.fato-form button:disabled { opacity: 0.55; cursor: default; }
+
+/* Anexos no composer */
+.anexos-chips { display: flex; flex-wrap: wrap; gap: 6px; padding: 2px 2px 8px; }
+.anexo-chip { display: inline-flex; align-items: center; gap: 6px; max-width: 230px; background: var(--panel-2); border: 1px solid var(--border); border-radius: 8px; padding: 5px 8px; font-size: 0.75rem; color: var(--text); }
+.anexo-chip .ax-ic { color: var(--accent); display: flex; flex-shrink: 0; }
+.anexo-chip .ax-nome { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.anexo-chip .ax-del { background: none; border: none; color: var(--text-dim); cursor: pointer; font-size: 0.95rem; line-height: 1; padding: 0 2px; flex-shrink: 0; }
+.anexo-chip .ax-del:hover { color: var(--danger); }
+.msg-anexos { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+.msg-anexos .anexo-chip { background: var(--accent-soft); border-color: var(--accent-border); }
+
+/* Opções clicáveis no chat */
+.opcoes { margin-top: 12px; display: flex; flex-direction: column; gap: 9px; max-width: 620px; }
+.opcoes-q { font-size: 0.87rem; font-weight: 600; color: var(--text); line-height: 1.4; }
+.opcoes-grid { display: flex; flex-direction: column; gap: 7px; }
+.opcao, .opcao-check {
+  display: flex; align-items: center; gap: 10px; width: 100%; text-align: left;
+  background: var(--panel); border: 1px solid var(--border); border-radius: 11px;
+  padding: 11px 14px; font-size: 0.85rem; font-family: inherit; color: var(--text);
+  cursor: pointer; transition: border-color 0.12s, background 0.12s;
+}
+.opcao:hover { border-color: var(--accent); background: var(--accent-soft); }
+.opcao-check input { accent-color: var(--accent); width: 15px; height: 15px; flex-shrink: 0; }
+.opcao-check:hover { border-color: var(--accent-border); }
+.opcoes-acoes { display: flex; gap: 8px; flex-wrap: wrap; }
+.opcao-enviar { background: var(--accent); color: #fff; border: none; border-radius: 9px; padding: 9px 18px; font-size: 0.83rem; font-weight: 600; cursor: pointer; }
+.opcao-enviar:hover { filter: brightness(1.05); }
+.opcao-outros { background: transparent; color: var(--text-dim); border: 1px dashed var(--border); border-radius: 9px; padding: 9px 15px; font-size: 0.83rem; font-family: inherit; cursor: pointer; }
+.opcao-outros:hover { color: var(--accent); border-color: var(--accent-border); background: var(--accent-soft); }
+.opcoes.respondida { opacity: 0.55; pointer-events: none; }
+
+/* Lista de conectores */
+.conectores-lista { display: flex; flex-direction: column; gap: 8px; }
+.conn-row2 { display: flex; align-items: center; justify-content: space-between; gap: 12px; background: var(--panel-2); border: 1px solid var(--border); border-radius: 10px; padding: 11px 14px; }
+.conn-id2 b { font-size: 0.86rem; }
+.conn-id2 small { display: block; color: var(--text-dim); font-size: 0.72rem; margin-top: 2px; }
+
+/* Menu Exportar (Word/PDF/Excel) */
+.ma-export { position: relative; }
+.export-menu { display: none; position: absolute; bottom: calc(100% + 6px); left: 0; z-index: 30; background: var(--panel); border: 1px solid var(--border); border-radius: 10px; box-shadow: 0 6px 20px rgba(29,34,48,.16); padding: 5px; min-width: 152px; }
+.export-menu button { display: block; width: 100%; text-align: left; background: none; border: none; border-radius: 7px; padding: 8px 11px; font-size: 0.8rem; font-family: inherit; color: var(--text); cursor: pointer; }
+.export-menu button:hover { background: var(--accent-soft); color: var(--accent); }
+
 /* Recentes */
 .side-convos {
   flex: 1;
@@ -579,6 +656,7 @@ main.home .composer-wrap { width: 100%; max-width: 780px; margin: 14px auto 0; }
       <div class="section-label">Agentes</div>
       <div class="agents" id="agents"></div>
     </div>
+
   </div>
 
   <div class="side-convos">
@@ -596,6 +674,10 @@ main.home .composer-wrap { width: 100%; max-width: 780px; margin: 14px auto 0; }
         <span class="ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>
         Conta e equipe
       </button>
+      <button class="pm-item" onclick="abrirConfig('condominios')">
+        <span class="ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 9h.01M9 13h.01M9 17h.01M15 9h.01M15 13h.01M15 17h.01"/></svg></span>
+        Condomínios
+      </button>
       <button class="pm-item" onclick="abrirConfig('uso')">
         <span class="ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 13v5"/><path d="M12 8v10"/><path d="M17 11v7"/></svg></span>
         Uso
@@ -604,10 +686,6 @@ main.home .composer-wrap { width: 100%; max-width: 780px; margin: 14px auto 0; }
         <span class="ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2v6"/><path d="M15 2v6"/><path d="M12 17v5"/><path d="M5 8h14l-1 7a4 4 0 0 1-4 3.5h-4A4 4 0 0 1 6 15z"/></svg></span>
         Conectores
       </button>
-      <a class="pm-item" href="/backend" target="_blank" rel="noopener">
-        <span class="ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></span>
-        Status do backend
-      </a>
       <button class="pm-item" onclick="sair()">
         <span class="ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></svg></span>
         Sair
@@ -620,6 +698,26 @@ main.home .composer-wrap { width: 100%; max-width: 780px; margin: 14px auto 0; }
     </button>
   </div>
 </aside>
+
+<div class="modal-overlay" id="proj-modal" style="display:none" onclick="if(event.target===this)fecharProjeto()">
+  <div class="proj-card">
+    <div class="proj-top">
+      <div>
+        <h3 id="proj-nome">Condomínio</h3>
+        <small id="proj-sub"></small>
+      </div>
+      <button class="modal-x" onclick="fecharProjeto()" aria-label="Fechar">×</button>
+    </div>
+    <div class="proj-body">
+      <div class="mem-label">Memória do projeto</div>
+      <div id="proj-fatos"><div class="proj-empty">Carregando…</div></div>
+      <form class="fato-form" onsubmit="addFato(event)">
+        <input id="fato-input" placeholder="Ensinar um fato (ex.: síndico atual é o Sr. Pedro)" required>
+        <button type="submit" id="fato-btn">Salvar</button>
+      </form>
+    </div>
+  </div>
+</div>
 
 <main class="home" id="main">
   <header>
@@ -645,13 +743,17 @@ main.home .composer-wrap { width: 100%; max-width: 780px; margin: 14px auto 0; }
 
   <div class="composer-wrap">
     <div class="composer">
+      <input type="file" id="file-input" multiple style="display:none"
+        accept="image/*,application/pdf,.pdf,.docx,.xlsx,.pptx,.txt,.csv,.md,.json,audio/*,video/*"
+        onchange="onArquivos(event)">
+      <div class="anexos-chips" id="anexos-chips" style="display:none"></div>
       <textarea id="input" rows="1" placeholder="Escreva sua demanda jurídica…"></textarea>
       <div class="composer-bar">
         <div class="cb-left">
           <div class="plus-menu" id="plus-menu" style="display:none">
-            <button class="pm-item" disabled title="Em breve">
+            <button class="pm-item" onclick="$('file-input').click();fecharMenus()">
               <span class="ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg></span>
-              Anexar arquivo <span class="soon">em breve</span>
+              Anexar arquivo
             </button>
             <button class="pm-item" onclick="abrirConfig('conectores');fecharMenus()">
               <span class="ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2v6"/><path d="M15 2v6"/><path d="M12 17v5"/><path d="M5 8h14l-1 7a4 4 0 0 1-4 3.5h-4A4 4 0 0 1 6 15z"/></svg></span>
@@ -693,6 +795,10 @@ main.home .composer-wrap { width: 100%; max-width: 780px; margin: 14px auto 0; }
         <span class="ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>
         Conta
       </button>
+      <button class="cfg-tab" id="tab-condominios" onclick="cfgTab('condominios')">
+        <span class="ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 9h.01M9 13h.01M9 17h.01M15 9h.01M15 13h.01M15 17h.01"/></svg></span>
+        Condomínios
+      </button>
       <button class="cfg-tab" id="tab-uso" onclick="cfgTab('uso')">
         <span class="ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 13v5"/><path d="M12 8v10"/><path d="M17 11v7"/></svg></span>
         Uso
@@ -714,29 +820,37 @@ main.home .composer-wrap { width: 100%; max-width: 780px; margin: 14px auto 0; }
           </select>
           <div class="cfg-hint">O seletor de cliente é ativado quando o acervo do escritório estiver sincronizado.</div>
         </div>
+      </div>
+
+      <div id="pane-condominios" style="display:none">
+        <h3>Condomínios</h3>
+        <div class="cfg-hint" style="margin-bottom:16px">Cada condomínio é um projeto com contexto e memória próprios — separado das conversas. Os agentes cadastram sozinhos quando você pede; você também pode adicionar aqui.</div>
+        <form class="cfg-section" onsubmit="novoProjeto(event)">
+          <label class="ctx-label">Cadastrar condomínio</label>
+          <div class="membro-form">
+            <input type="text" id="np-nome" placeholder="Nome do condomínio" required minlength="2">
+            <button class="vincular-btn" type="submit">Cadastrar</button>
+          </div>
+          <div class="cfg-hint" id="np-msg"></div>
+        </form>
         <div class="cfg-section">
-          <a class="cfg-link" href="/backend" target="_blank" rel="noopener">Ver status do backend →</a>
+          <label class="ctx-label">Condomínios do escritório</label>
+          <div id="cfg-projetos" class="projetos">Carregando…</div>
         </div>
       </div>
 
       <div id="pane-conectores" style="display:none">
         <h3>Conectores</h3>
-        <div class="conn-head"><span>Conector</span><span>Tipo</span><span style="text-align:right">Status</span></div>
-        <div class="conn-row">
-          <div class="conn-id">
-            <span class="conn-ic">
-              <svg width="18" height="18" viewBox="0 0 87.3 78"><path d="m6.6 66.85 3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3l13.75-23.8h-27.5c0 1.55.4 3.1 1.2 4.5z" fill="#0066da"/><path d="m43.65 25-13.75-23.8c-1.35.8-2.5 1.9-3.3 3.3l-25.4 44a9.06 9.06 0 0 0-1.2 4.5h27.5z" fill="#00ac47"/><path d="m73.55 76.8c1.35-.8 2.5-1.9 3.3-3.3l1.6-2.75 7.65-13.25c.8-1.4 1.2-2.95 1.2-4.5h-27.502l5.852 11.5z" fill="#ea4335"/><path d="m43.65 25 13.75-23.8c-1.35-.8-2.9-1.2-4.5-1.2h-18.5c-1.6 0-3.15.45-4.5 1.2z" fill="#00832d"/><path d="m59.8 53h-32.3l-13.75 23.8c1.35.8 2.9 1.2 4.5 1.2h50.8c1.6 0 3.15-.45 4.5-1.2z" fill="#2684fc"/><path d="m73.4 26.5-12.7-22c-.8-1.4-1.95-2.5-3.3-3.3l-13.75 23.8 16.15 28h27.45c0-1.55-.4-3.1-1.2-4.5z" fill="#ffba00"/></svg>
-            </span>
-            <div><b>Google Drive</b><small id="g-label">verificando…</small></div>
-          </div>
-          <span class="conn-tipo">Web</span>
-          <span class="conn-status">
-            <span class="conn-check" id="g-check" style="display:none"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Conectado</span>
-            <button class="vincular-btn" id="g-connect" onclick="conectarGoogle()" style="display:none">Vincular</button>
-          </span>
+        <div class="cfg-hint" style="margin-bottom:12px">Cada escritório conecta a própria conta Google — é só clicar em Vincular e fazer login. Depois, os agentes podem agendar, rascunhar e-mails e gerar documentos (sempre pedindo sua confirmação).</div>
+        <div id="conectores-lista" class="conectores-lista">Carregando…</div>
+        <div class="cfg-section" id="g-acervo" style="display:none; margin-top:18px">
+          <label class="ctx-label">Pasta do acervo de modelos</label>
+          <div id="g-acervo-atual" class="cfg-hint"></div>
+          <button class="vincular-btn" id="g-escolher" onclick="carregarPastas()" style="margin-top:8px">Escolher pasta</button>
+          <div id="g-pastas" class="projetos" style="margin-top:10px"></div>
         </div>
         <div class="cfg-section" style="margin-top:16px">
-          <div class="cfg-hint">Conecte o Google Drive do escritório para os agentes escreverem no padrão dos seus modelos. Mais conectores em breve (OneDrive, ADVBOX…).</div>
+          <div class="cfg-hint">Conecte o Google Drive do escritório e escolha a pasta com seus modelos (petições, notificações, pareceres…). Os agentes passam a escrever no padrão do escritório. Mais conectores em breve (OneDrive, ADVBOX…).</div>
         </div>
       </div>
 
@@ -856,44 +970,89 @@ function sair() {
 function papelLabel(p) { return p === 'admin' ? 'Admin' : p === 'advogado' ? 'Advogado' : 'Estagiário'; }
 const NOME_MODELO = { 'claude-sonnet-4-6': 'Sonnet', 'claude-haiku-4-5-20251001': 'Haiku', 'claude-opus-4-8': 'Opus' };
 
-/* ---------- Google Drive (Conectores) ---------- */
-async function checarGoogle() {
-  const label = $('g-label'), btn = $('g-connect'), check = $('g-check');
+/* ---------- Conectores (Google via Composio) ---------- */
+async function carregarConectores() {
+  const el = $('conectores-lista');
+  if (!el) return;
   try {
-    const s = await (await fetch('/api/google/status')).json();
-    if (!s.configurado) {
-      label.textContent = 'indisponível no momento';
-      btn.style.display = 'none'; check.style.display = 'none';
-    } else if (s.conectado) {
-      label.textContent = 'Drive do escritório vinculado';
-      btn.style.display = 'none'; check.style.display = 'flex';
-    } else {
-      label.textContent = 'não conectado';
-      btn.style.display = 'inline-block'; check.style.display = 'none';
+    const lista = await (await fetch('/api/google/conectores', { headers: authHeaders() })).json();
+    if (!Array.isArray(lista) || !lista.length) {
+      el.innerHTML = '<div class="cfg-hint">Conectores indisponíveis no momento.</div>';
+      return;
     }
-  } catch {
-    label.textContent = 'indisponível no momento';
-    btn.style.display = 'none'; check.style.display = 'none';
-  }
+    el.innerHTML = lista.map(c => `
+      <div class="conn-row2">
+        <div class="conn-id2">
+          <b>${escapar(c.nome)}</b>
+          <small>${c.configurado ? (c.conectado ? 'Conectado' : 'Não conectado') : 'Indisponível'}</small>
+        </div>
+        ${!c.configurado ? '' : (c.conectado
+          ? `<span class="conn-check">${CHECK} Conectado</span>`
+          : `<button class="vincular-btn" onclick="vincularServico('${c.servico}', this)">Vincular</button>`)}
+      </div>`).join('');
+  } catch { el.innerHTML = '<div class="cfg-hint">Não foi possível carregar os conectores.</div>'; }
 }
 
-async function conectarGoogle() {
-  const btn = $('g-connect');
+async function vincularServico(servico, btn) {
   btn.disabled = true; btn.textContent = 'Gerando link…';
   try {
-    const d = await (await fetch('/api/google/conectar', { method: 'POST' })).json();
+    const d = await (await fetch('/api/google/conectar/' + servico, { method: 'POST', headers: authHeaders() })).json();
     if (d.redirect_url) {
       window.open(d.redirect_url, '_blank', 'noopener');
-      btn.textContent = 'Vincular';
-      setTimeout(checarGoogle, 5000);
-    } else {
-      btn.textContent = 'Erro — tentar de novo';
+      btn.textContent = 'Concluir login…';
+      setTimeout(() => { carregarConectores(); checarGoogle(); }, 6000);
+    } else { btn.disabled = false; btn.textContent = 'Erro — tentar de novo'; }
+  } catch { btn.disabled = false; btn.textContent = 'Erro — tentar de novo'; }
+}
+
+// Cuida só do acervo do Drive (o status/conexão fica na lista de conectores).
+async function checarGoogle() {
+  const acervo = $('g-acervo');
+  if (!acervo) return;
+  try {
+    const s = await (await fetch('/api/google/status', { headers: authHeaders() })).json();
+    if (s.configurado && s.conectado) {
+      acervo.style.display = 'block';
+      $('g-acervo-atual').textContent = s.acervo_definido
+        ? 'Pasta do acervo definida ✓ — os agentes já se baseiam nos seus modelos.'
+        : 'Nenhuma pasta escolhida ainda. Selecione a pasta com seus modelos.';
+    } else { acervo.style.display = 'none'; }
+  } catch { acervo.style.display = 'none'; }
+}
+
+let _pastasDrive = [];
+async function carregarPastas() {
+  const cont = $('g-pastas'), btn = $('g-escolher');
+  btn.disabled = true;
+  cont.innerHTML = '<div class="proj-empty">Carregando pastas do seu Drive…</div>';
+  try {
+    const pastas = await (await fetch('/api/google/pastas', { headers: authHeaders() })).json();
+    _pastasDrive = Array.isArray(pastas) ? pastas : [];
+    if (!_pastasDrive.length) {
+      cont.innerHTML = '<div class="proj-empty">Nenhuma pasta na raiz do seu Drive.</div>';
+      return;
     }
-  } catch {
-    btn.textContent = 'Erro — tentar de novo';
-  } finally {
-    btn.disabled = false;
-  }
+    cont.innerHTML = _pastasDrive.map((p, i) => `
+      <button class="proj-item" onclick="escolherAcervo(${i})" title="${escapar(p.nome)}">
+        <span class="pi-ic"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2z"/></svg></span>
+        <span class="pi-nome">${escapar(p.nome)}</span>
+      </button>`).join('');
+  } catch { cont.innerHTML = '<div class="proj-empty">Não foi possível listar as pastas.</div>'; }
+  finally { btn.disabled = false; }
+}
+
+async function escolherAcervo(i) {
+  const p = _pastasDrive[i];
+  if (!p) return;
+  $('g-pastas').innerHTML = '<div class="proj-empty">Salvando…</div>';
+  try {
+    await fetch('/api/google/acervo', {
+      method: 'PUT',
+      headers: authHeaders({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify({ folder_id: p.id })
+    });
+    checarGoogle();
+  } catch { $('g-pastas').innerHTML = '<div class="proj-empty">Não foi possível salvar.</div>'; }
 }
 
 /* ---------- Menus e Configurações ---------- */
@@ -912,6 +1071,7 @@ function toggleProfile(e) {
 function fecharMenus() {
   $('plus-menu').style.display = 'none';
   $('profile-menu').style.display = 'none';
+  document.querySelectorAll('.export-menu').forEach(m => m.style.display = 'none');
 }
 document.addEventListener('click', fecharMenus);
 
@@ -923,14 +1083,15 @@ function abrirConfig(tab = 'geral') {
 }
 function fecharConfig() { $('cfg-modal').style.display = 'none'; }
 function cfgTab(nome) {
-  ['geral', 'conta', 'uso', 'conectores'].forEach(n => {
+  ['geral', 'conta', 'condominios', 'uso', 'conectores'].forEach(n => {
     const pane = $('pane-' + n), tab = $('tab-' + n);
     if (pane) pane.style.display = n === nome ? 'block' : 'none';
     if (tab) tab.classList.toggle('active', n === nome);
   });
   if (nome === 'conta') carregarConta();
+  if (nome === 'condominios') carregarProjetos();
   if (nome === 'uso') carregarUso();
-  if (nome === 'conectores') checarGoogle();
+  if (nome === 'conectores') { carregarConectores(); checarGoogle(); }
 }
 
 /* ---------- Conta e equipe ---------- */
@@ -1004,6 +1165,230 @@ async function carregarUso() {
     }
     el.innerHTML = html;
   } catch { el.innerHTML = '<div class="cfg-hint">Não foi possível carregar o uso.</div>'; }
+}
+
+/* ---------- Condomínios (projetos) ---------- */
+let projetos = [];
+let projetoAberto = null;
+
+async function carregarProjetos() {
+  try {
+    const r = await fetch('/api/projetos', { headers: authHeaders() });
+    if (!r.ok) return;
+    projetos = await r.json();
+    renderProjetos();
+  } catch { /* silencioso: a lista de condomínios é secundária */ }
+}
+
+function renderProjetos() {
+  const el = $('cfg-projetos');
+  if (!el) return;
+  if (!projetos.length) {
+    el.innerHTML = '<div class="proj-empty">Nenhum condomínio ainda. Cadastre acima, ou peça ao Supervisor no chat.</div>';
+    return;
+  }
+  el.innerHTML = projetos.map((p, i) => `
+    <button class="proj-item" onclick="abrirProjeto(${i})" title="${escapar(p.nome)}">
+      <span class="pi-ic"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 9h.01M9 13h.01M9 17h.01M15 9h.01M15 13h.01M15 17h.01"/></svg></span>
+      <span class="pi-nome">${escapar(p.nome)}</span>
+      ${p.total_fatos ? `<span class="pi-badge">${p.total_fatos}</span>` : ''}
+    </button>`).join('');
+}
+
+async function novoProjeto(ev) {
+  if (ev) ev.preventDefault();
+  const inp = $('np-nome'), msg = $('np-msg');
+  const nome = (inp.value || '').trim();
+  if (nome.length < 2) return;
+  msg.style.color = 'var(--text-dim)'; msg.textContent = 'Cadastrando…';
+  try {
+    const r = await fetch('/api/projetos', {
+      method: 'POST',
+      headers: authHeaders({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify({ nome })
+    });
+    if (!r.ok) { const d = await r.json().catch(() => ({})); throw new Error(d.detail || 'Erro ' + r.status); }
+    inp.value = '';
+    msg.style.color = 'var(--green)'; msg.textContent = 'Condomínio cadastrado!';
+    await carregarProjetos();
+  } catch (e) { msg.style.color = 'var(--danger)'; msg.textContent = e.message; }
+}
+
+async function abrirProjeto(i) {
+  projetoAberto = projetos[i];
+  if (!projetoAberto) return;
+  $('proj-nome').textContent = projetoAberto.nome;
+  const partes = [];
+  if (projetoAberto.endereco) partes.push(projetoAberto.endereco);
+  if (projetoAberto.cnpj) partes.push('CNPJ ' + projetoAberto.cnpj);
+  $('proj-sub').textContent = partes.join(' · ');
+  $('proj-fatos').innerHTML = '<div class="proj-empty">Carregando…</div>';
+  $('proj-modal').style.display = 'flex';
+  fecharMenus();
+  await carregarFatos(projetoAberto.id);
+}
+
+async function carregarFatos(id) {
+  try {
+    const r = await fetch(`/api/projetos/${id}/fatos`, { headers: authHeaders() });
+    const fatos = r.ok ? await r.json() : [];
+    $('proj-fatos').innerHTML = fatos.length
+      ? fatos.map(f => `<div class="fato">${escapar(f.fato)}<span class="fo">${f.origem === 'manual' ? 'você anotou' : 'aprendido pelo agente'}</span></div>`).join('')
+      : '<div class="proj-empty">Nada memorizado ainda. Ensine um fato abaixo, ou converse com o Supervisor.</div>';
+  } catch { $('proj-fatos').innerHTML = '<div class="proj-empty">Não foi possível carregar a memória.</div>'; }
+}
+
+function fecharProjeto() { $('proj-modal').style.display = 'none'; projetoAberto = null; }
+
+async function addFato(ev) {
+  ev.preventDefault();
+  if (!projetoAberto) return;
+  const input = $('fato-input'), btn = $('fato-btn');
+  const fato = input.value.trim();
+  if (fato.length < 3) return;
+  btn.disabled = true;
+  try {
+    const r = await fetch(`/api/projetos/${projetoAberto.id}/fatos`, {
+      method: 'POST',
+      headers: authHeaders({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify({ fato })
+    });
+    if (r.ok) { input.value = ''; await carregarFatos(projetoAberto.id); carregarProjetos(); }
+  } catch { /* ignora: sem conexão */ }
+  finally { btn.disabled = false; }
+}
+
+/* ---------- Anexos ---------- */
+let anexos = [];
+let anexosEnvio = [];
+const MAX_ANEXO = 5 * 1024 * 1024;  // 5 MB por arquivo
+const IC_CLIP = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>';
+
+function onArquivos(ev) {
+  const files = Array.from(ev.target.files || []);
+  for (const f of files) {
+    if (anexos.length >= 10) { alert('Máximo de 10 anexos por mensagem.'); break; }
+    if (f.size > MAX_ANEXO) { alert(`"${f.name}" tem mais de 5 MB e não pôde ser anexado.`); continue; }
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = String(reader.result || '');
+      const base64 = dataUrl.includes(',') ? dataUrl.split(',')[1] : dataUrl;
+      anexos.push({ nome: f.name, tipo: f.type || '', dados: base64 });
+      renderAnexos();
+    };
+    reader.readAsDataURL(f);
+  }
+  ev.target.value = '';  // permite reanexar o mesmo arquivo
+}
+
+function renderAnexos() {
+  const el = $('anexos-chips');
+  if (!anexos.length) { el.style.display = 'none'; el.innerHTML = ''; return; }
+  el.style.display = 'flex';
+  el.innerHTML = anexos.map((a, i) => `<span class="anexo-chip">
+    <span class="ax-ic">${IC_CLIP}</span>
+    <span class="ax-nome" title="${escapar(a.nome)}">${escapar(a.nome)}</span>
+    <button class="ax-del" type="button" onclick="removerAnexo(${i})" title="Remover">×</button>
+  </span>`).join('');
+}
+
+function removerAnexo(i) { anexos.splice(i, 1); renderAnexos(); }
+
+function chipBolha(nome) {
+  return `<span class="anexo-chip"><span class="ax-ic">${IC_CLIP}</span>` +
+    `<span class="ax-nome" title="${escapar(nome)}">${escapar(nome)}</span></span>`;
+}
+
+/* ---------- Opções clicáveis (estilo Claude Code) ---------- */
+function soTexto(t) {
+  const i = t.indexOf('[[OPCOES');
+  return i === -1 ? t : t.slice(0, i);
+}
+
+function limparOpcoes(t) {
+  return t.replace(/\[\[OPCOES[\s\S]*?\[\[\/OPCOES\]\]/g, '').trim();
+}
+
+function parseOpcoes(t) {
+  const m = t.match(/\[\[OPCOES([^\]]*)\]\]([\s\S]*?)\[\[\/OPCOES\]\]/);
+  if (!m) return null;
+  const attrs = m[1] || '';
+  const multipla = /multipla\s*=\s*(sim|true)/i.test(attrs);
+  const outros = !/outros\s*=\s*(nao|false)/i.test(attrs);  // padrão: sim
+  const opcoes = [];
+  let pergunta = '';
+  for (const linha of m[2].split('\n').map(l => l.trim()).filter(Boolean)) {
+    if (/^[-*|]\s+/.test(linha)) opcoes.push(linha.replace(/^[-*|]\s+/, '').trim());
+    else if (!pergunta) pergunta = linha;
+  }
+  return opcoes.length ? { pergunta, opcoes, multipla, outros } : null;
+}
+
+function renderOpcoes(div, o) {
+  const wrap = document.createElement('div');
+  wrap.className = 'opcoes';
+  if (o.pergunta) {
+    const q = document.createElement('div');
+    q.className = 'opcoes-q'; q.textContent = o.pergunta;
+    wrap.appendChild(q);
+  }
+  const grid = document.createElement('div');
+  grid.className = 'opcoes-grid';
+  if (o.multipla) {
+    o.opcoes.forEach(op => {
+      const lbl = document.createElement('label');
+      lbl.className = 'opcao-check';
+      lbl.innerHTML = `<input type="checkbox"> <span></span>`;
+      lbl.querySelector('input').value = op;
+      lbl.querySelector('span').textContent = op;
+      grid.appendChild(lbl);
+    });
+  } else {
+    o.opcoes.forEach(op => {
+      const b = document.createElement('button');
+      b.className = 'opcao'; b.type = 'button'; b.textContent = op;
+      b.onclick = () => { travarOpcoes(wrap); enviarOpcao(op); };
+      grid.appendChild(b);
+    });
+  }
+  wrap.appendChild(grid);
+
+  const barra = document.createElement('div');
+  barra.className = 'opcoes-acoes';
+  if (o.multipla) {
+    const env = document.createElement('button');
+    env.className = 'opcao-enviar'; env.type = 'button'; env.textContent = 'Enviar seleção';
+    env.onclick = () => {
+      const sel = [...wrap.querySelectorAll('input:checked')].map(i => i.value);
+      if (!sel.length) return;
+      travarOpcoes(wrap); enviarOpcao(sel.join('; '));
+    };
+    barra.appendChild(env);
+  }
+  if (o.outros) {
+    const outros = document.createElement('button');
+    outros.className = 'opcao-outros'; outros.type = 'button'; outros.textContent = 'Outros…';
+    outros.onclick = () => {
+      travarOpcoes(wrap);
+      const inp = $('input');
+      inp.placeholder = 'Digite sua resposta…'; inp.focus();
+    };
+    barra.appendChild(outros);
+  }
+  if (barra.children.length) wrap.appendChild(barra);
+  div.appendChild(wrap);
+  scrollFim();
+}
+
+function travarOpcoes(wrap) {
+  wrap.classList.add('respondida');
+  wrap.querySelectorAll('button, input').forEach(el => { el.disabled = true; });
+}
+
+function enviarOpcao(texto) {
+  if (gerando) return;
+  $('input').value = texto;
+  enviar();
 }
 
 /* ---------- Agentes ---------- */
@@ -1150,7 +1535,61 @@ function addAcoes(div, texto) {
   bRefazer.onclick = () => refazer(div);
   bar.appendChild(bCopiar);
   bar.appendChild(bRefazer);
+
+  const exp = document.createElement('div');
+  exp.className = 'ma-export';
+  exp.innerHTML = `
+    <button class="ma-btn" type="button">${IC_DOWN} Exportar</button>
+    <div class="export-menu">
+      <button type="button" data-fmt="docx">Word (.docx)</button>
+      <button type="button" data-fmt="pdf">PDF</button>
+      <button type="button" data-fmt="xlsx">Excel (.xlsx)</button>
+    </div>`;
+  const menuExp = exp.querySelector('.export-menu');
+  exp.querySelector('.ma-btn').onclick = (e) => {
+    e.stopPropagation();
+    const aberto = menuExp.style.display === 'block';
+    document.querySelectorAll('.export-menu').forEach(m => m.style.display = 'none');
+    menuExp.style.display = aberto ? 'none' : 'block';
+  };
+  menuExp.querySelectorAll('button').forEach(b => {
+    b.onclick = () => { menuExp.style.display = 'none'; exportarDoc(div._raw, b.dataset.fmt); };
+  });
+  bar.appendChild(exp);
   div.appendChild(bar);
+}
+
+const IC_DOWN = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>';
+
+function tituloDoDoc(texto) {
+  const m = texto.match(/^#{1,3}\s+(.+)$/m);
+  if (m) return m[1].trim().slice(0, 80);
+  const primeira = (texto.trim().split('\n')[0] || 'Documento').replace(/[*#>|`-]/g, '').trim();
+  return (primeira || 'Documento').slice(0, 80);
+}
+
+function slugDoc(t) {
+  const s = t.normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .replace(/[^\w\s-]/g, '').trim().replace(/[\s_-]+/g, '-').toLowerCase().slice(0, 60);
+  return s || 'documento';
+}
+
+async function exportarDoc(conteudo, formato) {
+  const titulo = tituloDoDoc(conteudo);
+  try {
+    const r = await fetch('/api/documentos/exportar', {
+      method: 'POST',
+      headers: authHeaders({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify({ conteudo, formato, titulo, escritorio: (perfil && perfil.escritorio_nome) || '' })
+    });
+    if (!r.ok) throw new Error('falha');
+    const blob = await r.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `${slugDoc(titulo)}.${formato}`;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
+  } catch { alert('Não foi possível exportar agora. Tente novamente.'); }
 }
 
 function escapar(t) {
@@ -1171,6 +1610,8 @@ async function gerarResposta() {
   gerando = true;
   $('send').disabled = true;
 
+  const anexosReq = anexosEnvio;
+  anexosEnvio = [];
   try {
     const resp = await fetch('/api/chat', {
       method: 'POST',
@@ -1178,7 +1619,8 @@ async function gerarResposta() {
       body: JSON.stringify({
         agente: agenteAtual,
         modelo: $('modelo').value,
-        mensagens: conversaAtual.mensagens
+        mensagens: conversaAtual.mensagens,
+        anexos: anexosReq
       })
     });
     if (!resp.ok) {
@@ -1196,11 +1638,15 @@ async function gerarResposta() {
       const { done, value } = await reader.read();
       if (done) break;
       total += dec.decode(value, { stream: true });
-      bubble.innerHTML = md(total);
+      bubble.innerHTML = md(soTexto(total));  // esconde marcação de opções incompleta
       scrollFim();
     }
-    conversaAtual.mensagens.push({ role: 'assistant', content: total });
-    addAcoes(div, total);
+    const opcoes = parseOpcoes(total);
+    const limpo = opcoes ? limparOpcoes(total) : total;
+    bubble.innerHTML = md(limpo);
+    conversaAtual.mensagens.push({ role: 'assistant', content: limpo });
+    addAcoes(div, limpo);
+    if (opcoes) renderOpcoes(div, opcoes);
     salvar();
   } catch (e) {
     typing.remove();
@@ -1219,21 +1665,34 @@ async function gerarResposta() {
 async function enviar() {
   const input = $('input');
   const texto = input.value.trim();
-  if (!texto || gerando) return;
+  if ((!texto && !anexos.length) || gerando) return;
+  const conteudo = texto || 'Segue o(s) anexo(s) para análise.';
   input.value = '';
   input.style.height = 'auto';
 
+  // captura os anexos deste envio e limpa o composer
+  anexosEnvio = anexos.slice();
+  const nomesAnexos = anexos.map(a => a.nome);
+  anexos = [];
+  renderAnexos();
+
   if (!conversaAtual) {
-    conversaAtual = { titulo: texto.slice(0, 42), agente: agenteAtual, mensagens: [] };
+    const titulo = texto || nomesAnexos[0] || 'Anexos';
+    conversaAtual = { titulo: titulo.slice(0, 42), agente: agenteAtual, mensagens: [] };
     conversas.unshift(conversaAtual);
   }
-  conversaAtual.mensagens.push({ role: 'user', content: texto });
+  conversaAtual.mensagens.push({ role: 'user', content: conteudo });
 
   modoHome(false);
   $('empty').style.display = 'none';
   const box = $('messages');
   box.style.display = 'flex';
-  box.appendChild(bolha('user', texto));
+  const ub = bolha('user', conteudo);
+  if (nomesAnexos.length) {
+    const chips = '<div class="msg-anexos">' + nomesAnexos.map(chipBolha).join('') + '</div>';
+    ub.querySelector('.bubble').insertAdjacentHTML('afterbegin', chips);
+  }
+  box.appendChild(ub);
   renderConvos();
   scrollFim();
 

@@ -18,12 +18,22 @@ class MensagemChat(BaseModel):
     content: str = Field(min_length=1)
 
 
+class AnexoIn(BaseModel):
+    """Arquivo anexado à última mensagem (enviado em base64 pelo front)."""
+
+    nome: str = Field(min_length=1, max_length=255)
+    tipo: str = Field(default="", max_length=120)  # mime type
+    # base64 sem o prefixo data:; ~14MB é o teto (≈10MB de arquivo cru)
+    dados: str = Field(min_length=1, max_length=14_000_000)
+
+
 class ChatRequest(BaseModel):
     """Payload de envio de mensagem para um agente."""
 
     agente: str = Field(min_length=1)
     mensagens: list[MensagemChat] = Field(min_length=1)
     modelo: ModeloPermitido | None = None
+    anexos: list[AnexoIn] = Field(default_factory=list, max_length=10)
 
 
 class AgenteInfo(BaseModel):
