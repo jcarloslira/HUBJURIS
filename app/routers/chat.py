@@ -5,7 +5,11 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, Header, HTTPException, Request, status
 from fastapi.responses import StreamingResponse
 
-from app.agents.ferramentas import FERRAMENTAS_SISTEMA, montar_executor
+from app.agents.ferramentas import (
+    FERRAMENTAS_HUB_LEITURA,
+    FERRAMENTAS_SISTEMA,
+    montar_executor,
+)
 from app.agents.ferramentas_drive import FERRAMENTAS_DRIVE, montar_handlers_drive
 from app.agents.ferramentas_google import (
     ferramentas_google_disponiveis,
@@ -95,10 +99,10 @@ def _montar_ferramentas(
 ):
     """Ferramentas dos agentes.
 
-    Retorna ``(tools_supervisor, tools_drive, executar)``:
+    Retorna ``(tools_supervisor, tools_especialista, executar)``:
     - ``tools_supervisor``: internas (condomínio, memória) + ações Google + Drive;
-    - ``tools_drive``: só as de Drive — dadas TAMBÉM aos especialistas, para eles
-      vasculharem e agirem no acervo;
+    - ``tools_especialista``: leitura do Hub (recordar contexto) + Drive — dadas aos
+      especialistas para vasculharem o acervo e recordarem o condomínio;
     - ``executar``: executor único (audita tudo) que atende todos os handlers.
 
     As ações Google só entram para os serviços configurados; o Drive só quando o
@@ -123,7 +127,9 @@ def _montar_ferramentas(
         *ferramentas_google_disponiveis(clients),
         *tools_drive,
     ]
-    return tools_supervisor, tools_drive, executar
+    # Especialistas: leem o Hub (recordar contexto do condomínio) + agem no Drive.
+    tools_especialista = [*FERRAMENTAS_HUB_LEITURA, *tools_drive]
+    return tools_supervisor, tools_especialista, executar
 
 
 @router.post("/chat", status_code=200)
@@ -148,13 +154,13 @@ async def conversar(
 
     contexto = await _resolver_perfil(request, authorization)
     on_usage = None
-    ferramentas = ferramentas_drive = executar_ferramenta = None
+    ferramentas = ferramentas_especialista = executar_ferramenta = None
     conector = None
     acervo_raiz = None
     if contexto is not None:
         svc, perfil = contexto
         on_usage = _montar_registro_uso(svc, perfil)
-        ferramentas, ferramentas_drive, executar_ferramenta = _montar_ferramentas(
+        ferramentas, ferramentas_especialista, executar_ferramenta = _montar_ferramentas(
             request, perfil, settings, composio
         )
         # Grounding por escritório: o agente se baseia no Drive DELE (entity =
@@ -194,7 +200,7 @@ async def conversar(
             acervo_raiz=acervo_raiz,
             on_usage=on_usage,
             ferramentas=ferramentas,
-            ferramentas_especialista=ferramentas_drive,
+            ferramentas_especialista=ferramentas_especialista,
             executar_ferramenta=executar_ferramenta,
             configs=configs,
             buscar_conhecimento=buscar_conhecimento,

@@ -118,6 +118,37 @@ async def test_executor_registrar_fato_com_autocriacao() -> None:
     assert "Síndico é João" in saida
 
 
+async def test_executor_detalhar_projeto_traz_memoria() -> None:
+    db = _FakeDB(
+        {
+            "condominios": [
+                [{"id": "c1", "nome": "Ed. Aurora", "status": "ativo"}],  # _buscar_por_nome
+                [{"id": "c1", "nome": "Ed. Aurora"}],  # _buscar_por_id (listar_fatos)
+            ],
+            "condominio_fatos": [
+                [{"id": "f1", "fato": "Síndico é o Sr. Pedro", "origem": "agente"}]
+            ],
+        }
+    )
+    svc = ProjetoService(db)  # type: ignore[arg-type]
+    executar = montar_executor(svc, escritorio_id="e1", user_id="u1")
+
+    saida = await executar("detalhar_projeto", {"nome": "Ed. Aurora"})
+
+    assert "Ed. Aurora" in saida
+    assert "Sr. Pedro" in saida  # recorda a memória do condomínio
+
+
+async def test_executor_detalhar_projeto_inexistente() -> None:
+    db = _FakeDB({"condominios": [[]]})  # _buscar_por_nome não acha
+    svc = ProjetoService(db)  # type: ignore[arg-type]
+    executar = montar_executor(svc, escritorio_id="e1", user_id="u1")
+
+    saida = await executar("detalhar_projeto", {"nome": "Fantasma"})
+
+    assert "não está cadastrado" in saida.lower()
+
+
 async def test_executor_ferramenta_desconhecida() -> None:
     svc = ProjetoService(_FakeDB({}))  # type: ignore[arg-type]
     executar = montar_executor(svc, escritorio_id="e1", user_id=None)

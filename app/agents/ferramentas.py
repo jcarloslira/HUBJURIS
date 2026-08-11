@@ -39,6 +39,19 @@ FERRAMENTAS_SISTEMA: list[dict[str, Any]] = [
         "input_schema": {"type": "object", "properties": {}},
     },
     {
+        "name": "detalhar_projeto",
+        "description": (
+            "Recorda tudo que o Hub sabe sobre um condomínio: dados cadastrais e a "
+            "MEMÓRIA (síndico, administradora, particularidades). Use ANTES de redigir "
+            "uma peça para aquele condomínio, para aproveitar o contexto já registrado."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {"nome": {"type": "string", "description": "Nome do condomínio."}},
+            "required": ["nome"],
+        },
+    },
+    {
         "name": "registrar_fato",
         "description": (
             "Salva um fato aprendido sobre um condomínio na memória do projeto "
@@ -55,6 +68,13 @@ FERRAMENTAS_SISTEMA: list[dict[str, Any]] = [
             "required": ["projeto", "fato"],
         },
     },
+]
+
+# Subconjunto de LEITURA do Hub — dado TAMBÉM aos especialistas para recordarem o
+# contexto de um condomínio antes de produzir a peça.
+_NOMES_HUB_LEITURA = {"listar_projetos", "detalhar_projeto"}
+FERRAMENTAS_HUB_LEITURA: list[dict[str, Any]] = [
+    f for f in FERRAMENTAS_SISTEMA if f["name"] in _NOMES_HUB_LEITURA
 ]
 
 Executor = Callable[[str, dict[str, Any]], Awaitable[str]]
@@ -109,6 +129,25 @@ def montar_executor(
         linhas = [f"- {p.nome} ({p.total_fatos} fato(s) na memória)" for p in itens]
         return "Condomínios cadastrados:\n" + "\n".join(linhas)
 
+    async def _detalhar_projeto(entrada: dict[str, Any]) -> str:
+        nome = str(entrada.get("nome") or "").strip()
+        if len(nome) < 2:
+            return "Informe o nome do condomínio a detalhar."
+        projeto, fatos = await projetos.detalhar_por_nome(escritorio_id, nome)
+        if projeto is None:
+            return f"O condomínio '{nome}' ainda não está cadastrado no Hub."
+        linhas = [f"Condomínio: {projeto.nome} (status: {projeto.status})"]
+        if projeto.cnpj:
+            linhas.append(f"CNPJ: {projeto.cnpj}")
+        if projeto.endereco:
+            linhas.append(f"Endereço: {projeto.endereco}")
+        if fatos:
+            linhas.append("Memória do condomínio:")
+            linhas.extend(f"- {f.fato}" for f in fatos)
+        else:
+            linhas.append("Sem fatos registrados na memória ainda.")
+        return "\n".join(linhas)
+
     async def _registrar_fato(entrada: dict[str, Any]) -> str:
         nome = str(entrada.get("projeto") or "").strip()
         fato = str(entrada.get("fato") or "").strip()
@@ -121,6 +160,7 @@ def montar_executor(
     handlers: dict[str, Callable[[dict[str, Any]], Awaitable[str]]] = {
         "criar_projeto": _criar_projeto,
         "listar_projetos": _listar_projetos,
+        "detalhar_projeto": _detalhar_projeto,
         "registrar_fato": _registrar_fato,
     }
     if extra_handlers:

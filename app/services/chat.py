@@ -9,6 +9,7 @@ from anthropic.types import MessageParam
 from app.agents.base import BaseAgent
 from app.agents.consulta_historica import ConsultaHistoricaAgent
 from app.agents.contratos import ContratosAgent
+from app.agents.ferramentas_drive import NOMES_DRIVE
 from app.agents.juridico_geral import JuridicoGeralAgent
 from app.agents.notificacoes import NotificacoesAgent
 from app.agents.pareceres import PareceresAgent
@@ -350,7 +351,9 @@ async def gerar_resposta_stream(
         referencia = f"{referencia}\n\n{INSTRUCAO_ENTREGA}"
 
     # Drive disponível (Composio configurado) → todos os agentes são experts no acervo.
-    drive_disponivel = executar_ferramenta is not None and bool(ferramentas_especialista)
+    drive_disponivel = executar_ferramenta is not None and any(
+        t.get("name") in NOMES_DRIVE for t in (ferramentas_especialista or [])
+    )
     if drive_disponivel:
         referencia = f"{referencia}\n\n{INSTRUCAO_DRIVE}"
 

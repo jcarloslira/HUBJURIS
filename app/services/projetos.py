@@ -8,9 +8,8 @@ JWT) e é o que alimenta o hub dos assinantes. Toda operação recebe o
 
 from typing import Any
 
-from supabase import AsyncClient
-
 from app.schemas.projetos import FatoResponse, ProjetoCreate, ProjetoResponse
+from supabase import AsyncClient
 
 
 class ProjetoError(Exception):
@@ -114,6 +113,27 @@ class ProjetoService:
             ),
             False,
         )
+
+    async def detalhar_por_nome(
+        self, escritorio_id: str, nome: str
+    ) -> tuple[ProjetoResponse | None, list[FatoResponse]]:
+        """Retorna um projeto pelo nome + sua memória (fatos), ou (None, []).
+
+        Usado pelos agentes para RECORDAR tudo o que o Hub sabe sobre um
+        condomínio antes de produzir uma peça.
+        """
+        row = await self._buscar_por_nome(escritorio_id, nome)
+        if row is None:
+            return None, []
+        projeto = ProjetoResponse(
+            id=str(row["id"]),
+            nome=row["nome"],
+            cnpj=row.get("cnpj"),
+            endereco=row.get("endereco"),
+            status=row.get("status") or "ativo",
+        )
+        fatos = await self.listar_fatos(escritorio_id, projeto.id)
+        return projeto, fatos
 
     # ── Memória (fatos) ─────────────────────────────────────────
 
