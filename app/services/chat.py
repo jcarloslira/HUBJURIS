@@ -10,6 +10,7 @@ from app.agents.base import BaseAgent
 from app.agents.consulta_historica import ConsultaHistoricaAgent
 from app.agents.contratos import ContratosAgent
 from app.agents.ferramentas_drive import NOMES_DRIVE
+from app.agents.ferramentas_mcpai import NOMES_MCPAI
 from app.agents.juridico_geral import JuridicoGeralAgent
 from app.agents.notificacoes import NotificacoesAgent
 from app.agents.pareceres import PareceresAgent
@@ -164,6 +165,18 @@ primeiro RESUMA o que fará e peça CONFIRMAÇÃO com um bloco [[OPCOES outros=s
 "Cancelar"; só execute após o "Confirmar".
 - Se o Drive não estiver conectado, a ferramenta avisa — oriente a conectar em Configurações → \
 Conectores."""
+
+INSTRUCAO_MCPAI = """Você tem acesso ao SISTEMA JURÍDICO (EasyJur) e ao HELPDESK (Tiflux) do \
+escritório:
+- CONSULTE-os quando a demanda pedir (ex.: achar um processo de um condomínio, ver as partes/ \
+movimentações/financeiro de um processo, listar clientes, checar prazos na agenda, ver tickets). \
+Ferramentas easyjur_* e tiflux_* de LEITURA você usa livremente. Use os dados reais na resposta e \
+cite (ex.: nº do processo, cliente) — não invente.
+- Ferramentas de ESCRITA do Tiflux (tiflux_criar_ticket, tiflux_responder_ticket) MEXEM no \
+sistema: primeiro RESUMA o que fará e peça CONFIRMAÇÃO com um bloco [[OPCOES outros=sim]] com \
+"Confirmar" e "Cancelar"; só execute após o "Confirmar".
+- Para achar um processo por condomínio: liste com easyjur_processos e case pelo nome do cliente; \
+depois aprofunde com easyjur_processo/_partes/_movimentacoes usando o id."""
 
 INSTRUCAO_ENTREGA = """Sobre o acervo do escritório e a entrega da peça:
 - Se você recebeu acima modelos do escritório ou trechos de conhecimento recuperado, baseie a peça \
@@ -375,6 +388,13 @@ async def gerar_resposta_stream(
     )
     if drive_disponivel:
         referencia = f"{referencia}\n\n{INSTRUCAO_DRIVE}"
+
+    # EasyJur/Tiflux (mcp.ai) disponíveis → orienta a consultar o sistema jurídico/helpdesk.
+    mcpai_disponivel = executar_ferramenta is not None and any(
+        t.get("name") in NOMES_MCPAI for t in (ferramentas_especialista or [])
+    )
+    if mcpai_disponivel:
+        referencia = f"{referencia}\n\n{INSTRUCAO_MCPAI}"
 
     registrar = None
     if on_usage is not None:

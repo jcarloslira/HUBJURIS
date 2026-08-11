@@ -15,6 +15,7 @@ from app.agents.ferramentas_google import (
     ferramentas_google_disponiveis,
     montar_handlers_google,
 )
+from app.agents.ferramentas_mcpai import FERRAMENTAS_MCPAI, montar_handlers_mcpai
 from app.config import Settings, get_settings
 from app.dependencies_google import USER_ID_PADRAO, get_composio_client
 from app.schemas.chat import AgenteInfo, ChatRequest
@@ -26,6 +27,7 @@ from app.services.conectores import client_para
 from app.services.conhecimento import ConhecimentoService, formatar_conhecimento
 from app.services.contas import ContaService
 from app.services.google_escritorio import GoogleEscritorioService
+from app.services.mcpai import MCPAIClient
 from app.services.projetos import ProjetoService
 
 _SERVICOS_ACAO = ("agenda", "gmail", "docs", "sheets")
@@ -116,6 +118,12 @@ def _montar_ferramentas(
     if composio is not None:
         handlers = {**handlers, **montar_handlers_drive(composio, perfil.escritorio_id)}
         tools_drive = FERRAMENTAS_DRIVE
+    # mcp.ai ("Banco MCP"): EasyJur + Tiflux, quando a API key está configurada.
+    mcpai = MCPAIClient(http, settings)
+    tools_mcpai: list[dict] = []
+    if mcpai.ativo:
+        handlers = {**handlers, **montar_handlers_mcpai(mcpai)}
+        tools_mcpai = FERRAMENTAS_MCPAI
     executar = montar_executor(
         projetos,
         escritorio_id=perfil.escritorio_id,
@@ -126,9 +134,10 @@ def _montar_ferramentas(
         *FERRAMENTAS_SISTEMA,
         *ferramentas_google_disponiveis(clients),
         *tools_drive,
+        *tools_mcpai,
     ]
-    # Especialistas: leem o Hub (recordar contexto do condomínio) + agem no Drive.
-    tools_especialista = [*FERRAMENTAS_HUB_LEITURA, *tools_drive]
+    # Especialistas: leem o Hub (contexto do condomínio) + agem no Drive + EasyJur/Tiflux.
+    tools_especialista = [*FERRAMENTAS_HUB_LEITURA, *tools_drive, *tools_mcpai]
     return tools_supervisor, tools_especialista, executar
 
 

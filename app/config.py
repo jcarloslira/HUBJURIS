@@ -52,6 +52,11 @@ class Settings(BaseSettings):
     COMPOSIO_GSHEETS_AUTH_CONFIG_ID: str = ""
     COMPOSIO_GMEET_AUTH_CONFIG_ID: str = ""
 
+    # mcp.ai ("Banco MCP") — REST por MCP: EasyJur (jurídico) e Tiflux (helpdesk).
+    # Workspace API key sk_live_... ; vazio = conectores mcp.ai desligados.
+    MCP_AI_API_KEY: str = ""
+    MCP_AI_BASE_URL: str = "https://api.mcp.ai"
+
 
 @lru_cache
 def get_settings() -> Settings:
