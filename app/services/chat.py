@@ -151,6 +151,19 @@ um bloco [[OPCOES outros=sim]] contendo "Confirmar" e "Cancelar". Só chame a fe
 o usuário confirmar. E-mails saem como RASCUNHO (o usuário revisa e envia). Se um conector não \
 estiver conectado, oriente a conectar em Configurações → Conectores."""
 
+INSTRUCAO_DRIVE = """Você tem ACESSO AO GOOGLE DRIVE do escritório e deve ser proativo nele:
+- Sempre que a demanda se beneficiar do acervo (redigir no padrão da casa, achar a última peça de \
+uma unidade, consultar a convenção/regimento de um condomínio), USE as ferramentas de Drive para \
+BUSCAR e LER os documentos relevantes ANTES de responder — não peça ao usuário o que você mesmo \
+pode encontrar. O acervo pode estar desorganizado; navegue com `buscar_no_drive` e \
+`listar_pasta_drive` e leia com `ler_documento_drive`.
+- Ferramentas de LEITURA (buscar/listar/ler) você usa livremente, sem pedir permissão.
+- Ferramentas de ESCRITA (criar_pasta_drive, mover_arquivo_drive, salvar_no_drive) MEXEM no Drive: \
+primeiro RESUMA o que fará e peça CONFIRMAÇÃO com um bloco [[OPCOES outros=sim]] com "Confirmar" e \
+"Cancelar"; só execute após o "Confirmar".
+- Se o Drive não estiver conectado, a ferramenta avisa — oriente a conectar em Configurações → \
+Conectores."""
+
 INSTRUCAO_ENTREGA = """Sobre o acervo do escritório e a entrega da peça:
 - Se você recebeu acima modelos do escritório ou trechos de conhecimento recuperado, baseie a peça \
 no padrão e no estilo deles — é o jeito da casa.
@@ -246,6 +259,7 @@ async def gerar_resposta_stream(
     acervo_raiz: str | None = None,
     on_usage: Callable[[str, str, int, int], Awaitable[None]] | None = None,
     ferramentas: list[dict] | None = None,
+    ferramentas_especialista: list[dict] | None = None,
     executar_ferramenta: Callable[[str, dict], Awaitable[str]] | None = None,
     configs: dict[str, AgenteConfig] | None = None,
     buscar_conhecimento: Callable[[str], Awaitable[str]] | None = None,
@@ -335,6 +349,11 @@ async def gerar_resposta_stream(
         # Especialistas redigem peças: orientação de acervo (Drive/exemplo) e entrega (export).
         referencia = f"{referencia}\n\n{INSTRUCAO_ENTREGA}"
 
+    # Drive disponível (Composio configurado) → todos os agentes são experts no acervo.
+    drive_disponivel = executar_ferramenta is not None and bool(ferramentas_especialista)
+    if drive_disponivel:
+        referencia = f"{referencia}\n\n{INSTRUCAO_DRIVE}"
+
     registrar = None
     if on_usage is not None:
         slug_final = slug
@@ -343,16 +362,17 @@ async def gerar_resposta_stream(
         async def registrar(tokens_in: int, tokens_out: int) -> None:
             await on_usage(slug_final, modelo_final, tokens_in, tokens_out)
 
-    # As ferramentas de sistema (cadastrar condomínio, memória...) ficam com o
-    # Supervisor — o maestro que conduz onboarding e organização. Especialistas
-    # seguem focados na peça que produzem.
-    usa_ferramentas = slug == "supervisor" and executar_ferramenta is not None
+    # O Supervisor conduz onboarding/organização (ferramentas internas + Google +
+    # Drive). Os especialistas recebem as ferramentas de DRIVE — para vasculhar o
+    # acervo e agir nele — mantendo o foco na peça que produzem.
+    tools_agente = ferramentas if slug == "supervisor" else ferramentas_especialista
+    usa_ferramentas = bool(tools_agente) and executar_ferramenta is not None
     async for trecho in agente.responder_stream(
         mensagens_agente,
         modelo=payload.modelo,
         referencia=referencia,
         on_usage=registrar,
-        ferramentas=ferramentas if usa_ferramentas else None,
+        ferramentas=tools_agente if usa_ferramentas else None,
         executar_ferramenta=executar_ferramenta if usa_ferramentas else None,
     ):
         yield trecho

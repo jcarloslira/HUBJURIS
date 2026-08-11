@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, Header, HTTPException, Request, status
 from fastapi.responses import StreamingResponse
 
 from app.agents.ferramentas import FERRAMENTAS_SISTEMA, montar_executor
+from app.agents.ferramentas_drive import FERRAMENTAS_DRIVE, montar_handlers_drive
 from app.agents.ferramentas_google import (
     ferramentas_google_disponiveis,
     montar_handlers_google,
@@ -86,23 +87,43 @@ def _montar_registro_uso(svc: ContaService, perfil: PerfilResponse):
     return registrar
 
 
-def _montar_ferramentas(request: Request, perfil: PerfilResponse, settings: Settings):
-    """Ferramentas do Supervisor: internas (condomínio, memória) + ações Google.
+def _montar_ferramentas(
+    request: Request,
+    perfil: PerfilResponse,
+    settings: Settings,
+    composio: "ComposioClient | None",
+):
+    """Ferramentas dos agentes.
 
-    As ações Google (Agenda, Gmail, Docs, Sheets) só entram para os serviços
-    configurados; todas escopadas ao escritório do usuário.
+    Retorna ``(tools_supervisor, tools_drive, executar)``:
+    - ``tools_supervisor``: internas (condomínio, memória) + ações Google + Drive;
+    - ``tools_drive``: só as de Drive — dadas TAMBÉM aos especialistas, para eles
+      vasculharem e agirem no acervo;
+    - ``executar``: executor único (audita tudo) que atende todos os handlers.
+
+    As ações Google só entram para os serviços configurados; o Drive só quando o
+    Composio está disponível. Tudo escopado ao escritório do usuário.
     """
     projetos = ProjetoService(request.app.state.supabase)
     http = request.app.state.http_client
     clients = {s: client_para(settings, http, s) for s in _SERVICOS_ACAO}
+    handlers = montar_handlers_google(clients, perfil.escritorio_id)
+    tools_drive: list[dict] = []
+    if composio is not None:
+        handlers = {**handlers, **montar_handlers_drive(composio, perfil.escritorio_id)}
+        tools_drive = FERRAMENTAS_DRIVE
     executar = montar_executor(
         projetos,
         escritorio_id=perfil.escritorio_id,
         user_id=perfil.user_id,
-        extra_handlers=montar_handlers_google(clients, perfil.escritorio_id),
+        extra_handlers=handlers,
     )
-    tools = [*FERRAMENTAS_SISTEMA, *ferramentas_google_disponiveis(clients)]
-    return tools, executar
+    tools_supervisor = [
+        *FERRAMENTAS_SISTEMA,
+        *ferramentas_google_disponiveis(clients),
+        *tools_drive,
+    ]
+    return tools_supervisor, tools_drive, executar
 
 
 @router.post("/chat", status_code=200)
@@ -127,13 +148,15 @@ async def conversar(
 
     contexto = await _resolver_perfil(request, authorization)
     on_usage = None
-    ferramentas = executar_ferramenta = None
+    ferramentas = ferramentas_drive = executar_ferramenta = None
     conector = None
     acervo_raiz = None
     if contexto is not None:
         svc, perfil = contexto
         on_usage = _montar_registro_uso(svc, perfil)
-        ferramentas, executar_ferramenta = _montar_ferramentas(request, perfil, settings)
+        ferramentas, ferramentas_drive, executar_ferramenta = _montar_ferramentas(
+            request, perfil, settings, composio
+        )
         # Grounding por escritório: o agente se baseia no Drive DELE (entity =
         # escritorio_id) e na pasta de acervo que ESTE escritório escolheu.
         if composio is not None:
@@ -171,6 +194,7 @@ async def conversar(
             acervo_raiz=acervo_raiz,
             on_usage=on_usage,
             ferramentas=ferramentas,
+            ferramentas_especialista=ferramentas_drive,
             executar_ferramenta=executar_ferramenta,
             configs=configs,
             buscar_conhecimento=buscar_conhecimento,
