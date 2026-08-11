@@ -13,6 +13,24 @@ DEFAULT_MAX_TOKENS = 1024
 MAX_ITERACOES_FERRAMENTAS = 5
 
 
+def _rotulo_passo(nome: str) -> str:
+    """Rótulo amigável do passo, a partir do nome da ferramenta (mostrado ao usuário)."""
+    if nome.startswith("easyjur"):
+        return "Consultando o EasyJur"
+    if nome.startswith("tiflux"):
+        return "Consultando o Tiflux"
+    if "drive" in nome:
+        return "Acessando o Google Drive"
+    if nome in ("criar_evento_agenda", "rascunhar_email", "criar_documento_google",
+                "criar_planilha_google"):
+        return "Agindo no Google Workspace"
+    if nome in ("listar_projetos", "detalhar_projeto"):
+        return "Consultando a memória do Hub"
+    if nome in ("criar_projeto", "registrar_fato"):
+        return "Organizando no Hub"
+    return "Trabalhando"
+
+
 class BaseAgent:
     """Base para agentes LLM via Anthropic SDK.
 
@@ -125,6 +143,8 @@ class BaseAgent:
             resultados: list[dict[str, Any]] = []
             for bloco in final.content:
                 if getattr(bloco, "type", None) == "tool_use":
+                    # Passo visível ao usuário (a UI mostra como etapa animada).
+                    yield f"[[PASSO {_rotulo_passo(bloco.name)}]]"
                     saida = await executar_ferramenta(bloco.name, dict(bloco.input))
                     resultados.append(
                         {"type": "tool_result", "tool_use_id": bloco.id, "content": saida}

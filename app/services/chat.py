@@ -166,6 +166,12 @@ primeiro RESUMA o que fará e peça CONFIRMAÇÃO com um bloco [[OPCOES outros=s
 - Se o Drive não estiver conectado, a ferramenta avisa — oriente a conectar em Configurações → \
 Conectores."""
 
+INSTRUCAO_ESTILO = """Tom e comunicação: escreva como um advogado sênior — natural, cordial e \
+profissional, sem soar robótico. NÃO narre que vai usar ferramentas nem descreva seus passos \
+internos ("vou buscar...", "deixa eu consultar...", "agora vou..."): a plataforma já mostra os \
+passos ao usuário. Use as ferramentas em silêncio e entregue direto o resultado, já organizado. \
+No máximo 1 emoji por resposta, e só quando couber. Seja claro e direto."""
+
 INSTRUCAO_MCPAI = """Você tem acesso ao SISTEMA JURÍDICO (EasyJur) e ao HELPDESK (Tiflux) do \
 escritório:
 - CONSULTE-os quando a demanda pedir (ex.: achar um processo de um condomínio, ver as partes/ \
@@ -376,6 +382,7 @@ async def gerar_resposta_stream(
         referencia = f"{referencia}\n\n{nota}" if referencia else nota
 
     referencia = f"{referencia}\n\n{INSTRUCAO_OPCOES}" if referencia else INSTRUCAO_OPCOES
+    referencia = f"{referencia}\n\n{INSTRUCAO_ESTILO}"
     if slug == "supervisor":
         referencia = f"{referencia}\n\n{INSTRUCAO_ACOES}"
     else:
