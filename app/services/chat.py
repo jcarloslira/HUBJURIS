@@ -161,6 +161,10 @@ conversa — isso deixa a resposta lenta à toa. Na dúvida, responda direto; s�
 usuário claramente quer um documento do acervo.
 - Quando precisar: busque com `buscar_no_drive`, navegue com `listar_pasta_drive`, leia com \
 `ler_documento_drive`. Leitura é livre (sem pedir permissão).
+- SEJA ECONÔMICO: no máximo ~4 operações de Drive por resposta — 1 busca focada e ler só os 2–3 \
+documentos realmente necessários (ex.: o modelo + a convenção + o regimento). NÃO abra pasta por \
+pasta nem leia dezenas de arquivos: muitas chamadas deixam a resposta lenta e podem dar timeout. \
+Se não achar rápido, pergunte ao usuário o nome da pasta/arquivo.
 - Ferramentas de ESCRITA (criar_pasta_drive, mover_arquivo_drive, salvar_no_drive) MEXEM no Drive: \
 primeiro RESUMA o que fará e peça CONFIRMAÇÃO com um bloco [[OPCOES outros=sim]] com "Confirmar" e \
 "Cancelar"; só execute após o "Confirmar".
@@ -191,8 +195,12 @@ Quando consultar, use os dados reais e cite (nº do processo, cliente) — não 
 - Ferramentas de ESCRITA do Tiflux (tiflux_criar_ticket, tiflux_responder_ticket) MEXEM no \
 sistema: primeiro RESUMA o que fará e peça CONFIRMAÇÃO com um bloco [[OPCOES outros=sim]] com \
 "Confirmar" e "Cancelar"; só execute após o "Confirmar".
-- Para achar um processo por condomínio: liste com easyjur_processos e case pelo nome do cliente; \
-depois aprofunde com easyjur_processo/_partes/_movimentacoes usando o id."""
+- IMPORTANTE — o EasyJur tem MILHARES de processos/clientes (listas paginadas, 20 por vez). NUNCA \
+conclua que um condomínio "não está cadastrado" só porque não apareceu na 1ª página. Para achar os \
+processos de um condomínio, siga o fluxo: (1) easyjur_clientes(nome="Casablanca") → pega o id do \
+cliente; (2) easyjur_processos(id_cliente=<id>) → traz os processos dele; (3) aprofunde com \
+easyjur_processo/_partes/_movimentacoes pelo id do processo. O nº CNJ (ex.: 0751235-22...) NÃO é o \
+id interno — localize pelo cliente."""
 
 INSTRUCAO_ENTREGA = """Sobre o acervo do escritório e a entrega da peça:
 - Se você recebeu acima modelos do escritório ou trechos de conhecimento recuperado, baseie a peça \

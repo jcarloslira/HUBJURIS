@@ -25,10 +25,18 @@ _CATALOGO: list[dict[str, Any]] = [
         "path": "/api/easyjur/list/processos",
         "escrita": False,
         "descricao": (
-            "Lista os processos do escritório no EasyJur (número, cliente, contrário, "
-            "advogado). Use para achar processos de um condomínio/cliente."
+            "Lista processos do EasyJur (paginado, 20 por página — o escritório tem MILHARES). "
+            "Para achar os processos de um condomínio, PRIMEIRO use easyjur_clientes(nome=...) "
+            "para pegar o id do cliente e depois passe 'id_cliente' aqui. Use 'pagina' para "
+            "avançar."
         ),
-        "props": {},
+        "props": {
+            "id_cliente": {
+                "type": "integer",
+                "description": "Filtra os processos deste cliente (id de easyjur_clientes).",
+            },
+            "pagina": {"type": "integer", "description": "Página (20 por página; padrão 1)."},
+        },
         "obrig": [],
     },
     {
@@ -67,8 +75,17 @@ _CATALOGO: list[dict[str, Any]] = [
         "name": "easyjur_clientes",
         "path": "/api/easyjur/list/pessoas",
         "escrita": False,
-        "descricao": "Lista pessoas/clientes cadastrados no EasyJur (condomínios, síndicos).",
-        "props": {},
+        "descricao": (
+            "Busca pessoas/clientes no EasyJur (condomínios, síndicos, contrários). Passe 'nome' "
+            "para FILTRAR por nome (ex.: 'Casablanca') — sem filtro vem só a 1ª página. "
+            "Retorna o id do cliente, que você usa em easyjur_processos(id_cliente=...)."
+        ),
+        "props": {
+            "nome": {
+                "type": "string",
+                "description": "Filtra clientes cujo nome contém este texto (ex.: 'Casablanca').",
+            }
+        },
         "obrig": [],
     },
     {
