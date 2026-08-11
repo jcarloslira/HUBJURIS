@@ -153,13 +153,14 @@ um bloco [[OPCOES outros=sim]] contendo "Confirmar" e "Cancelar". Só chame a fe
 o usuário confirmar. E-mails saem como RASCUNHO (o usuário revisa e envia). Se um conector não \
 estiver conectado, oriente a conectar em Configurações → Conectores."""
 
-INSTRUCAO_DRIVE = """Você tem ACESSO AO GOOGLE DRIVE do escritório e deve ser proativo nele:
-- Sempre que a demanda se beneficiar do acervo (redigir no padrão da casa, achar a última peça de \
-uma unidade, consultar a convenção/regimento de um condomínio), USE as ferramentas de Drive para \
-BUSCAR e LER os documentos relevantes ANTES de responder — não peça ao usuário o que você mesmo \
-pode encontrar. O acervo pode estar desorganizado; navegue com `buscar_no_drive` e \
-`listar_pasta_drive` e leia com `ler_documento_drive`.
-- Ferramentas de LEITURA (buscar/listar/ler) você usa livremente, sem pedir permissão.
+INSTRUCAO_DRIVE = """Você tem ACESSO AO GOOGLE DRIVE do escritório.
+- Use o Drive APENAS quando a tarefa realmente precisar de um documento/modelo/peça específica do \
+acervo (ex.: "redija no padrão da última notificação do Bloco B", "consulte a convenção do \
+condomínio X"). NÃO vasculhe o Drive em perguntas de conhecimento jurídico geral, teses, leis ou \
+conversa — isso deixa a resposta lenta à toa. Na dúvida, responda direto; só busque no Drive se o \
+usuário claramente quer um documento do acervo.
+- Quando precisar: busque com `buscar_no_drive`, navegue com `listar_pasta_drive`, leia com \
+`ler_documento_drive`. Leitura é livre (sem pedir permissão).
 - Ferramentas de ESCRITA (criar_pasta_drive, mover_arquivo_drive, salvar_no_drive) MEXEM no Drive: \
 primeiro RESUMA o que fará e peça CONFIRMAÇÃO com um bloco [[OPCOES outros=sim]] com "Confirmar" e \
 "Cancelar"; só execute após o "Confirmar".
@@ -172,12 +173,21 @@ internos ("vou buscar...", "deixa eu consultar...", "agora vou..."): a plataform
 passos ao usuário. Use as ferramentas em silêncio e entregue direto o resultado, já organizado. \
 No máximo 1 emoji por resposta, e só quando couber. Seja claro e direto."""
 
+INSTRUCAO_MEMORIA = """Sobre MEMÓRIA (responda com precisão se perguntarem): você TEM memória. \
+Dentro desta conversa, lembra de tudo que já foi dito. Entre conversas, o que PERSISTE é: (1) a \
+memória de cada condomínio (fatos salvos — recupere com `detalhar_projeto`); (2) a base de \
+conhecimento jurídico (leis, doutrina, protocolos), que você consulta sempre; e (3) o acervo do \
+Google Drive do escritório, quando conectado. NUNCA diga que "não tem memória", "não guarda nada" \
+ou "começa do zero" — isso é FALSO e passa má impressão. Explique a memória de forma positiva e \
+convide a cadastrar condomínios e conectar o Drive para enriquecê-la."""
+
 INSTRUCAO_MCPAI = """Você tem acesso ao SISTEMA JURÍDICO (EasyJur) e ao HELPDESK (Tiflux) do \
 escritório:
-- CONSULTE-os quando a demanda pedir (ex.: achar um processo de um condomínio, ver as partes/ \
-movimentações/financeiro de um processo, listar clientes, checar prazos na agenda, ver tickets). \
-Ferramentas easyjur_* e tiflux_* de LEITURA você usa livremente. Use os dados reais na resposta e \
-cite (ex.: nº do processo, cliente) — não invente.
+- Consulte-os SOMENTE quando a pergunta pedir DADOS REAIS do escritório (achar/detalhar um \
+processo, ver partes/movimentações/financeiro, listar clientes, checar prazos na agenda, ver \
+tickets). Para dúvidas jurídicas gerais, teses, leis ou "como redigir uma peça", responda direto \
+da sua base — NÃO consulte EasyJur/Tiflux (chamadas desnecessárias deixam a resposta lenta). \
+Quando consultar, use os dados reais e cite (nº do processo, cliente) — não invente.
 - Ferramentas de ESCRITA do Tiflux (tiflux_criar_ticket, tiflux_responder_ticket) MEXEM no \
 sistema: primeiro RESUMA o que fará e peça CONFIRMAÇÃO com um bloco [[OPCOES outros=sim]] com \
 "Confirmar" e "Cancelar"; só execute após o "Confirmar".
@@ -386,7 +396,7 @@ async def gerar_resposta_stream(
         referencia = f"{referencia}\n\n{nota}" if referencia else nota
 
     referencia = f"{referencia}\n\n{INSTRUCAO_OPCOES}" if referencia else INSTRUCAO_OPCOES
-    referencia = f"{referencia}\n\n{INSTRUCAO_ESTILO}"
+    referencia = f"{referencia}\n\n{INSTRUCAO_ESTILO}\n\n{INSTRUCAO_MEMORIA}"
     if slug == "supervisor":
         referencia = f"{referencia}\n\n{INSTRUCAO_ACOES}\n\n{INSTRUCAO_DOCUMENTO}"
     else:
