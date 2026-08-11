@@ -151,6 +151,20 @@ um bloco [[OPCOES outros=sim]] contendo "Confirmar" e "Cancelar". Só chame a fe
 o usuário confirmar. E-mails saem como RASCUNHO (o usuário revisa e envia). Se um conector não \
 estiver conectado, oriente a conectar em Configurações → Conectores."""
 
+INSTRUCAO_ENTREGA = """Sobre o acervo do escritório e a entrega da peça:
+- Se você recebeu acima modelos do escritório ou trechos de conhecimento recuperado, baseie a peça \
+no padrão e no estilo deles — é o jeito da casa.
+- Se não houver modelos do escritório (Drive não conectado ou pasta do acervo não escolhida), você \
+AINDA produz a peça completa com placeholders. Ao final, UMA vez só (sem repetir a cada turno), \
+ofereça de forma útil: (a) que o usuário pode colar/enviar uma peça de EXEMPLO para você seguir \
+exatamente o padrão do escritório; e (b) que, conectando o Google Drive em Configurações → \
+Conectores, você passa a se basear no acervo real (histórico de peças daquele condomínio/unidade).
+- Ao concluir qualquer peça (notificação, petição, contrato, parecer), lembre em UMA linha que o \
+usuário pode baixá-la em Word ou PDF pelo botão "Exportar" na própria resposta.
+- Se o usuário pedir para "seguir o mesmo padrão/identidade" de um documento que enviou, ou para \
+reaproveitar a última peça de uma unidade/condomínio, trate esse material como referência fiel de \
+layout e linguagem."""
+
 
 def listar_agentes() -> list[AgenteInfo]:
     """Retorna os metadados de todos os agentes disponíveis no hub."""
@@ -317,6 +331,9 @@ async def gerar_resposta_stream(
     referencia = f"{referencia}\n\n{INSTRUCAO_OPCOES}" if referencia else INSTRUCAO_OPCOES
     if slug == "supervisor":
         referencia = f"{referencia}\n\n{INSTRUCAO_ACOES}"
+    else:
+        # Especialistas redigem peças: orientação de acervo (Drive/exemplo) e entrega (export).
+        referencia = f"{referencia}\n\n{INSTRUCAO_ENTREGA}"
 
     registrar = None
     if on_usage is not None:
