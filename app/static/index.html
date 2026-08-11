@@ -815,6 +815,10 @@ main.home .composer-wrap { width: 100%; max-width: 780px; margin: 14px auto 0; }
         <span class="ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>
         Conta
       </button>
+      <button class="cfg-tab" id="tab-timbre" onclick="cfgTab('timbre')">
+        <span class="ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22h16"/><path d="M4 2h16"/><path d="M6 2v4a6 6 0 0 0 12 0V2"/><path d="M6 22v-4a6 6 0 0 1 12 0v4"/></svg></span>
+        Timbre
+      </button>
       <button class="cfg-tab" id="tab-condominios" onclick="cfgTab('condominios')">
         <span class="ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 9h.01M9 13h.01M9 17h.01M15 9h.01M15 13h.01M15 17h.01"/></svg></span>
         Condomínios
@@ -840,6 +844,27 @@ main.home .composer-wrap { width: 100%; max-width: 780px; margin: 14px auto 0; }
           </select>
           <div class="cfg-hint">O seletor de cliente é ativado quando o acervo do escritório estiver sincronizado.</div>
         </div>
+      </div>
+
+      <div id="pane-timbre" style="display:none">
+        <h3>Timbre do escritório</h3>
+        <div class="cfg-hint" style="margin-bottom:16px">A identidade visual aplicada automaticamente às peças exportadas em Word e PDF. O nome vem da sua conta.</div>
+        <form class="cfg-section" onsubmit="salvarTimbre(event)">
+          <label class="ctx-label">Subtítulo (OAB, área de atuação)</label>
+          <input type="text" id="tb-subtitulo" placeholder="Ex.: OAB/GO 12.345 · Direito Condominial" maxlength="160">
+          <label class="ctx-label" style="margin-top:12px">Cor do timbre</label>
+          <input type="color" id="tb-cor" value="#9A6A3A" style="width:56px;height:34px;padding:2px;border-radius:8px;cursor:pointer">
+          <label class="ctx-label" style="margin-top:12px">Rodapé (confidencialidade)</label>
+          <input type="text" id="tb-rodape" placeholder="Ex.: Documento confidencial — uso interno do escritório e do cliente." maxlength="300">
+          <label class="ctx-label" style="margin-top:12px">Logo (PNG/JPG, opcional)</label>
+          <input type="file" id="tb-logo-file" accept="image/png,image/jpeg" onchange="carregarLogoTimbre(event)">
+          <div id="tb-logo-prev" style="margin-top:8px"></div>
+          <div class="membro-form" style="margin-top:16px">
+            <button class="vincular-btn" type="submit">Salvar timbre</button>
+            <button class="vincular-btn" type="button" onclick="removerLogoTimbre()" style="background:none;border:1px solid var(--border);color:var(--text-dim)">Remover logo</button>
+          </div>
+          <div class="cfg-hint" id="tb-msg"></div>
+        </form>
       </div>
 
       <div id="pane-condominios" style="display:none">
@@ -1104,15 +1129,63 @@ function abrirConfig(tab = 'geral') {
 }
 function fecharConfig() { $('cfg-modal').style.display = 'none'; }
 function cfgTab(nome) {
-  ['geral', 'conta', 'condominios', 'uso', 'conectores'].forEach(n => {
+  ['geral', 'conta', 'timbre', 'condominios', 'uso', 'conectores'].forEach(n => {
     const pane = $('pane-' + n), tab = $('tab-' + n);
     if (pane) pane.style.display = n === nome ? 'block' : 'none';
     if (tab) tab.classList.toggle('active', n === nome);
   });
   if (nome === 'conta') carregarConta();
+  if (nome === 'timbre') carregarTimbre();
   if (nome === 'condominios') carregarProjetos();
   if (nome === 'uso') carregarUso();
   if (nome === 'conectores') { carregarConectores(); checarGoogle(); }
+}
+
+/* ---------- Timbre (identidade visual) ---------- */
+let timbreLogo = '';
+async function carregarTimbre() {
+  try {
+    const r = await fetch('/api/documentos/timbre', { headers: authHeaders() });
+    if (!r.ok) return;
+    const t = await r.json();
+    $('tb-subtitulo').value = t.subtitulo || '';
+    $('tb-cor').value = /^#[0-9a-fA-F]{6}$/.test(t.cor) ? t.cor : '#9A6A3A';
+    $('tb-rodape').value = t.rodape || '';
+    timbreLogo = t.logo || '';
+    pintarLogoTimbre();
+  } catch { /* silencioso */ }
+}
+function pintarLogoTimbre() {
+  const prev = $('tb-logo-prev');
+  prev.innerHTML = timbreLogo
+    ? `<img src="${timbreLogo}" alt="logo" style="max-height:60px;max-width:200px;border:1px solid var(--border);border-radius:8px;padding:6px;background:#fff">`
+    : '<span class="cfg-hint">Nenhum logo definido.</span>';
+}
+function carregarLogoTimbre(ev) {
+  const file = ev.target.files && ev.target.files[0];
+  if (!file) return;
+  if (file.size > 600 * 1024) { $('tb-msg').textContent = 'Logo muito grande (máx. 600KB).'; return; }
+  const reader = new FileReader();
+  reader.onload = () => { timbreLogo = reader.result; pintarLogoTimbre(); $('tb-msg').textContent = 'Logo carregado — clique em Salvar timbre.'; };
+  reader.readAsDataURL(file);
+}
+function removerLogoTimbre() { timbreLogo = ''; pintarLogoTimbre(); $('tb-msg').textContent = 'Logo removido — clique em Salvar timbre.'; }
+async function salvarTimbre(ev) {
+  ev.preventDefault();
+  $('tb-msg').textContent = 'Salvando…';
+  try {
+    const r = await fetch('/api/documentos/timbre', {
+      method: 'PUT',
+      headers: authHeaders({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify({
+        subtitulo: $('tb-subtitulo').value.trim(),
+        cor: $('tb-cor').value,
+        rodape: $('tb-rodape').value.trim(),
+        logo: timbreLogo
+      })
+    });
+    $('tb-msg').textContent = r.ok ? 'Timbre salvo ✓ — vale para as próximas exportações.' : 'Não foi possível salvar agora.';
+  } catch { $('tb-msg').textContent = 'Falha de conexão ao salvar.'; }
 }
 
 /* ---------- Conta e equipe ---------- */

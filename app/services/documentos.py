@@ -7,14 +7,40 @@ cabeçalho do escritório. Não depende do Google.
 
 import io
 import re
+from dataclasses import dataclass
 from typing import Any
 
 from docx import Document
 from docx.enum.text import WD_ALIGN_PARAGRAPH
-from docx.shared import Pt, RGBColor
+from docx.shared import Inches, Pt, RGBColor
 from fpdf import FPDF
 from openpyxl import Workbook
 from openpyxl.styles import Font as XLFont
+
+_COR_PADRAO = "#9A6A3A"
+
+
+@dataclass
+class Timbre:
+    """Identidade visual aplicada ao cabeçalho/rodapé das peças exportadas."""
+
+    nome: str = ""
+    subtitulo: str = ""
+    cor: str = _COR_PADRAO
+    rodape: str = ""
+    logo: bytes | None = None  # PNG/JPEG já decodificado (opcional)
+
+
+def _hex_rgb(cor: str) -> tuple[int, int, int]:
+    """Converte '#RRGGBB' em (r, g, b); cai no padrão se inválido."""
+    c = (cor or "").lstrip("#")
+    if len(c) != 6:
+        c = _COR_PADRAO.lstrip("#")
+    try:
+        return int(c[0:2], 16), int(c[2:4], 16), int(c[4:6], 16)
+    except ValueError:
+        c = _COR_PADRAO.lstrip("#")
+        return int(c[0:2], 16), int(c[2:4], 16), int(c[4:6], 16)
 
 # ── Parser de Markdown → blocos ─────────────────────────────────
 
@@ -85,8 +111,6 @@ def _sem_negrito(texto: str) -> str:
 
 # ── Word (.docx) ────────────────────────────────────────────────
 
-_ACCENT = RGBColor(0x9A, 0x6A, 0x3A)
-
 
 def _runs_negrito(paragrafo: Any, texto: str) -> None:
     """Escreve o texto no parágrafo tratando **negrito** inline."""
@@ -96,15 +120,35 @@ def _runs_negrito(paragrafo: Any, texto: str) -> None:
             run.bold = i % 2 == 1
 
 
-def gerar_docx(titulo: str, markdown: str, escritorio: str = "") -> bytes:
-    """Gera um .docx com cabeçalho do escritório e o conteúdo formatado."""
+def gerar_docx(
+    titulo: str, markdown: str, escritorio: str = "", timbre: Timbre | None = None
+) -> bytes:
+    """Gera um .docx com o timbre do escritório e o conteúdo formatado."""
+    t = timbre or Timbre(nome=escritorio)
+    cor = RGBColor(*_hex_rgb(t.cor))
     doc = Document()
-    if escritorio:
+    if t.logo:
+        try:
+            doc.add_picture(io.BytesIO(t.logo), width=Inches(1.6))
+        except Exception:  # noqa: BLE001 - logo inválido não impede a exportação
+            pass
+    if t.nome:
         cab = doc.add_paragraph()
-        r = cab.add_run(escritorio)
+        r = cab.add_run(t.nome)
         r.bold = True
         r.font.size = Pt(13)
-        r.font.color.rgb = _ACCENT
+        r.font.color.rgb = cor
+    if t.subtitulo:
+        sub = doc.add_paragraph()
+        rs = sub.add_run(t.subtitulo)
+        rs.font.size = Pt(9)
+        rs.font.color.rgb = RGBColor(0x60, 0x60, 0x60)
+    if t.rodape:
+        rod = doc.sections[0].footer.paragraphs[0]
+        rr = rod.add_run(t.rodape)
+        rr.font.size = Pt(8)
+        rr.font.color.rgb = RGBColor(0x80, 0x80, 0x80)
+        rod.alignment = WD_ALIGN_PARAGRAPH.CENTER
     if titulo:
         h = doc.add_heading(titulo, level=0)
         h.alignment = WD_ALIGN_PARAGRAPH.LEFT
@@ -163,23 +207,49 @@ def _lat1(texto: str) -> str:
 
 
 class _PDF(FPDF):
-    escritorio = ""
+    timbre = Timbre()
 
     def header(self) -> None:  # noqa: D102 - chamado pelo fpdf a cada página
-        if self.escritorio:
-            self.set_font("Helvetica", "B", 12)
-            self.set_text_color(0x9A, 0x6A, 0x3A)
-            self.multi_cell(0, 7, _lat1(self.escritorio))
-            self.set_draw_color(0x9A, 0x6A, 0x3A)
-            self.line(self.l_margin, self.get_y() + 1, self.w - self.r_margin, self.get_y() + 1)
-            self.ln(4)
-            self.set_text_color(0x1D, 0x22, 0x30)
+        t = self.timbre
+        if not (t.nome or t.logo):
+            return
+        r, g, b = _hex_rgb(t.cor)
+        x_texto = self.l_margin
+        if t.logo:
+            try:
+                self.image(io.BytesIO(t.logo), x=self.l_margin, y=9, h=13)
+                x_texto = self.l_margin + 36
+            except Exception:  # noqa: BLE001 - logo inválido não impede o PDF
+                pass
+        self.set_xy(x_texto, 10)
+        self.set_font("Helvetica", "B", 12)
+        self.set_text_color(r, g, b)
+        self.multi_cell(0, 7, _lat1(t.nome))
+        if t.subtitulo:
+            self.set_x(x_texto)
+            self.set_font("Helvetica", "", 8)
+            self.set_text_color(0x60, 0x60, 0x60)
+            self.multi_cell(0, 5, _lat1(t.subtitulo))
+        self.set_draw_color(r, g, b)
+        self.line(self.l_margin, self.get_y() + 1, self.w - self.r_margin, self.get_y() + 1)
+        self.ln(5)
+        self.set_text_color(0x1D, 0x22, 0x30)
+
+    def footer(self) -> None:  # noqa: D102 - chamado pelo fpdf a cada página
+        if not self.timbre.rodape:
+            return
+        self.set_y(-14)
+        self.set_font("Helvetica", "", 7)
+        self.set_text_color(0x80, 0x80, 0x80)
+        self.cell(0, 6, _lat1(self.timbre.rodape), align="C")
 
 
-def gerar_pdf(titulo: str, markdown: str, escritorio: str = "") -> bytes:
-    """Gera um PDF com cabeçalho do escritório e o conteúdo formatado."""
+def gerar_pdf(
+    titulo: str, markdown: str, escritorio: str = "", timbre: Timbre | None = None
+) -> bytes:
+    """Gera um PDF com o timbre do escritório e o conteúdo formatado."""
     pdf = _PDF(format="A4")
-    pdf.escritorio = escritorio
+    pdf.timbre = timbre or Timbre(nome=escritorio)
     pdf.set_auto_page_break(auto=True, margin=18)
     pdf.set_margins(20, 18, 20)
     pdf.add_page()

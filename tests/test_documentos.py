@@ -7,7 +7,13 @@ from openpyxl import load_workbook
 
 from app.dependencies import get_current_user
 from app.schemas.auth import AuthUser
-from app.services.documentos import gerar_docx, gerar_pdf, gerar_xlsx, parse_markdown
+from app.services.documentos import (
+    Timbre,
+    gerar_docx,
+    gerar_pdf,
+    gerar_xlsx,
+    parse_markdown,
+)
 
 _MD = """# Notificação Extrajudicial
 
@@ -52,6 +58,25 @@ def test_gerar_pdf_lida_com_unicode_exotico() -> None:
     # em-dash, aspas curvas e emoji não podem quebrar a geração (fonte latin-1)
     dados = gerar_pdf("Teste", "Bloco — “aspas” e emoji 🎯 conforme art. 5º.")
     assert dados[:4] == b"%PDF"
+
+
+def test_timbre_completo_gera_docx_e_pdf() -> None:
+    timbre = Timbre(
+        nome="Jales Advogados",
+        subtitulo="OAB/GO 12.345 · Direito Condominial",
+        cor="#2E4739",
+        rodape="Documento confidencial — uso interno.",
+    )
+    docx = gerar_docx("Notificação", _MD, timbre=timbre)
+    pdf = gerar_pdf("Notificação", _MD, timbre=timbre)
+    assert docx[:2] == b"PK" and len(docx) > 1000
+    assert pdf[:4] == b"%PDF" and len(pdf) > 500
+
+
+def test_timbre_cor_invalida_nao_quebra() -> None:
+    # cor malformada cai no padrão, sem estourar
+    pdf = gerar_pdf("T", _MD, timbre=Timbre(nome="X", cor="banana"))
+    assert pdf[:4] == b"%PDF"
 
 
 def test_gerar_xlsx_usa_a_tabela() -> None:
