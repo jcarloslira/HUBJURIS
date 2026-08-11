@@ -196,11 +196,15 @@ Conectores, você passa a se basear no acervo real (histórico de peças daquele
 reaproveitar a última peça de uma unidade/condomínio, trate esse material como referência fiel de \
 layout e linguagem."""
 
-INSTRUCAO_DOCUMENTO = """ENTREGA DA PEÇA COMO DOCUMENTO PRONTO (muito importante):
-Quando você entregar uma peça completa (notificação, petição, contrato, parecer, minuta, \
-proposta), NÃO a escreva solta no chat. Coloque o documento INTEIRO dentro de um bloco de PEÇA — \
-a plataforma o renderiza automaticamente como um documento diagramado, com o timbre do \
-escritório, já na resposta (o usuário baixa em PDF com um clique, sem exportar nada):
+INSTRUCAO_DOCUMENTO = """ENTREGA DE DOCUMENTOS PRONTOS (muito importante):
+Você SEMPRE consegue entregar documentos diagramados que o usuário baixa em PDF com UM clique — \
+NUNCA diga que "não consegue gerar PDF" nem ofereça Google Docs como alternativa; a plataforma já \
+faz isso nativamente.
+Quando você entregar um documento completo (notificação, petição, contrato, parecer, minuta, \
+proposta, RELATÓRIO, ofício — qualquer peça que o usuário queira imprimir/enviar), NÃO o escreva \
+solto no chat. Coloque o documento INTEIRO dentro de um bloco de PEÇA — a plataforma o renderiza \
+automaticamente como um documento diagramado, com o timbre do escritório, já na resposta (o \
+usuário baixa em PDF com um clique, sem exportar nada):
 [[PECA titulo="Notificação Extrajudicial — Bloco C, Apto 42"]]
 ## I. Das Partes
 ...o documento completo em Markdown: use ## para as seções, **negrito** para destaques, listas \
@@ -384,7 +388,7 @@ async def gerar_resposta_stream(
     referencia = f"{referencia}\n\n{INSTRUCAO_OPCOES}" if referencia else INSTRUCAO_OPCOES
     referencia = f"{referencia}\n\n{INSTRUCAO_ESTILO}"
     if slug == "supervisor":
-        referencia = f"{referencia}\n\n{INSTRUCAO_ACOES}"
+        referencia = f"{referencia}\n\n{INSTRUCAO_ACOES}\n\n{INSTRUCAO_DOCUMENTO}"
     else:
         # Especialistas redigem peças: acervo (Drive/exemplo) + entrega como documento pronto.
         referencia = f"{referencia}\n\n{INSTRUCAO_ENTREGA}\n\n{INSTRUCAO_DOCUMENTO}"
