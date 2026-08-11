@@ -379,6 +379,11 @@ main.home #home-agents { display: block; width: 100%; max-width: 780px; margin: 
   display: flex; align-items: center; gap: 6px;
 }
 .msg .label .ic { color: var(--accent); display: flex; }
+.msg .label .ag-roteado {
+  color: var(--accent); background: var(--accent-soft);
+  padding: 1px 7px; border-radius: 20px; letter-spacing: 0.02em;
+  text-transform: none; font-weight: 600;
+}
 .msg.user .bubble {
   background: var(--user-bubble);
   border: 1px solid var(--border);
@@ -1315,6 +1320,28 @@ function chipBolha(nome) {
     `<span class="ax-nome" title="${escapar(nome)}">${escapar(nome)}</span></span>`;
 }
 
+/* ---------- Hand-off: sentinela [[AGENTE:slug]] no início do stream ---------- */
+function extrairAgente(t) {
+  const m = t.match(/^\[\[AGENTE:([a-z-]+)\]\]/);
+  return m ? m[1] : null;
+}
+function corpoStream(t) {
+  // Remove a sentinela do começo; enquanto ela ainda chega, não mostra nada.
+  if (t.startsWith('[[AGENTE')) {
+    const fim = t.indexOf(']]');
+    return fim === -1 ? '' : t.slice(fim + 2);
+  }
+  return t;
+}
+function atualizarLabelBolha(div, slug) {
+  const ag = agentes.find(a => a.slug === slug);
+  const lab = div.querySelector('.label');
+  if (lab && ag) {
+    lab.innerHTML = `<span class="ic">${icone(slug)}</span>${ag.nome}` +
+      (slug !== 'supervisor' ? '<span class="ag-roteado">· encaminhado</span>' : '');
+  }
+}
+
 /* ---------- Opções clicáveis (estilo Claude Code) ---------- */
 function soTexto(t) {
   const i = t.indexOf('[[OPCOES');
@@ -1486,7 +1513,7 @@ function abrirConversa(i) {
   const box = $('messages');
   box.style.display = 'flex';
   box.innerHTML = '';
-  conversaAtual.mensagens.forEach(m => box.appendChild(bolha(m.role, m.content)));
+  conversaAtual.mensagens.forEach(m => box.appendChild(bolha(m.role, m.content, m.agente)));
   renderConvos();
   scrollFim();
 }
@@ -1519,13 +1546,16 @@ function md(t) {
   ).join('');
 }
 
-function bolha(role, content) {
+function bolha(role, content, agSlug) {
   const div = document.createElement('div');
   div.className = 'msg ' + role;
-  const ag = agentes.find(a => a.slug === agenteAtual);
+  const slug = agSlug || agenteAtual;
+  const ag = agentes.find(a => a.slug === slug);
   const label = role === 'user'
     ? 'Você'
-    : `<span class="ic">${icone(agenteAtual)}</span>${ag ? ag.nome : 'LexHub'}`;
+    : `<span class="ic">${icone(slug)}</span>${ag ? ag.nome : 'LexHub'}` +
+      (role === 'assistant' && agSlug && agSlug !== 'supervisor' && agSlug !== conversaAtual?.agente
+        ? '<span class="ag-roteado">· encaminhado</span>' : '');
   div.innerHTML = `<span class="label">${label}</span>
     <div class="bubble">${role === 'user' ? escapar(content) : md(content)}</div>`;
   if (role === 'assistant' && content) addAcoes(div, content);
@@ -1651,17 +1681,21 @@ async function gerarResposta() {
     const reader = resp.body.getReader();
     const dec = new TextDecoder();
     let total = '';
+    let respondente = agenteAtual;
     while (true) {
       const { done, value } = await reader.read();
       if (done) break;
       total += dec.decode(value, { stream: true });
-      bubble.innerHTML = md(soTexto(total));  // esconde marcação de opções incompleta
+      const rot = extrairAgente(total);
+      if (rot && rot !== respondente) { respondente = rot; atualizarLabelBolha(div, rot); }
+      bubble.innerHTML = md(soTexto(corpoStream(total)));  // tira sentinela + opções incompletas
       scrollFim();
     }
-    const opcoes = parseOpcoes(total);
-    const limpo = opcoes ? limparOpcoes(total) : total;
+    const corpo = corpoStream(total);
+    const opcoes = parseOpcoes(corpo);
+    const limpo = opcoes ? limparOpcoes(corpo) : corpo;
     bubble.innerHTML = md(limpo);
-    conversaAtual.mensagens.push({ role: 'assistant', content: limpo });
+    conversaAtual.mensagens.push({ role: 'assistant', content: limpo, agente: respondente });
     addAcoes(div, limpo);
     if (opcoes) renderOpcoes(div, opcoes);
     salvar();

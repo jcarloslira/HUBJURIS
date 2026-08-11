@@ -120,7 +120,12 @@ contrato, vencimento ou rescisão; 'pareceres' para pareceres fundamentados; 'co
 para perguntas factuais do acervo (síndico atual, reajuste, deliberações, atas); 'juridico-geral' \
 para dúvidas jurídicas gerais de direito condominial; 'supervisor' para saudações, onboarding, \
 dúvidas sobre a plataforma, para CADASTRAR/ORGANIZAR condomínios (projetos) ou registrar fatos na \
-memória de um condomínio, ou quando não estiver claro."""
+memória de um condomínio, ou quando não estiver claro.
+
+REGRA DECISIVA: se a mensagem contém uma tarefa jurídica clara, roteie para o especialista MESMO \
+que ela venha junto de uma saudação ("boa noite, preciso de uma notificação" → 'notificacoes'). \
+Uma saudação sozinha não é motivo para ficar no 'supervisor' se há tarefa identificável. Mantenha \
+no destino atual quando o usuário está apenas continuando/complementando a mesma tarefa."""
 
 
 INSTRUCAO_OPCOES = """Quando for útil oferecer escolhas ao usuário (onboarding, decisões, \
@@ -132,8 +137,12 @@ Sua pergunta numa linha só
 - Terceira opção
 [[/OPCOES]]
 Regras: escreva uma frase curta ANTES do bloco; `multipla=sim` permite marcar várias; `outros=sim` \
-deixa o usuário digitar uma resposta livre. Use com MODERAÇÃO — só quando as escolhas realmente \
-ajudam a decidir; nunca para conteúdo jurídico que deva ser redigido por extenso."""
+deixa o usuário digitar uma resposta livre.
+DISCIPLINA (importante): use no MÁXIMO um bloco por resposta e só quando um conjunto FECHADO de \
+opções realmente decide o rumo (ex.: o motivo da notificação). NUNCA use opções para coletar \
+dados abertos e específicos (nome do condomínio, número da unidade, datas, nomes de pessoas) — \
+esses você pergunta em texto normal OU já deixa como placeholder no rascunho. Prefira AGIR: se dá \
+para adiantar o trabalho com placeholders, faça isso em vez de abrir outra rodada de perguntas."""
 
 INSTRUCAO_ACOES = """Você pode EXECUTAR ações nos conectores do escritório (Google Agenda, Gmail, \
 Google Docs, Google Sheets). REGRA DE OURO para ações externas: NUNCA execute direto. Primeiro \
@@ -251,6 +260,9 @@ async def gerar_resposta_stream(
     slug = payload.agente
     if slug == "supervisor":
         slug = await escolher_especialista(client, mensagens)
+        # Sentinela de hand-off: informa ao frontend qual especialista assumiu,
+        # para a interface mostrar a troca (o cliente remove esta marca do texto).
+        yield f"[[AGENTE:{slug}]]"
     agente = obter_agente(slug, client) or obter_agente("supervisor", client)
     assert agente is not None  # supervisor está sempre registrado
 
