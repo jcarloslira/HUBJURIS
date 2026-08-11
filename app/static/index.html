@@ -188,6 +188,45 @@ aside {
 .opcao-outros { background: transparent; color: var(--text-dim); border: 1px dashed var(--border); border-radius: 9px; padding: 9px 15px; font-size: 0.83rem; font-family: inherit; cursor: pointer; }
 .opcao-outros:hover { color: var(--accent); border-color: var(--accent-border); background: var(--accent-soft); }
 .opcoes.respondida { opacity: 0.55; pointer-events: none; }
+.peca-nota { color: var(--text-dim); font-size: 0.9rem; }
+
+/* Peça: documento diagramado entregue inline (estilo Gabinete) */
+.peca {
+  --peca-cor: var(--accent);
+  margin-top: 14px; max-width: 720px; border: 1px solid var(--border);
+  border-radius: 14px; overflow: hidden; background: var(--panel);
+  box-shadow: 0 10px 30px rgba(29,34,48,.10);
+}
+.peca-bar {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 10px 14px; background: var(--panel-2); border-bottom: 1px solid var(--border);
+}
+.peca-marca { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.peca-logo { max-height: 30px; max-width: 90px; border-radius: 4px; }
+.peca-marca-txt b { font-family: 'Fraunces', serif; font-size: 0.9rem; color: var(--peca-cor); display: block; line-height: 1.1; }
+.peca-marca-txt small { font-size: 0.68rem; color: var(--text-dim); }
+.peca-acts { display: flex; gap: 7px; flex-shrink: 0; }
+.peca-btn {
+  background: none; border: 1px solid var(--border); color: var(--text-dim);
+  border-radius: 8px; padding: 6px 12px; font-size: 0.76rem; font-family: inherit;
+  font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.12s;
+}
+.peca-btn:hover { border-color: var(--peca-cor); color: var(--peca-cor); }
+.peca-btn.primary { background: var(--peca-cor); color: #fff; border-color: var(--peca-cor); }
+.peca-btn.primary:hover { filter: brightness(1.06); color: #fff; }
+.peca-folha { padding: 26px 30px 30px; background: #fffdf8; color: #1d2230; }
+:root[data-theme="dark"] .peca-folha { background: #f7f4ec; }
+.peca-titulo {
+  font-family: 'Fraunces', serif; font-size: 1.15rem; color: #1d2230;
+  border-bottom: 2px solid var(--peca-cor); padding-bottom: 8px; margin: 0 0 16px;
+}
+.peca-conteudo { font-family: Georgia, 'Times New Roman', serif; font-size: 0.92rem; line-height: 1.62; }
+.peca-conteudo h3 { font-family: 'Fraunces', serif; color: var(--peca-cor); font-size: 1rem; margin: 16px 0 6px; }
+.peca-conteudo p { text-align: justify; margin: 0 0 10px; }
+.peca-conteudo ul { margin: 0 0 10px 20px; }
+.peca-conteudo table { border-collapse: collapse; width: 100%; margin: 10px 0; font-size: 0.85rem; }
+.peca-conteudo td, .peca-conteudo th { border: 1px solid #d8d2c4; padding: 6px 9px; text-align: left; }
+.peca-rodape { margin-top: 26px; border-top: 1px solid #e0dccf; padding-top: 8px; color: #8a8474; font-size: 0.72rem; text-align: center; }
 
 /* Lista de conectores */
 .conectores-lista { display: flex; flex-direction: column; gap: 8px; }
@@ -985,6 +1024,15 @@ async function init() {
   renderConvos();
   checarGoogle();
   carregarPerfil();
+  carregarTimbreGlobal();
+}
+
+// Timbre do escritório em memória — usado para diagramar as peças inline e o PDF.
+async function carregarTimbreGlobal() {
+  try {
+    const r = await fetch('/api/documentos/timbre', { headers: authHeaders() });
+    if (r.ok) timbre = await r.json();
+  } catch { /* usa o padrão */ }
 }
 
 function aplicarPerfil() {
@@ -1143,6 +1191,7 @@ function cfgTab(nome) {
 
 /* ---------- Timbre (identidade visual) ---------- */
 let timbreLogo = '';
+let timbre = null;
 async function carregarTimbre() {
   try {
     const r = await fetch('/api/documentos/timbre', { headers: authHeaders() });
@@ -1417,12 +1466,122 @@ function atualizarLabelBolha(div, slug) {
 
 /* ---------- Opções clicáveis (estilo Claude Code) ---------- */
 function soTexto(t) {
-  const i = t.indexOf('[[OPCOES');
-  return i === -1 ? t : t.slice(0, i);
+  // durante o stream, corta no 1º marcador (opções ou peça) ainda incompleto
+  let corte = -1;
+  for (const marca of ['[[OPCOES', '[[PECA']) {
+    const i = t.indexOf(marca);
+    if (i !== -1 && (corte === -1 || i < corte)) corte = i;
+  }
+  return corte === -1 ? t : t.slice(0, corte);
 }
 
 function limparOpcoes(t) {
   return t.replace(/\[\[OPCOES[\s\S]*?\[\[\/OPCOES\]\]/g, '').trim();
+}
+
+/* ---------- Peça: documento diagramado entregue inline ---------- */
+function parsePeca(t) {
+  const m = t.match(/\[\[PECA([^\]]*)\]\]([\s\S]*?)\[\[\/PECA\]\]/);
+  if (!m) return null;
+  const titulo = (m[1].match(/titulo\s*=\s*"([^"]*)"/) || [])[1] || 'Documento';
+  const conteudo = m[2].trim();
+  return conteudo ? { titulo, conteudo } : null;
+}
+function limparPeca(t) {
+  return t.replace(/\[\[PECA[\s\S]*?\[\[\/PECA\]\]/g, '').trim();
+}
+
+// Aplica os artefatos (peça e/ou opções) de uma resposta bruta a uma bolha.
+function aplicarArtefatos(div, bruto) {
+  const peca = parsePeca(bruto);
+  const opcoes = parseOpcoes(bruto);
+  let limpo = bruto;
+  if (peca) limpo = limparPeca(limpo);
+  if (opcoes) limpo = limparOpcoes(limpo);
+  const bubble = div.querySelector('.bubble');
+  bubble.innerHTML = limpo
+    ? md(limpo)
+    : (peca ? '<p class="peca-nota">Documento gerado abaixo. 📄</p>' : '');
+  addAcoes(div, limpo || (peca ? peca.conteudo : ''));
+  if (peca) renderPeca(div, peca);
+  if (opcoes) renderOpcoes(div, opcoes);
+}
+
+function pecaTimbre() {
+  return timbre || { nome: (perfil && perfil.escritorio_nome) || 'Documento', cor: '#9A6A3A' };
+}
+
+function renderPeca(div, peca) {
+  const t = pecaTimbre();
+  const cor = /^#[0-9a-fA-F]{6}$/.test(t.cor || '') ? t.cor : '#9A6A3A';
+  const corpoHtml = md(peca.conteudo);
+  const art = document.createElement('div');
+  art.className = 'peca';
+  art.style.setProperty('--peca-cor', cor);
+  art.innerHTML = `
+    <div class="peca-bar">
+      <div class="peca-marca">
+        ${t.logo ? `<img class="peca-logo" src="${t.logo}" alt="">` : ''}
+        <div class="peca-marca-txt"><b>${escapar(t.nome || 'Documento')}</b>
+          ${t.subtitulo ? `<small>${escapar(t.subtitulo)}</small>` : ''}</div>
+      </div>
+      <div class="peca-acts">
+        <button class="peca-btn primary">⬇ Baixar PDF</button>
+        <button class="peca-btn">Copiar</button>
+      </div>
+    </div>
+    <div class="peca-folha">
+      <h2 class="peca-titulo">${escapar(peca.titulo)}</h2>
+      <div class="peca-conteudo">${corpoHtml}</div>
+      ${t.rodape ? `<div class="peca-rodape">${escapar(t.rodape)}</div>` : ''}
+    </div>`;
+  const [bBaixar, bCopiar] = art.querySelectorAll('.peca-btn');
+  bBaixar.onclick = () => baixarPecaPDF(peca.titulo, corpoHtml);
+  bCopiar.onclick = async () => {
+    try {
+      await navigator.clipboard.writeText(peca.conteudo);
+      bCopiar.textContent = 'Copiado ✓';
+      setTimeout(() => { bCopiar.textContent = 'Copiar'; }, 1600);
+    } catch { /* clipboard indisponível */ }
+  };
+  div.appendChild(art);
+}
+
+// Baixar em PDF de alta fidelidade via impressão do navegador (Salvar como PDF).
+function baixarPecaPDF(titulo, corpoHtml) {
+  const t = pecaTimbre();
+  const cor = /^#[0-9a-fA-F]{6}$/.test(t.cor || '') ? t.cor : '#9A6A3A';
+  const w = window.open('', '_blank');
+  if (!w) return;
+  w.document.write(`<!doctype html><html lang="pt-BR"><head><meta charset="utf-8">
+  <title>${escapar(titulo)}</title>
+  <style>
+    @page { margin: 2.2cm 2cm; }
+    * { box-sizing: border-box; }
+    body { font-family: Georgia, 'Times New Roman', serif; color: #1d2230; line-height: 1.55;
+      font-size: 11.5pt; margin: 0; }
+    .cab { border-bottom: 2px solid ${cor}; padding-bottom: 10px; margin-bottom: 26px; }
+    .cab img { max-height: 54px; margin-bottom: 6px; display: block; }
+    .cab b { color: ${cor}; font-size: 15pt; }
+    .cab small { display: block; color: #666; font-size: 9pt; margin-top: 2px; }
+    h1 { font-size: 16pt; margin: 0 0 16px; }
+    h2 { font-size: 12.5pt; color: ${cor}; margin: 20px 0 8px; }
+    h3 { font-size: 11.5pt; margin: 14px 0 6px; }
+    p { text-align: justify; margin: 0 0 10px; }
+    ul { margin: 0 0 10px 18px; } li { margin-bottom: 4px; }
+    table { border-collapse: collapse; width: 100%; margin: 10px 0; font-size: 10.5pt; }
+    td, th { border: 1px solid #ccc; padding: 6px 8px; text-align: left; }
+    .rod { margin-top: 34px; border-top: 1px solid #ddd; padding-top: 8px;
+      color: #888; font-size: 8.5pt; text-align: center; }
+  </style></head><body>
+    <div class="cab">${t.logo ? `<img src="${t.logo}" alt="">` : ''}
+      <b>${escapar(t.nome || '')}</b>${t.subtitulo ? `<small>${escapar(t.subtitulo)}</small>` : ''}</div>
+    <h1>${escapar(titulo)}</h1>
+    ${corpoHtml}
+    ${t.rodape ? `<div class="rod">${escapar(t.rodape)}</div>` : ''}
+  </body></html>`);
+  w.document.close();
+  setTimeout(() => { try { w.focus(); w.print(); } catch { /* */ } }, 350);
 }
 
 function parseOpcoes(t) {
@@ -1586,7 +1745,15 @@ function abrirConversa(i) {
   const box = $('messages');
   box.style.display = 'flex';
   box.innerHTML = '';
-  conversaAtual.mensagens.forEach(m => box.appendChild(bolha(m.role, m.content, m.agente)));
+  conversaAtual.mensagens.forEach(m => {
+    if (m.role === 'assistant') {
+      const div = bolha('assistant', '', m.agente);
+      box.appendChild(div);
+      aplicarArtefatos(div, m.content);  // re-renderiza peça/opções guardadas
+    } else {
+      box.appendChild(bolha(m.role, m.content));
+    }
+  });
   renderConvos();
   scrollFim();
 }
@@ -1765,12 +1932,9 @@ async function gerarResposta() {
       scrollFim();
     }
     const corpo = corpoStream(total);
-    const opcoes = parseOpcoes(corpo);
-    const limpo = opcoes ? limparOpcoes(corpo) : corpo;
-    bubble.innerHTML = md(limpo);
-    conversaAtual.mensagens.push({ role: 'assistant', content: limpo, agente: respondente });
-    addAcoes(div, limpo);
-    if (opcoes) renderOpcoes(div, opcoes);
+    aplicarArtefatos(div, corpo);  // renderiza peça (documento) e/ou opções
+    // guarda o bruto (com o bloco da peça) para re-renderizar ao reabrir a conversa
+    conversaAtual.mensagens.push({ role: 'assistant', content: corpo, agente: respondente });
     salvar();
   } catch (e) {
     typing.remove();

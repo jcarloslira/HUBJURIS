@@ -173,11 +173,30 @@ AINDA produz a peça completa com placeholders. Ao final, UMA vez só (sem repet
 ofereça de forma útil: (a) que o usuário pode colar/enviar uma peça de EXEMPLO para você seguir \
 exatamente o padrão do escritório; e (b) que, conectando o Google Drive em Configurações → \
 Conectores, você passa a se basear no acervo real (histórico de peças daquele condomínio/unidade).
-- Ao concluir qualquer peça (notificação, petição, contrato, parecer), lembre em UMA linha que o \
-usuário pode baixá-la em Word ou PDF pelo botão "Exportar" na própria resposta.
 - Se o usuário pedir para "seguir o mesmo padrão/identidade" de um documento que enviou, ou para \
 reaproveitar a última peça de uma unidade/condomínio, trate esse material como referência fiel de \
 layout e linguagem."""
+
+INSTRUCAO_DOCUMENTO = """ENTREGA DA PEÇA COMO DOCUMENTO PRONTO (muito importante):
+Quando você entregar uma peça completa (notificação, petição, contrato, parecer, minuta, \
+proposta), NÃO a escreva solta no chat. Coloque o documento INTEIRO dentro de um bloco de PEÇA — \
+a plataforma o renderiza automaticamente como um documento diagramado, com o timbre do \
+escritório, já na resposta (o usuário baixa em PDF com um clique, sem exportar nada):
+[[PECA titulo="Notificação Extrajudicial — Bloco C, Apto 42"]]
+## I. Das Partes
+...o documento completo em Markdown: use ## para as seções, **negrito** para destaques, listas \
+e tabelas quando ajudar...
+[[/PECA]]
+Regras: escreva 1 linha curta ANTES do bloco (ex.: "Segue a notificação pronta:"); coloque \
+APENAS o documento dentro do bloco (nenhuma conversa); use no máximo UM bloco por resposta. Se o \
+usuário pedir alterações, reenvie o documento INTEIRO já corrigido dentro de um novo bloco \
+[[PECA]]. Perguntas e comentários ficam fora do bloco, em texto normal.
+REGRA MAIS IMPORTANTE: toda solicitação de peça TERMINA com o documento entregue no bloco \
+[[PECA]]. Buscar no Drive/Hub serve para ENRIQUECER a peça — mas se você não encontrar o \
+condomínio, modelos ou dados, PRODUZA a peça mesmo assim, usando placeholders entre colchetes \
+para o que faltar (ex.: [NOME DO NOTIFICADO], [ART. X DA CONVENÇÃO]). NUNCA termine a resposta \
+apenas dizendo que não encontrou algo, sem entregar o documento — o advogado sempre espera a \
+peça pronta na primeira resposta."""
 
 
 def listar_agentes() -> list[AgenteInfo]:
@@ -347,8 +366,8 @@ async def gerar_resposta_stream(
     if slug == "supervisor":
         referencia = f"{referencia}\n\n{INSTRUCAO_ACOES}"
     else:
-        # Especialistas redigem peças: orientação de acervo (Drive/exemplo) e entrega (export).
-        referencia = f"{referencia}\n\n{INSTRUCAO_ENTREGA}"
+        # Especialistas redigem peças: acervo (Drive/exemplo) + entrega como documento pronto.
+        referencia = f"{referencia}\n\n{INSTRUCAO_ENTREGA}\n\n{INSTRUCAO_DOCUMENTO}"
 
     # Drive disponível (Composio configurado) → todos os agentes são experts no acervo.
     drive_disponivel = executar_ferramenta is not None and any(
