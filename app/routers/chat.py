@@ -18,6 +18,7 @@ from app.services import chat as chat_service
 from app.services.agentes_config import AgenteConfigService
 from app.services.composio_drive import ComposioClient, ComposioDriveConnector
 from app.services.conectores import client_para
+from app.services.conhecimento import ConhecimentoService, formatar_conhecimento
 from app.services.contas import ContaService
 from app.services.google_escritorio import GoogleEscritorioService
 from app.services.projetos import ProjetoService
@@ -150,6 +151,18 @@ async def conversar(
     supabase = request.app.state.supabase
     configs = await AgenteConfigService(supabase).mapa() if supabase is not None else None
 
+    # Busca na base de conhecimento (RAG) escopada ao escritório logado (ou só o
+    # acervo global quando não há login). Fica como closure para o chat service
+    # ficar desacoplado do Supabase/HTTP.
+    buscar_conhecimento = None
+    if supabase is not None:
+        escritorio_id = contexto[1].escritorio_id if contexto is not None else None
+        kb = ConhecimentoService(supabase, request.app.state.http_client, settings)
+
+        async def buscar_conhecimento(consulta: str) -> str:
+            trechos = await kb.buscar(consulta, escritorio_id)
+            return formatar_conhecimento(trechos)
+
     return StreamingResponse(
         chat_service.gerar_resposta_stream(
             payload,
@@ -160,6 +173,7 @@ async def conversar(
             ferramentas=ferramentas,
             executar_ferramenta=executar_ferramenta,
             configs=configs,
+            buscar_conhecimento=buscar_conhecimento,
         ),
         media_type="text/plain; charset=utf-8",
     )

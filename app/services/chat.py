@@ -234,6 +234,7 @@ async def gerar_resposta_stream(
     ferramentas: list[dict] | None = None,
     executar_ferramenta: Callable[[str, dict], Awaitable[str]] | None = None,
     configs: dict[str, AgenteConfig] | None = None,
+    buscar_conhecimento: Callable[[str], Awaitable[str]] | None = None,
 ) -> AsyncIterator[str]:
     """Gera a resposta em streaming, roteando quando o alvo é o Supervisor.
 
@@ -291,6 +292,19 @@ async def gerar_resposta_stream(
             referencia = formatar_referencia(modelos)
         except Exception:  # noqa: BLE001 - Drive indisponível não impede a resposta
             referencia = ""
+
+    # Busca na base de conhecimento (RAG): trechos da legislação, protocolos e do
+    # acervo do escritório relevantes à última mensagem. Falha não impede a resposta.
+    if buscar_conhecimento is not None:
+        ultima_user = next(
+            (m.content for m in reversed(payload.mensagens) if m.role == "user"), ""
+        )
+        try:
+            bloco = await buscar_conhecimento(ultima_user)
+        except Exception:  # noqa: BLE001 - base indisponível degrada graciosamente
+            bloco = ""
+        if bloco:
+            referencia = f"{referencia}\n\n{bloco}" if referencia else bloco
 
     if payload.anexos:
         nota = (

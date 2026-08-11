@@ -112,7 +112,8 @@ def test_supervisor_roteia_para_especialista(client: TestClient) -> None:
     )
 
     assert response.status_code == 200
-    assert response.text == "Notificação: prezado condômino."
+    # A sentinela de hand-off precede a resposta do especialista (a UI a remove).
+    assert response.text == "[[AGENTE:notificacoes]]Notificação: prezado condômino."
     fake.messages.create.assert_awaited_once()
     assert "notifica" in fake.messages.stream.call_args.kwargs["system"].lower()
 
@@ -131,7 +132,8 @@ def test_supervisor_trata_onboarding_diretamente(client: TestClient) -> None:
     )
 
     assert response.status_code == 200
-    assert response.text == "Olá! vamos começar o onboarding."
+    # Mesmo mantendo com o supervisor, a sentinela informa o destino à UI.
+    assert response.text == "[[AGENTE:supervisor]]Olá! vamos começar o onboarding."
     assert "onboarding" in fake.messages.stream.call_args.kwargs["system"].lower()
 
 
