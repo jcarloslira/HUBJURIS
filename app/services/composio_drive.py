@@ -78,6 +78,31 @@ class ComposioClient:
         """Executa uma tool do Composio (ação externa) e devolve os dados."""
         return await self._execute(tool, user_id, arguments)
 
+    async def desconectar(self, user_id: str) -> int:
+        """Revoga (deleta) as conexões DESTE toolkit para o escritório.
+
+        Útil quando o usuário conectou sem dar todas as permissões e precisa
+        refazer. Filtra pelo auth config deste cliente, para não mexer em
+        outros conectores. Retorna quantas conexões foram removidas.
+        """
+        resp = await self._http.get(
+            f"{self._base}/connected_accounts",
+            headers=self._headers,
+            params={"user_ids": user_id, "auth_config_ids": self._auth_config_id},
+        )
+        itens = resp.json().get("items", [])
+        removidas = 0
+        for item in itens:
+            cid = item.get("id")
+            if not cid:
+                continue
+            apagar = await self._http.delete(
+                f"{self._base}/connected_accounts/{cid}", headers=self._headers
+            )
+            if apagar.status_code < 400:
+                removidas += 1
+        return removidas
+
     async def _execute(self, tool: str, user_id: str, arguments: dict) -> dict:
         resp = await self._http.post(
             f"{self._base}/tools/execute/{tool}",

@@ -272,6 +272,10 @@ aside {
 .conn-row2 { display: flex; align-items: center; justify-content: space-between; gap: 12px; background: var(--panel-2); border: 1px solid var(--border); border-radius: 10px; padding: 11px 14px; }
 .conn-id2 b { font-size: 0.86rem; }
 .conn-id2 small { display: block; color: var(--text-dim); font-size: 0.72rem; margin-top: 2px; }
+.conn-acts { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+.conn-desc { background: none; border: 1px solid var(--border); color: var(--text-dim); border-radius: 8px; padding: 6px 12px; font-size: 0.76rem; font-family: inherit; font-weight: 600; cursor: pointer; transition: color .12s, border-color .12s; }
+.conn-desc:hover { color: var(--danger); border-color: var(--danger); }
+.conn-desc:disabled { opacity: .5; cursor: default; }
 
 /* Menu Exportar (Word/PDF/Excel) */
 .ma-export { position: relative; }
@@ -1152,10 +1156,20 @@ async function carregarConectores() {
           <small>${c.configurado ? (c.conectado ? 'Conectado' : 'Não conectado') : 'Indisponível'}</small>
         </div>
         ${!c.configurado ? '' : (c.conectado
-          ? `<span class="conn-check">${CHECK} Conectado</span>`
+          ? `<div class="conn-acts"><span class="conn-check">${CHECK} Conectado</span>` +
+            `<button class="conn-desc" onclick="desconectarServico('${c.servico}', this)" title="Desconectar para refazer as permissões">Desconectar</button></div>`
           : `<button class="vincular-btn" onclick="vincularServico('${c.servico}', this)">Vincular</button>`)}
       </div>`).join('');
   } catch { el.innerHTML = '<div class="cfg-hint">Não foi possível carregar os conectores.</div>'; }
+}
+
+async function desconectarServico(servico, btn) {
+  if (!confirm('Desconectar este conector? Você precisará vincular de novo (fazendo login e concedendo as permissões) para reativar.')) return;
+  btn.disabled = true; btn.textContent = 'Desconectando…';
+  try {
+    await fetch('/api/google/desconectar/' + servico, { method: 'POST', headers: authHeaders() });
+    carregarConectores(); checarGoogle();
+  } catch { btn.disabled = false; btn.textContent = 'Erro — tentar de novo'; }
 }
 
 async function vincularServico(servico, btn) {

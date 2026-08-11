@@ -10,7 +10,6 @@ from typing import Annotated
 
 import httpx
 from fastapi import APIRouter, Depends, HTTPException, Request
-from supabase import AsyncClient
 
 from app.config import Settings, get_settings
 from app.dependencies import get_current_user, get_supabase
@@ -22,6 +21,7 @@ from app.services.composio_drive import ComposioClient, ComposioError
 from app.services.conectores import CONECTORES, client_para
 from app.services.contas import ContaError, ContaService
 from app.services.google_escritorio import GoogleEscritorioError, GoogleEscritorioService
+from supabase import AsyncClient
 
 router = APIRouter(prefix="/api/google", tags=["google"])
 
@@ -146,3 +146,23 @@ async def conectar_servico(
     except ComposioError as exc:
         raise HTTPException(status_code=502, detail=f"Falha no Composio: {exc}") from exc
     return {"redirect_url": link.redirect_url}
+
+
+@router.post("/desconectar/{servico}", status_code=200)
+async def desconectar_servico(
+    servico: str,
+    user: _User,
+    contas: _Contas,
+    request: Request,
+    settings: Annotated[Settings, Depends(get_settings)],
+) -> dict[str, object]:
+    """Revoga a conexão de um conector do escritório (para reconectar/dar permissões)."""
+    escritorio_id = await _escritorio_id(contas, user)
+    cli = client_para(settings, request.app.state.http_client, servico)
+    if cli is None:
+        raise HTTPException(status_code=503, detail="Conector indisponível ou não configurado")
+    try:
+        removidas = await cli.desconectar(escritorio_id)
+    except ComposioError as exc:
+        raise HTTPException(status_code=502, detail=f"Falha no Composio: {exc}") from exc
+    return {"desconectado": removidas > 0, "removidas": removidas}
