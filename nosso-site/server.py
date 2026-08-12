@@ -460,10 +460,12 @@ async def ranking(periodo: str = "geral") -> list[dict]:
     """
     if periodo == "menor":
         ini, fim = _janela_hoje_br_utc()
+        # Filtra pela data em que a COMPRA foi feita (created_at), não pela
+        # confirmação — assim pedidos antigos reconciliados hoje não vazam.
         query = """SELECT n.nome AS nome, MIN(n.numero) AS menor
                    FROM numeros n
                    JOIN pedidos p ON p.id = n.pedido_id
-                   WHERE p.status='pago' AND p.paid_at >= ? AND p.paid_at <= ?
+                   WHERE p.status='pago' AND p.created_at >= ? AND p.created_at <= ?
                    GROUP BY n.cpf, n.nome
                    ORDER BY menor ASC LIMIT 15"""
         with _db() as con:
