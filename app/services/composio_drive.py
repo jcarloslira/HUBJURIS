@@ -7,12 +7,45 @@ o app lê o Drive por aquele `user_id`. Esta camada implementa o contrato
 API do Composio.
 """
 
+import io
+
 import httpx
 from pydantic import BaseModel
 
 from app.services.drive import DriveEntry
 
 _FOLDER_MIME = "application/vnd.google-apps.folder"
+_LIMITE_TEXTO = 20000  # chars devolvidos ao ler um documento (evita estourar contexto)
+
+
+def _extrair_texto(conteudo: bytes) -> str:
+    """Extrai o TEXTO de um arquivo baixado (PDF/DOCX/texto) — não o binário cru.
+
+    O s3url do PARSE_FILE devolve o arquivo original; para o agente usar o
+    conteúdo, precisamos extrair o texto (PDF via pypdf, DOCX via python-docx),
+    não entregar os bytes brutos. Falha na extração degrada para texto puro.
+    """
+    if conteudo[:5] == b"%PDF-":
+        try:
+            from pypdf import PdfReader
+
+            leitor = PdfReader(io.BytesIO(conteudo))
+            texto = "\n".join((p.extract_text() or "") for p in leitor.pages).strip()
+            if texto:
+                return texto[:_LIMITE_TEXTO]
+        except Exception:  # noqa: BLE001 - degrada para texto puro
+            pass
+    if conteudo[:2] == b"PK":  # zip → docx/xlsx/pptx
+        try:
+            from docx import Document
+
+            doc = Document(io.BytesIO(conteudo))
+            texto = "\n".join(p.text for p in doc.paragraphs if p.text.strip())
+            if texto:
+                return texto[:_LIMITE_TEXTO]
+        except Exception:  # noqa: BLE001 - não é docx ou falhou
+            pass
+    return conteudo.decode("utf-8", "replace")[:_LIMITE_TEXTO]
 
 
 class ComposioError(Exception):
@@ -108,6 +141,7 @@ class ComposioClient:
             f"{self._base}/tools/execute/{tool}",
             headers=self._headers,
             json={"user_id": user_id, "arguments": arguments},
+            timeout=30,
         )
         dados = resp.json()
         if not dados.get("successful", False):
@@ -163,8 +197,8 @@ class ComposioClient:
         s3url = (data.get("file") or {}).get("s3url")
         if not s3url:
             raise ComposioError("PARSE_FILE não retornou s3url")
-        resp = await self._http.get(s3url)
-        return resp.text
+        resp = await self._http.get(s3url, timeout=30)
+        return _extrair_texto(resp.content)
 
 
 class ComposioDriveConnector:
