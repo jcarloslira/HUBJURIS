@@ -17,7 +17,7 @@ import random
 import sqlite3
 import uuid
 from contextlib import asynccontextmanager
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime, timedelta, timezone
 from decimal import Decimal
 from pathlib import Path
 
@@ -429,15 +429,29 @@ async def meus_numeros(body: LoginIn) -> dict:
     }
 
 
+def _inicio_do_dia_br_utc() -> str:
+    """Retorna o início do dia de hoje (00:00 no horário de Brasília) em UTC ISO."""
+    br = datetime.now(UTC).astimezone(timezone(timedelta(hours=-3)))
+    inicio_br = br.replace(hour=0, minute=0, second=0, microsecond=0)
+    return inicio_br.astimezone(UTC).isoformat()
+
+
 @app.get("/api/ranking")
-async def ranking() -> list[dict]:
-    """Top compradores por total de números pagos."""
+async def ranking(periodo: str = "geral") -> list[dict]:
+    """Top compradores por números pagos. periodo: 'geral' (tudo) ou 'hoje'."""
+    if periodo == "hoje":
+        inicio = _inicio_do_dia_br_utc()
+        query = """SELECT nome, SUM(qtd) AS titulos
+                   FROM pedidos WHERE status='pago' AND paid_at >= ?
+                   GROUP BY nome ORDER BY titulos DESC LIMIT 10"""
+        params: tuple = (inicio,)
+    else:
+        query = """SELECT nome, SUM(qtd) AS titulos
+                   FROM pedidos WHERE status='pago'
+                   GROUP BY nome ORDER BY titulos DESC LIMIT 10"""
+        params = ()
     with _db() as con:
-        rows = con.execute(
-            """SELECT nome, SUM(qtd) AS titulos
-               FROM pedidos WHERE status='pago'
-               GROUP BY nome ORDER BY titulos DESC LIMIT 10"""
-        ).fetchall()
+        rows = con.execute(query, params).fetchall()
     return [{"nome": r["nome"], "titulos": r["titulos"]} for r in rows]
 
 

@@ -195,6 +195,14 @@ img { max-width: 100%; display: block; }
 .promo-box small { color: var(--text-mut); }
 
 /* ---------- Ranking ---------- */
+.rank-tabs { display: flex; gap: .5rem; justify-content: center; margin-bottom: 1.8rem; }
+.rank-tab { font-weight: 800; font-size: .9rem; padding: .6rem 1.4rem; border-radius: 999px; cursor: pointer;
+    background: var(--surface); color: var(--text-mut); border: 1.5px solid var(--border); transition: all .15s ease; }
+.rank-tab:hover { border-color: var(--border-strong); color: var(--text); }
+.rank-tab.is-active { background: linear-gradient(135deg, var(--gold-bright), var(--gold-deep)); color: #2a1c00; border-color: transparent; }
+.live-dot { display: inline-block; width: 9px; height: 9px; border-radius: 999px; background: var(--emerald-bright); margin-left: .3rem;
+    box-shadow: 0 0 0 0 rgba(52,211,153,.7); animation: pulse 1.6s infinite; }
+@keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(52,211,153,.6); } 70% { box-shadow: 0 0 0 8px rgba(52,211,153,0); } 100% { box-shadow: 0 0 0 0 rgba(52,211,153,0); } }
 .podium { display: grid; grid-template-columns: 1fr 1.2fr 1fr; gap: 1rem; align-items: end; max-width: 640px; margin: 0 auto 2rem; }
 .podium-card { text-align: center; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.2rem 1rem; }
 .podium-card.first { border-color: var(--gold); background: rgba(251,191,36,.07); padding-top: 1.8rem; padding-bottom: 1.8rem; box-shadow: 0 20px 40px -25px rgba(251,191,36,.5); }

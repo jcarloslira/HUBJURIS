@@ -168,15 +168,27 @@ function startPolling(paymentId) {
 }
 
 // ---- Ranking ----
+let rankPeriodo = "hoje";
 async function loadRanking() {
     try {
-        const res = await fetch("/api/ranking");
+        const res = await fetch("/api/ranking?periodo=" + rankPeriodo);
         const list = await res.json();
         renderRanking(list);
     } catch (_) {
         renderRanking([]);
     }
 }
+// abas Hoje / Geral
+document.querySelectorAll(".rank-tab").forEach((tab) => {
+    tab.addEventListener("click", () => {
+        document.querySelectorAll(".rank-tab").forEach((t) => t.classList.remove("is-active"));
+        tab.classList.add("is-active");
+        rankPeriodo = tab.dataset.periodo;
+        loadRanking();
+    });
+});
+// tempo real: atualiza o ranking a cada 15s
+setInterval(loadRanking, 15000);
 function renderRanking(list) {
     const podium = $("podium");
     const rankList = $("rankList");
