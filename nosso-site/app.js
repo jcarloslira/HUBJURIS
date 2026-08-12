@@ -161,6 +161,7 @@ function startPolling(paymentId) {
                 renderNums($("successNums"), json.numeros || []);
                 showStep("stepSuccess");
                 loadRanking();
+                loadRankingGeral();
                 loadStats();
             }
         } catch (_) { /* silencioso */ }
@@ -194,8 +195,46 @@ function renderRankingMenor(list) {
         </li>`;
     }).join("");
 }
-// tempo real: atualiza a cada 15s
-setInterval(loadRanking, 15000);
+// ---- Ranking GERAL (maiores compradores, seção separada) ----
+async function loadRankingGeral() {
+    try {
+        const list = await fetch("/api/ranking?periodo=geral").then((r) => r.json());
+        renderRankingGeral(list);
+    } catch (_) {
+        renderRankingGeral([]);
+    }
+}
+function renderRankingGeral(list) {
+    const podium = document.getElementById("podiumGeral");
+    const rankList = document.getElementById("rankListGeral");
+    if (!podium || !rankList) return;
+    if (!list.length) {
+        podium.innerHTML = "";
+        rankList.innerHTML = `<div class="rank-empty">🍀 Seja o primeiro a comprar e liderar!</div>`;
+        return;
+    }
+    const top3 = list.slice(0, 3);
+    const order = [top3[1], top3[0], top3[2]]; // 2º, 1º, 3º
+    const medals = { 0: "🥇", 1: "🥈", 2: "🥉" };
+    const posName = { 0: "1º LUGAR", 1: "2º LUGAR", 2: "3º LUGAR" };
+    podium.innerHTML = order.map((item) => {
+        if (!item) return `<div></div>`;
+        const realIdx = list.indexOf(item);
+        return `
+        <div class="podium-card ${realIdx === 0 ? "first" : ""}">
+            <div class="podium-medal">${medals[realIdx]}</div>
+            <div class="podium-pos">${posName[realIdx]}</div>
+            <div class="podium-name">${escapeHtml(item.nome)}</div>
+            <div class="podium-qty">${item.titulos.toLocaleString("pt-BR")} <small>números</small></div>
+        </div>`;
+    }).join("");
+    rankList.innerHTML = list.slice(3, 10).map((item, i) => `
+        <li><span class="pos">${i + 4}º</span><span class="nm">${escapeHtml(item.nome)}</span><span class="qt">${item.titulos.toLocaleString("pt-BR")}</span></li>
+    `).join("");
+}
+
+// tempo real: atualiza os dois rankings a cada 15s
+setInterval(() => { loadRanking(); loadRankingGeral(); }, 15000);
 function escapeHtml(s) {
     return String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 }
@@ -287,4 +326,5 @@ $("year").textContent = new Date().getFullYear();
 renderPacotes();
 updateTotal();
 loadRanking();
+loadRankingGeral();
 loadStats();
