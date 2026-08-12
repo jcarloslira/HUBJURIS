@@ -274,6 +274,52 @@ async def test_loop_executa_ferramenta_e_soma_tokens() -> None:
     assert len(client.messages.chamadas) == 2
 
 
+async def test_loop_forca_resposta_final_ao_bater_o_teto() -> None:
+    from app.agents.base import MAX_ITERACOES_FERRAMENTAS
+
+    def tool_stream() -> _FakeStream:
+        return _FakeStream(
+            [""],
+            _FinalMsg(
+                content=[_Bloco("tool_use", name="buscar_no_drive", id="t", input={"termo": "x"})],
+                stop_reason="tool_use",
+                usage=_Usage(1, 1),
+            ),
+        )
+
+    # todas as iterações pedem ferramenta → bate o teto sem nunca "terminar"
+    respostas = [tool_stream() for _ in range(MAX_ITERACOES_FERRAMENTAS)]
+    # a passada FORÇADA (sem ferramentas) entrega a resposta final
+    respostas.append(
+        _FakeStream(
+            ["Segue o resultado com o que encontrei."],
+            _FinalMsg(
+                content=[_Bloco("text", text="ok")], stop_reason="end_turn", usage=_Usage(2, 3)
+            ),
+        )
+    )
+    client = _FakeClient(respostas)
+    agente = _Agente(client)  # type: ignore[arg-type]
+
+    async def executar(nome: str, entrada: dict[str, Any]) -> str:
+        return "resultado da ferramenta"
+
+    ferramentas = [
+        {"name": "buscar_no_drive", "input_schema": {"type": "object", "properties": {}}}
+    ]
+    texto = ""
+    async for trecho in agente.responder_stream(
+        [{"role": "user", "content": "faz X"}],
+        ferramentas=ferramentas,
+        executar_ferramenta=executar,
+    ):
+        texto += trecho
+
+    assert "Segue o resultado" in texto  # forçou a resposta final (não ficou "carregando e para")
+    assert len(client.messages.chamadas) == MAX_ITERACOES_FERRAMENTAS + 1  # 5 + a de fechamento
+    assert "tools" not in client.messages.chamadas[-1]  # a passada final é SEM ferramentas
+
+
 async def test_sem_ferramentas_mantem_stream_simples() -> None:
     passo = _FakeStream(
         ["Olá!"],

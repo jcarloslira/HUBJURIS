@@ -116,6 +116,7 @@ class BaseAgent:
         precisa_final = usa_tools or on_usage is not None
         historico: list[MessageParam] = list(mensagens)
         tokens_in = tokens_out = 0
+        final = None
 
         for _ in range(MAX_ITERACOES_FERRAMENTAS if usa_tools else 1):
             extra: dict[str, Any] = {"tools": ferramentas} if usa_tools else {}
@@ -150,6 +151,22 @@ class BaseAgent:
                         {"type": "tool_result", "tool_use_id": bloco.id, "content": saida}
                     )
             historico.append({"role": "user", "content": resultados})
+
+        # Se bateu o teto de iterações ainda pedindo ferramentas, o laço acabou SEM
+        # gerar a resposta — força UMA passada final SEM ferramentas para o agente
+        # concluir com o que já coletou (evita o "carregando e para" sem resposta).
+        if usa_tools and final is not None and final.stop_reason == "tool_use":
+            async with self.client.messages.stream(
+                model=modelo or self.model,
+                max_tokens=self.max_tokens,
+                system=system,
+                messages=historico,
+            ) as stream:
+                async for texto in stream.text_stream:
+                    yield texto
+                fechamento = await stream.get_final_message()
+            tokens_in += fechamento.usage.input_tokens
+            tokens_out += fechamento.usage.output_tokens
 
         if on_usage is not None:
             try:
