@@ -33,6 +33,18 @@
         </div>
     </header>
 
+    <!-- Ranking MENOR COTA (destaque no topo) -->
+    <section id="ranking" class="ranking-top">
+        <div class="container">
+            <div class="rt-head">
+                <span class="eyebrow">🔻 RANKING · MENOR COTA</span>
+                <h2>Quem comprou menos <span class="live-dot" title="ao vivo"></span></h2>
+                <p>Ranking ao vivo de hoje (10h às 22h) — atualiza sozinho</p>
+            </div>
+            <ol class="rank-list rank-menor" id="rankListMenor"><!-- render via app.js --></ol>
+        </div>
+    </section>
+
     <!-- Hero -->
     <section class="hero">
         <div class="container hero-grid">
@@ -134,28 +146,6 @@
                 <button id="participarBtn" class="btn btn-gold btn-lg">QUERO PARTICIPAR! 🎉</button>
             </div>
 
-            <div class="promo-box">
-                <span class="chip chip-gold">PROMOÇÃO TOP COMPRADOR</span>
-                <p>Quem tiver <strong>mais títulos até 12/09/2026</strong> leva <strong class="text-gold">R$ 1.000 extras!</strong></p>
-                <small>O prêmio é pago via PIX no dia seguinte ao sorteio principal.</small>
-            </div>
-        </div>
-    </section>
-
-    <!-- Ranking -->
-    <section id="ranking" class="section section-alt">
-        <div class="container">
-            <div class="section-head">
-                <span class="eyebrow">🏆 RANKING</span>
-                <h2>Top compradores</h2>
-                <p>Atualiza em tempo real <span class="live-dot" title="ao vivo"></span></p>
-            </div>
-            <div class="rank-tabs">
-                <button class="rank-tab is-active" data-periodo="hoje">🔥 Hoje</button>
-                <button class="rank-tab" data-periodo="geral">🏆 Geral</button>
-            </div>
-            <div class="podium" id="podium"><!-- render via app.js --></div>
-            <ol class="rank-list" id="rankList"><!-- render via app.js --></ol>
         </div>
     </section>
 

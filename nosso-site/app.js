@@ -167,56 +167,35 @@ function startPolling(paymentId) {
     }, 5000);
 }
 
-// ---- Ranking ----
-let rankPeriodo = "hoje";
+// ---- Ranking MENOR COTA (topo, ao vivo) ----
 async function loadRanking() {
     try {
-        const res = await fetch("/api/ranking?periodo=" + rankPeriodo);
+        const res = await fetch("/api/ranking?periodo=menor");
         const list = await res.json();
-        renderRanking(list);
+        renderRankingMenor(list);
     } catch (_) {
-        renderRanking([]);
+        renderRankingMenor([]);
     }
 }
-// abas Hoje / Geral
-document.querySelectorAll(".rank-tab").forEach((tab) => {
-    tab.addEventListener("click", () => {
-        document.querySelectorAll(".rank-tab").forEach((t) => t.classList.remove("is-active"));
-        tab.classList.add("is-active");
-        rankPeriodo = tab.dataset.periodo;
-        loadRanking();
-    });
-});
-// tempo real: atualiza o ranking a cada 15s
-setInterval(loadRanking, 15000);
-function renderRanking(list) {
-    const podium = $("podium");
-    const rankList = $("rankList");
+function renderRankingMenor(list) {
+    const el = document.getElementById("rankListMenor");
+    if (!el) return;
     if (!list.length) {
-        podium.innerHTML = "";
-        rankList.innerHTML = `<div class="rank-empty">🍀 Seja o primeiro a comprar números e liderar o ranking!</div>`;
+        el.innerHTML = `<div class="rank-empty">Ainda não há compras registradas nesta janela.</div>`;
         return;
     }
-    const top3 = list.slice(0, 3);
-    const order = [top3[1], top3[0], top3[2]]; // 2º, 1º, 3º
-    const medals = { 0: "🥇", 1: "🥈", 2: "🥉" };
-    const posName = { 0: "1º LUGAR", 1: "2º LUGAR", 2: "3º LUGAR" };
-    podium.innerHTML = order.map((item, i) => {
-        if (!item) return `<div></div>`;
-        const realIdx = list.indexOf(item);
-        return `
-        <div class="podium-card ${realIdx === 0 ? "first" : ""}">
-            <div class="podium-medal">${medals[realIdx]}</div>
-            <div class="podium-pos">${posName[realIdx]}</div>
-            <div class="podium-name">${escapeHtml(item.nome)}</div>
-            <div class="podium-qty">${item.titulos.toLocaleString("pt-BR")} <small>números</small></div>
-            ${realIdx === 0 ? `<span class="podium-prize">Ganha R$ 1.000 🎁</span>` : ""}
-        </div>`;
+    el.innerHTML = list.map((item, i) => {
+        const pos = i + 1;
+        const cls = pos === 1 ? "rank-lead" : "";
+        return `<li class="${cls}">
+            <span class="pos">${pos}º</span>
+            <span class="nm">${escapeHtml(item.nome)}</span>
+            <span class="qt">${item.titulos.toLocaleString("pt-BR")} <small>nºs</small></span>
+        </li>`;
     }).join("");
-    rankList.innerHTML = list.slice(3, 10).map((item, i) => `
-        <li><span class="pos">${i + 4}º</span><span class="nm">${escapeHtml(item.nome)}</span><span class="qt">${item.titulos.toLocaleString("pt-BR")}</span></li>
-    `).join("");
 }
+// tempo real: atualiza a cada 15s
+setInterval(loadRanking, 15000);
 function escapeHtml(s) {
     return String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 }

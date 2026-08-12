@@ -194,6 +194,15 @@ img { max-width: 100%; display: block; }
 .promo-box p { margin: .6rem 0 .3rem; font-size: 1.05rem; }
 .promo-box small { color: var(--text-mut); }
 
+/* ---------- Ranking MENOR COTA (topo) ---------- */
+.ranking-top { padding: 2rem 0 1rem; background: linear-gradient(180deg, rgba(251,191,36,.06), transparent); border-bottom: 1px solid var(--border); }
+.rt-head { text-align: center; margin-bottom: 1.2rem; }
+.rt-head h2 { font-size: clamp(1.4rem, 3.5vw, 2rem); font-weight: 900; letter-spacing: -.01em; }
+.rt-head p { color: var(--text-mut); margin-top: .3rem; font-size: .9rem; }
+.rank-menor { max-width: 560px; }
+.rank-menor .rank-lead { border-color: var(--gold); background: rgba(251,191,36,.08); box-shadow: 0 0 0 2px rgba(251,191,36,.15); }
+.rank-menor .rank-lead .pos { color: var(--gold); }
+
 /* ---------- Ranking ---------- */
 .rank-tabs { display: flex; gap: .5rem; justify-content: center; margin-bottom: 1.8rem; }
 .rank-tab { font-weight: 800; font-size: .9rem; padding: .6rem 1.4rem; border-radius: 999px; cursor: pointer;

@@ -429,22 +429,47 @@ async def meus_numeros(body: LoginIn) -> dict:
     }
 
 
+BR_TZ = timezone(timedelta(hours=-3))
+# Janela da promoção de engajamento (horário de Brasília)
+JANELA_HORA_INICIO = 10  # 10h
+JANELA_HORA_FIM = 22     # 22h
+
+
 def _inicio_do_dia_br_utc() -> str:
     """Retorna o início do dia de hoje (00:00 no horário de Brasília) em UTC ISO."""
-    br = datetime.now(UTC).astimezone(timezone(timedelta(hours=-3)))
+    br = datetime.now(UTC).astimezone(BR_TZ)
     inicio_br = br.replace(hour=0, minute=0, second=0, microsecond=0)
     return inicio_br.astimezone(UTC).isoformat()
 
 
+def _janela_hoje_br_utc() -> tuple[str, str]:
+    """Janela de hoje das 10h às 22h (Brasília), devolvida em UTC ISO."""
+    br = datetime.now(UTC).astimezone(BR_TZ)
+    ini = br.replace(hour=JANELA_HORA_INICIO, minute=0, second=0, microsecond=0)
+    fim = br.replace(hour=JANELA_HORA_FIM, minute=0, second=0, microsecond=0)
+    return ini.astimezone(UTC).isoformat(), fim.astimezone(UTC).isoformat()
+
+
 @app.get("/api/ranking")
 async def ranking(periodo: str = "geral") -> list[dict]:
-    """Top compradores por números pagos. periodo: 'geral' (tudo) ou 'hoje'."""
-    if periodo == "hoje":
-        inicio = _inicio_do_dia_br_utc()
+    """Ranking de compradores. periodo: 'geral', 'hoje' ou 'menor'.
+
+    'menor' = quem comprou a MENOR cota na janela de hoje (10h–22h), ordem
+    crescente — usado para a promoção de engajamento (regras só no Instagram).
+    """
+    if periodo == "menor":
+        ini, fim = _janela_hoje_br_utc()
+        query = """SELECT nome, SUM(qtd) AS titulos
+                   FROM pedidos
+                   WHERE status='pago' AND paid_at >= ? AND paid_at <= ?
+                   GROUP BY cpf, nome
+                   ORDER BY titulos ASC, MIN(paid_at) ASC LIMIT 15"""
+        params: tuple = (ini, fim)
+    elif periodo == "hoje":
         query = """SELECT nome, SUM(qtd) AS titulos
                    FROM pedidos WHERE status='pago' AND paid_at >= ?
                    GROUP BY nome ORDER BY titulos DESC LIMIT 10"""
-        params: tuple = (inicio,)
+        params = (_inicio_do_dia_br_utc(),)
     else:
         query = """SELECT nome, SUM(qtd) AS titulos
                    FROM pedidos WHERE status='pago'
