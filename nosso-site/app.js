@@ -191,7 +191,7 @@ function renderRankingMenor(list) {
         return `<li class="${cls}">
             <span class="pos">${pos}º</span>
             <span class="nm">${escapeHtml(item.nome)}</span>
-            <span class="qt">${item.titulos.toLocaleString("pt-BR")} <small>nºs</small></span>
+            <span class="qt"><small>cota</small> ${item.cota}</span>
         </li>`;
     }).join("");
 }

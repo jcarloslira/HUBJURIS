@@ -454,22 +454,27 @@ def _janela_hoje_br_utc() -> tuple[str, str]:
 async def ranking(periodo: str = "geral") -> list[dict]:
     """Ranking de compradores. periodo: 'geral', 'hoje' ou 'menor'.
 
-    'menor' = quem comprou a MENOR cota na janela de hoje (10h–22h), ordem
-    crescente — usado para a promoção de engajamento (regras só no Instagram).
+    'menor' = quem POSSUI o menor NÚMERO de cota entre as compras da janela de
+    hoje (10h–22h). Cada pessoa entra com a menor cota que tem; ordena crescente.
+    Regras da promoção ficam só no Instagram.
     """
     if periodo == "menor":
         ini, fim = _janela_hoje_br_utc()
-        query = """SELECT nome, SUM(qtd) AS titulos
-                   FROM pedidos
-                   WHERE status='pago' AND paid_at >= ? AND paid_at <= ?
-                   GROUP BY cpf, nome
-                   ORDER BY titulos ASC, MIN(paid_at) ASC LIMIT 15"""
-        params: tuple = (ini, fim)
-    elif periodo == "hoje":
+        query = """SELECT n.nome AS nome, MIN(n.numero) AS menor
+                   FROM numeros n
+                   JOIN pedidos p ON p.id = n.pedido_id
+                   WHERE p.status='pago' AND p.paid_at >= ? AND p.paid_at <= ?
+                   GROUP BY n.cpf, n.nome
+                   ORDER BY menor ASC LIMIT 15"""
+        with _db() as con:
+            rows = con.execute(query, (ini, fim)).fetchall()
+        return [{"nome": r["nome"], "cota": _fmt_num(r["menor"])} for r in rows]
+
+    if periodo == "hoje":
         query = """SELECT nome, SUM(qtd) AS titulos
                    FROM pedidos WHERE status='pago' AND paid_at >= ?
                    GROUP BY nome ORDER BY titulos DESC LIMIT 10"""
-        params = (_inicio_do_dia_br_utc(),)
+        params: tuple = (_inicio_do_dia_br_utc(),)
     else:
         query = """SELECT nome, SUM(qtd) AS titulos
                    FROM pedidos WHERE status='pago'
