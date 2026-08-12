@@ -462,11 +462,12 @@ async def ranking(periodo: str = "geral") -> list[dict]:
         ini, fim = _janela_hoje_br_utc()
         # Filtra pela data em que a COMPRA foi feita (created_at), não pela
         # confirmação — assim pedidos antigos reconciliados hoje não vazam.
+        # Agrupa por CPF (1 pessoa = 1 entrada, mesmo com nome digitado diferente)
         query = """SELECT n.nome AS nome, MIN(n.numero) AS menor
                    FROM numeros n
                    JOIN pedidos p ON p.id = n.pedido_id
                    WHERE p.status='pago' AND p.created_at >= ? AND p.created_at <= ?
-                   GROUP BY n.cpf, n.nome
+                   GROUP BY n.cpf
                    ORDER BY menor ASC LIMIT 15"""
         with _db() as con:
             rows = con.execute(query, (ini, fim)).fetchall()
