@@ -18,11 +18,16 @@ class _Resp:
     """Resposta HTTP simulada (httpx-like)."""
 
     def __init__(
-        self, json_data: dict[str, Any] | None = None, status_code: int = 200, text: str = ""
+        self,
+        json_data: dict[str, Any] | None = None,
+        status_code: int = 200,
+        text: str = "",
+        content: bytes = b"",
     ) -> None:
         self._json = json_data or {}
         self.status_code = status_code
         self.text = text
+        self.content = content
 
     def json(self) -> dict[str, Any]:
         return self._json
@@ -115,12 +120,12 @@ async def test_ler_texto_baixa_do_s3url() -> None:
     http.post.return_value = _Resp(
         {"successful": True, "data": {"file": {"s3url": "https://s3/x", "name": "p.docx"}}}
     )
-    http.get.return_value = _Resp(text="Parecer no estilo do escritório.")
+    http.get.return_value = _Resp(content="Parecer no estilo do escritório.".encode())
 
     texto = await _client(http).ler_texto("escritorio-1", "f1")
 
-    assert texto == "Parecer no estilo do escritório."
-    http.get.assert_awaited_once_with("https://s3/x")
+    assert texto == "Parecer no estilo do escritório."  # texto puro extraído dos bytes
+    http.get.assert_awaited_once_with("https://s3/x", timeout=30)
 
 
 async def test_connector_fixa_user_id() -> None:
