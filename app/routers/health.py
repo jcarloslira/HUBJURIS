@@ -32,6 +32,8 @@ async def health_full(
             "url": settings.SUPABASE_URL or None,
         },
         "anthropic": bool(settings.ANTHROPIC_API_KEY),
+        "composio_drive": bool(settings.COMPOSIO_API_KEY),
+        "mcp_ai": bool(settings.MCP_AI_API_KEY),
         "mercado_pago": {
             "token_configurado": bool(settings.MERCADO_PAGO_ACCESS_TOKEN),
             "webhook_url": settings.MERCADO_PAGO_WEBHOOK_URL or None,
