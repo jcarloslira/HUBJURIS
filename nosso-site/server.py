@@ -473,15 +473,16 @@ async def ranking(periodo: str = "geral") -> list[dict]:
             rows = con.execute(query, (ini, fim)).fetchall()
         return [{"nome": r["nome"], "cota": _fmt_num(r["menor"])} for r in rows]
 
+    # Agrupa por CPF (1 pessoa = 1 entrada, mesmo com nome digitado diferente)
     if periodo == "hoje":
-        query = """SELECT nome, SUM(qtd) AS titulos
+        query = """SELECT MAX(nome) AS nome, SUM(qtd) AS titulos
                    FROM pedidos WHERE status='pago' AND paid_at >= ?
-                   GROUP BY nome ORDER BY titulos DESC LIMIT 10"""
+                   GROUP BY cpf ORDER BY titulos DESC LIMIT 10"""
         params: tuple = (_inicio_do_dia_br_utc(),)
     else:
-        query = """SELECT nome, SUM(qtd) AS titulos
+        query = """SELECT MAX(nome) AS nome, SUM(qtd) AS titulos
                    FROM pedidos WHERE status='pago'
-                   GROUP BY nome ORDER BY titulos DESC LIMIT 10"""
+                   GROUP BY cpf ORDER BY titulos DESC LIMIT 10"""
         params = ()
     with _db() as con:
         rows = con.execute(query, params).fetchall()
