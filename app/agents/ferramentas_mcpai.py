@@ -14,7 +14,14 @@ from typing import Any
 
 from app.services.mcpai import MCPAIClient, MCPAIError
 
-_LIMITE_RESULTADO = 8000  # chars devolvidos ao modelo (evita estourar contexto)
+# Chars devolvidos ao modelo. Uma página cheia (20 processos) dá ~8k; a folga
+# garante que nenhuma página perca a cauda por causa de um registro mais gordo.
+_LIMITE_RESULTADO = 12_000
+# Alguns andamentos trazem log de acordo com ~3.000 chars. Sem um teto por campo,
+# UM registro gordo estoura o orçamento e derruba a cauda da página inteira —
+# some processo do relatório sem ninguém perceber. O que importa do andamento
+# (data + o que aconteceu) está sempre no começo.
+_LIMITE_ANDAMENTO = 400
 
 Handler = Callable[[dict[str, Any]], Awaitable[str]]
 
@@ -83,7 +90,10 @@ def _enxugar(path: str, resultado: Any) -> Any:
             for item in itens:
                 linha = {c: item.get(c) for c in campos if item.get(c) not in (None, "", 0)}
                 if "ultimo_andamento" in linha:
-                    linha["ultimo_andamento"] = _limpar_html(linha["ultimo_andamento"])
+                    andamento = _limpar_html(linha["ultimo_andamento"])
+                    if len(andamento) > _LIMITE_ANDAMENTO:
+                        andamento = andamento[:_LIMITE_ANDAMENTO] + " […]"
+                    linha["ultimo_andamento"] = andamento
                 enxutos.append(linha)
             resultado["data"] = enxutos
     return resultado
