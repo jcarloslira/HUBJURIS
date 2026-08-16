@@ -585,6 +585,36 @@ async def pedido_manual(
     }
 
 
+@app.get("/api/admin/numero/{numero}")
+async def admin_consultar_numero(
+    numero: int, x_admin_token: str | None = Header(default=None)
+) -> dict:
+    """Descobre quem é o dono de uma cota/número (sorteio e prêmio instantâneo)."""
+    _check_admin(x_admin_token)
+    if numero < 1 or numero > TOTAL_NUMEROS:
+        raise HTTPException(status_code=400, detail="Número fora do intervalo.")
+    with _db() as con:
+        row = con.execute(
+            """SELECT n.numero AS numero, p.nome AS nome, p.cpf AS cpf,
+                      p.telefone AS telefone, p.status AS status,
+                      p.mp_payment_id AS mp, p.created_at AS data
+               FROM numeros n JOIN pedidos p ON p.id = n.pedido_id
+               WHERE n.numero = ?""",
+            (numero,),
+        ).fetchone()
+    if not row:
+        return {"numero": _fmt_num(numero), "disponivel": True}
+    return {
+        "numero": _fmt_num(numero),
+        "disponivel": False,
+        "nome": row["nome"],
+        "cpf": row["cpf"],
+        "telefone": row["telefone"],
+        "por_fora": str(row["mp"] or "").startswith("MANUAL"),
+        "data": row["data"],
+    }
+
+
 @app.post("/api/admin/reconciliar")
 async def admin_reconciliar(x_admin_token: str | None = Header(default=None)) -> dict:
     """Confere agora todos os pendentes no Mercado Pago e libera números."""

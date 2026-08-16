@@ -29,6 +29,18 @@
         .nums-cell { max-width: 260px; font-family: monospace; font-size: .78rem; color: var(--gold-bright); }
         .table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); }
         .muted { color: var(--text-mut); }
+        .lookup { background: var(--surface); border: 1px solid var(--gold); border-radius: var(--radius); padding: 1.2rem; margin-bottom: 1.5rem; }
+        .lookup-head { font-weight: 800; margin-bottom: .8rem; color: var(--gold-bright); }
+        .lookup-row { display: flex; gap: .6rem; flex-wrap: wrap; }
+        .lookup-row input { flex: 1; min-width: 200px; padding: .7rem 1rem; border-radius: 10px; border: 1px solid var(--border-strong); background: var(--bg-2); color: var(--text); font-size: 1rem; }
+        .lookup-result { margin-top: .9rem; }
+        .lookup-card { padding: 1rem 1.2rem; border-radius: 12px; border: 1px solid var(--border-strong); background: var(--bg-2); }
+        .lookup-card.hit { border-color: var(--emerald); }
+        .lookup-card.free { border-color: var(--border); color: var(--text-mut); }
+        .lookup-card .cota { font-family: monospace; font-size: 1.4rem; font-weight: 800; color: var(--gold-bright); }
+        .lookup-card .who { font-size: 1.15rem; font-weight: 800; margin: .3rem 0; }
+        .lookup-card .meta { color: var(--text-mut); font-size: .88rem; }
+        .tag-fora { font-size: .66rem; font-weight: 800; padding: .12rem .5rem; border-radius: 999px; background: rgba(251,191,36,.15); color: var(--gold-bright); margin-left: .4rem; }
         @media (max-width: 720px){ .cards { grid-template-columns: 1fr 1fr; } }
     </style>
 </head>
@@ -56,6 +68,15 @@
         </div>
 
         <div class="cards" id="cards"></div>
+
+        <div class="lookup">
+            <div class="lookup-head">🎯 Consultar cota (sorteio / prêmio)</div>
+            <div class="lookup-row">
+                <input id="numInput" type="number" min="1" placeholder="Digite o número sorteado, ex: 12345" />
+                <button class="btn btn-gold" id="numBtn">Buscar dono</button>
+            </div>
+            <div id="numResult" class="lookup-result"></div>
+        </div>
 
         <div class="toolbar">
             <input id="search" placeholder="🔎 Buscar por nome, CPF ou telefone…" />
@@ -109,7 +130,7 @@
                 const nums = p.numeros.length ? p.numeros.join(", ") : "<span class='muted'>—</span>";
                 return `<tr>
                     <td class="muted">${d}</td>
-                    <td>${esc(p.nome)}</td>
+                    <td>${esc(p.nome)}${String(p.mp_payment_id||"").startsWith("MANUAL") ? '<span class="tag-fora">por fora</span>' : ''}</td>
                     <td>${esc(p.cpf || "")}</td>
                     <td>${esc(p.telefone || "")}</td>
                     <td>${p.qtd}</td>
@@ -148,6 +169,27 @@
                 entrar();
             } catch (err) { $("adminErr").textContent = "Token inválido."; }
         });
+        async function consultarNumero() {
+            const n = parseInt($("numInput").value, 10);
+            if (!n || n < 1) { $("numResult").innerHTML = `<div class="lookup-card free">Digite um número válido.</div>`; return; }
+            $("numResult").innerHTML = `<div class="lookup-card">Consultando…</div>`;
+            try {
+                const res = await fetch("/api/admin/numero/" + n, { headers: { "X-Admin-Token": TOKEN } });
+                const d = await res.json();
+                if (d.disponivel) {
+                    $("numResult").innerHTML = `<div class="lookup-card free"><span class="cota">${d.numero}</span> — ainda não foi vendido (sem dono).</div>`;
+                } else {
+                    $("numResult").innerHTML = `<div class="lookup-card hit">
+                        <span class="cota">${d.numero}</span>${d.por_fora ? '<span class="tag-fora">pago por fora</span>' : ''}
+                        <div class="who">${esc(d.nome)}</div>
+                        <div class="meta">📱 ${esc(d.telefone || "—")} · CPF ${esc(d.cpf || "—")}</div>
+                    </div>`;
+                }
+            } catch (e) { $("numResult").innerHTML = `<div class="lookup-card free">Erro ao consultar.</div>`; }
+        }
+        $("numBtn").addEventListener("click", consultarNumero);
+        $("numInput").addEventListener("keydown", (e) => { if (e.key === "Enter") consultarNumero(); });
+
         $("refreshBtn").addEventListener("click", () => carregar().catch(() => {}));
         $("csvBtn").addEventListener("click", baixarCSV);
         $("reconBtn").addEventListener("click", async () => {
