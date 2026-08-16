@@ -100,7 +100,7 @@ _CATALOGO: list[dict[str, Any]] = [
             "um único condomínio pode ter dezenas). Para achar os processos de um condomínio, "
             "PRIMEIRO use easyjur_clientes(nome=...) para pegar o id do cliente e depois passe "
             "'id_cliente' aqui. O campo 'meta.total' e 'meta.total_pages' dizem QUANTOS existem "
-            "no total — se houver mais de uma página, chame de novo com 'pagina'=2, 3… até cobrir "
+            "no total — se houver mais de uma página, chame de novo com 'page'=2, 3… até cobrir "
             "todas ANTES de concluir. Nunca afirme um total sem ter percorrido todas as páginas."
         ),
         "props": {
@@ -108,7 +108,9 @@ _CATALOGO: list[dict[str, Any]] = [
                 "type": "integer",
                 "description": "Filtra os processos deste cliente (id de easyjur_clientes).",
             },
-            "pagina": {"type": "integer", "description": "Página (20 por página; padrão 1)."},
+            # ATENÇÃO: a API ignora em silêncio qualquer outro nome (ex.: "pagina") e
+            # devolve sempre a página 1 — o que faz o agente concluir que não há mais nada.
+            "page": {"type": "integer", "description": "Página (20 por página; padrão 1)."},
         },
         "obrig": [],
     },
@@ -257,7 +259,7 @@ def montar_handlers_mcpai(client: MCPAIClient) -> dict[str, Handler]:
                 return f"Não consegui consultar o {_sistema(nome)} agora ({exc})."
             texto = json.dumps(_enxugar(path, resultado), ensure_ascii=False)
             if len(texto) > _LIMITE_RESULTADO:
-                texto = texto[:_LIMITE_RESULTADO] + " …[truncado — use 'pagina' p/ ver mais]"
+                texto = texto[:_LIMITE_RESULTADO] + " …[truncado — use 'page' p/ ver mais]"
             return texto
 
         return handler

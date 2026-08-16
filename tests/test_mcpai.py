@@ -32,16 +32,32 @@ def test_schemas_e_nomes_batem() -> None:
     assert "easyjur_processos" in nomes and "tiflux_criar_ticket" in nomes
 
 
+def test_paginacao_de_processos_usa_page() -> None:
+    """A API do EasyJur ignora em silêncio qualquer outro nome (ex.: 'pagina') e
+    devolve sempre a página 1 — o agente conclui que não há mais nada e erra o total."""
+    processos = next(f for f in FERRAMENTAS_MCPAI if f["name"] == "easyjur_processos")
+    props = processos["input_schema"]["properties"]
+    assert "page" in props, "o parâmetro de paginação precisa se chamar 'page'"
+    assert "pagina" not in props
+
+
 @pytest.mark.asyncio
 async def test_handler_leitura_chama_rota_certa() -> None:
     client = AsyncMock()
-    client.chamar.return_value = {"data": [{"numero": "123", "nome_cliente": "COND. LARA"}]}
+    client.chamar.return_value = {
+        "data": [{"numero": "123", "nome_contrario": "FULANO", "campo_ruido": "x" * 500}],
+        "meta": {"total": 42, "total_pages": 3},
+        "raw_data": "x" * 9000,  # a API duplica tudo aqui — deve ser removido
+    }
     handlers = montar_handlers_mcpai(client)
 
     saida = await handlers["easyjur_processos"]({})
 
     client.chamar.assert_awaited_once_with("/api/easyjur/list/processos", {})
-    assert "COND. LARA" in saida
+    assert "123" in saida and "FULANO" in saida  # campos essenciais mantidos
+    assert "campo_ruido" not in saida  # ruído do processo é enxugado
+    assert "raw_data" not in saida  # duplicata gigante removida
+    assert '"total": 42' in saida and '"total_pages": 3' in saida  # meta preservado p/ paginar
 
 
 @pytest.mark.asyncio
