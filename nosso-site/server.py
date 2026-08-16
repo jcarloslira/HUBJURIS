@@ -224,14 +224,6 @@ class LoginIn(BaseModel):
     telefone: str = Field(min_length=10, max_length=11)
 
 
-class PedidoManualIn(BaseModel):
-    """Registro de compra paga FORA do site (ex.: PIX direto)."""
-    nome: str = Field(min_length=2, max_length=120)
-    cpf: str = Field(min_length=11, max_length=11)
-    telefone: str = Field(default="", max_length=11)
-    qtd: int = Field(ge=1, le=TOTAL_NUMEROS)
-
-
 # ── App / lifespan ────────────────────────────────────────────────────
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -548,40 +540,6 @@ async def admin_dados(x_admin_token: str | None = Header(default=None)) -> dict:
             "ficticios": VENDIDOS_FICTICIOS,
         },
         "pedidos": pedidos_out,
-    }
-
-
-@app.post("/api/admin/pedido-manual")
-async def pedido_manual(
-    body: PedidoManualIn, x_admin_token: str | None = Header(default=None)
-) -> dict:
-    """Registra uma compra paga FORA do site e sorteia os números de verdade.
-
-    Fica marcada como 'MANUAL' (pago por fora) para auditoria no painel.
-    """
-    _check_admin(x_admin_token)
-    pedido_id = str(uuid.uuid4())
-    agora = datetime.now(UTC).isoformat()
-    valor = float((PRECO_TITULO * body.qtd).quantize(Decimal("0.01")))
-    with _db() as con:
-        con.execute(
-            """INSERT INTO pedidos
-               (id, mp_payment_id, qtd, valor, nome, cpf, telefone, email,
-                status, qr_code, created_at, paid_at)
-               VALUES (?,?,?,?,?,?,?,?,?,?,?,?)""",
-            (
-                pedido_id, f"MANUAL-{pedido_id[:8]}", body.qtd, valor, body.nome,
-                body.cpf, body.telefone, None, "pago", "", agora, agora,
-            ),
-        )
-        ped = con.execute("SELECT * FROM pedidos WHERE id=?", (pedido_id,)).fetchone()
-        numeros = _atribuir_numeros(con, ped)
-    return {
-        "pedido_id": pedido_id,
-        "nome": body.nome,
-        "qtd": body.qtd,
-        "valor": valor,
-        "numeros": [_fmt_num(n) for n in numeros],
     }
 
 
