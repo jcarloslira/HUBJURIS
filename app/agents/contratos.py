@@ -24,4 +24,4 @@ class ContratosAgent(BaseAgent):
     """Redator e revisor de contratos condominiais, com vencimento e rescisão."""
 
     system_prompt = SYSTEM_PROMPT
-    max_tokens = 8192
+    max_tokens = 32_000

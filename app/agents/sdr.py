@@ -320,4 +320,7 @@ class SDRAgent(BaseAgent):
     """Lorena — SDR do escritório Lassi Leocádio Advogados."""
 
     system_prompt = SYSTEM_PROMPT
+    # Produto à parte (WhatsApp do Lassi) e chamada não-streaming: fica no modelo
+    # e no limite antigos de propósito — respostas de SDR são curtas.
+    model = "claude-sonnet-4-6"
     max_tokens = 512

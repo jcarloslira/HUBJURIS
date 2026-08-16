@@ -6,11 +6,23 @@ from typing import Any
 from anthropic import AsyncAnthropic
 from anthropic.types import MessageParam
 
-DEFAULT_MODEL = "claude-sonnet-4-6"
-DEFAULT_MAX_TOKENS = 1024
+DEFAULT_MODEL = "claude-opus-5"
+# Uma peça jurídica com timbre não cabe em poucos milhares de tokens; este é o
+# teto de saída por resposta (só é cobrado o que o modelo realmente gerar).
+DEFAULT_MAX_TOKENS = 32_000
 
 # Teto de idas ao modelo num único turno com ferramentas (evita loop infinito).
-MAX_ITERACOES_FERRAMENTAS = 5
+# Uma tarefa real encadeia várias: achar o cliente no EasyJur, listar processos,
+# abrir a pasta no Drive, ler o documento e só então redigir.
+MAX_ITERACOES_FERRAMENTAS = 40
+
+# Raciocínio adaptativo: o modelo decide sozinho quando e quanto pensar.
+THINKING: dict[str, Any] = {"type": "adaptive"}
+# Profundidade de raciocínio e de trabalho: low | medium | high | xhigh | max.
+# Medido numa notificação completa: "medium" começa a escrever em 3,5s e entrega
+# ~1.700 palavras; "high" leva 36s de tela muda para entregar ~2.100. Num chat em
+# que a pessoa está olhando, o silêncio inicial custa mais do que o ganho.
+OUTPUT_CONFIG: dict[str, Any] = {"effort": "medium"}
 
 
 def _rotulo_passo(nome: str) -> str:
@@ -125,6 +137,8 @@ class BaseAgent:
                 max_tokens=self.max_tokens,
                 system=system,
                 messages=historico,
+                thinking=THINKING,
+                output_config=OUTPUT_CONFIG,
                 **extra,
             ) as stream:
                 async for texto in stream.text_stream:
@@ -161,6 +175,8 @@ class BaseAgent:
                 max_tokens=self.max_tokens,
                 system=system,
                 messages=historico,
+                thinking=THINKING,
+                output_config=OUTPUT_CONFIG,
             ) as stream:
                 async for texto in stream.text_stream:
                     yield texto

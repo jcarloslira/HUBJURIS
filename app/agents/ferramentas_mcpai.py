@@ -8,14 +8,85 @@ escritório). Novos endpoints entram só acrescentando uma linha em ``_CATALOGO`
 """
 
 import json
+import re
 from collections.abc import Awaitable, Callable
 from typing import Any
 
 from app.services.mcpai import MCPAIClient, MCPAIError
 
-_LIMITE_RESULTADO = 3200  # chars devolvidos ao modelo (evita estourar contexto)
+_LIMITE_RESULTADO = 8000  # chars devolvidos ao modelo (evita estourar contexto)
 
 Handler = Callable[[dict[str, Any]], Awaitable[str]]
+
+# Campos que valem a pena de cada PROCESSO do EasyJur (a API devolve ~80 por item,
+# a maioria ruído; sem enxugar, só 2 processos cabem no orçamento de contexto).
+_CAMPOS_PROCESSO = (
+    "id_processo",
+    "numero",
+    "titulo_acao",
+    "nome_contrario",
+    "vinculo",
+    "area_info",
+    "status_label",
+    "instancia_label",
+    "valor_causa",
+    "vara",
+    "comarca",
+    "uf",
+    "fase_atual",
+    "data_distribuicao",
+    "ultimo_andamento",
+)
+# Campos úteis de cada PESSOA/cliente (dropa campos_personalizados e ruído).
+_CAMPOS_PESSOA = (
+    "id",
+    "nome",
+    "apelido",
+    "fisica_juridica",
+    "cpf",
+    "cnpj",
+    "email",
+    "celular",
+)
+
+
+def _limpar_html(valor: Any) -> Any:
+    """Remove tags e desescapa entidades HTML de um texto (ex.: último andamento)."""
+    if not isinstance(valor, str):
+        return valor
+    texto = re.sub(r"<[^>]+>", " ", valor)
+    for ent, char in (("&nbsp;", " "), ("&ccedil;", "ç"), ("&atilde;", "ã"),
+                      ("&aacute;", "á"), ("&eacute;", "é"), ("&iacute;", "í"),
+                      ("&oacute;", "ó"), ("&uacute;", "ú"), ("&ecirc;", "ê"),
+                      ("&ocirc;", "ô"), ("&atilde", "ã"), ("&amp;", "&")):
+        texto = texto.replace(ent, char)
+    return re.sub(r"\s+", " ", texto).strip()
+
+
+def _enxugar(path: str, resultado: Any) -> Any:
+    """Enxuga a resposta do EasyJur/Tiflux: remove ``raw_data`` (duplica tudo) e,
+    em listagens de processos/pessoas, projeta cada item nos campos essenciais e
+    preserva ``meta`` (total, total_pages) para o agente saber quando paginar."""
+    if not isinstance(resultado, dict):
+        return resultado
+    resultado = {k: v for k, v in resultado.items() if k != "raw_data"}
+    itens = resultado.get("data")
+    if isinstance(itens, list) and itens and isinstance(itens[0], dict):
+        if "processos" in path:
+            campos = _CAMPOS_PROCESSO
+        elif "pessoas" in path:
+            campos = _CAMPOS_PESSOA
+        else:
+            campos = ()
+        if campos:
+            enxutos = []
+            for item in itens:
+                linha = {c: item.get(c) for c in campos if item.get(c) not in (None, "", 0)}
+                if "ultimo_andamento" in linha:
+                    linha["ultimo_andamento"] = _limpar_html(linha["ultimo_andamento"])
+                enxutos.append(linha)
+            resultado["data"] = enxutos
+    return resultado
 
 # name -> (path, escrita, descrição, propriedades, obrigatórios)
 _CATALOGO: list[dict[str, Any]] = [
@@ -25,10 +96,12 @@ _CATALOGO: list[dict[str, Any]] = [
         "path": "/api/easyjur/list/processos",
         "escrita": False,
         "descricao": (
-            "Lista processos do EasyJur (paginado, 20 por página — o escritório tem MILHARES). "
-            "Para achar os processos de um condomínio, PRIMEIRO use easyjur_clientes(nome=...) "
-            "para pegar o id do cliente e depois passe 'id_cliente' aqui. Use 'pagina' para "
-            "avançar."
+            "Lista processos do EasyJur (paginado, 20 por página — o escritório tem MILHARES; "
+            "um único condomínio pode ter dezenas). Para achar os processos de um condomínio, "
+            "PRIMEIRO use easyjur_clientes(nome=...) para pegar o id do cliente e depois passe "
+            "'id_cliente' aqui. O campo 'meta.total' e 'meta.total_pages' dizem QUANTOS existem "
+            "no total — se houver mais de uma página, chame de novo com 'pagina'=2, 3… até cobrir "
+            "todas ANTES de concluir. Nunca afirme um total sem ter percorrido todas as páginas."
         ),
         "props": {
             "id_cliente": {
@@ -182,9 +255,9 @@ def montar_handlers_mcpai(client: MCPAIClient) -> dict[str, Handler]:
                 resultado = await client.chamar(path, entrada)
             except MCPAIError as exc:
                 return f"Não consegui consultar o {_sistema(nome)} agora ({exc})."
-            texto = json.dumps(resultado, ensure_ascii=False)
+            texto = json.dumps(_enxugar(path, resultado), ensure_ascii=False)
             if len(texto) > _LIMITE_RESULTADO:
-                texto = texto[:_LIMITE_RESULTADO] + " …[resultado truncado]"
+                texto = texto[:_LIMITE_RESULTADO] + " …[truncado — use 'pagina' p/ ver mais]"
             return texto
 
         return handler

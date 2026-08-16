@@ -33,4 +33,4 @@ class NotificacoesAgent(BaseAgent):
     """Redator de notificações extrajudiciais condominiais."""
 
     system_prompt = SYSTEM_PROMPT
-    max_tokens = 4096
+    max_tokens = 32_000

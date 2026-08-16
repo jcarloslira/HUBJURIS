@@ -7,7 +7,7 @@ dependencies = [
     "fastapi>=0.115",
     "uvicorn[standard]>=0.30",
     "supabase>=2.6",
-    "anthropic>=0.40",
+    "anthropic>=0.116",
     "pydantic>=2.7",
     "pydantic-settings>=2.3",
     "httpx>=0.27",
@@ -16,6 +16,7 @@ dependencies = [
     "fpdf2>=2.8.7",
     "openpyxl>=3.1.5",
     "pypdf>=6.15.0",
+    "beautifulsoup4>=4.15.0",
 ]
 
 [dependency-groups]

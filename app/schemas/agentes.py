@@ -13,8 +13,8 @@ class AgenteConfig(BaseModel):
     descricao: str = ""
     icone: str = "scale"
     system_prompt: str
-    modelo: str = "claude-sonnet-4-6"
-    max_tokens: int = Field(default=1024, ge=256, le=8192)
+    modelo: str = "claude-opus-5"
+    max_tokens: int = Field(default=32_000, ge=256, le=64_000)
     ativo: bool = True
     ordem: int = 0
 
@@ -27,6 +27,6 @@ class AgenteConfigUpdate(BaseModel):
     icone: str | None = Field(default=None, max_length=40)
     system_prompt: str | None = Field(default=None, min_length=1)
     modelo: str | None = Field(default=None, max_length=60)
-    max_tokens: int | None = Field(default=None, ge=256, le=8192)
+    max_tokens: int | None = Field(default=None, ge=256, le=64_000)
     ativo: bool | None = None
     ordem: int | None = None

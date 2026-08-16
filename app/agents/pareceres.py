@@ -27,4 +27,4 @@ class PareceresAgent(BaseAgent):
     """Redator de pareceres jurídicos condominiais fundamentados."""
 
     system_prompt = SYSTEM_PROMPT
-    max_tokens = 8192
+    max_tokens = 32_000

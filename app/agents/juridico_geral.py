@@ -23,4 +23,4 @@ class JuridicoGeralAgent(BaseAgent):
     """Assistente generalista de Direito Condominial."""
 
     system_prompt = SYSTEM_PROMPT
-    max_tokens = 4096
+    max_tokens = 16_000

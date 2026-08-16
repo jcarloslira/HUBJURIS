@@ -24,4 +24,4 @@ class ConsultaHistoricaAgent(BaseAgent):
     """Consulta factual ao acervo histórico do condomínio."""
 
     system_prompt = SYSTEM_PROMPT
-    max_tokens = 4096
+    max_tokens = 16_000

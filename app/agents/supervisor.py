@@ -48,4 +48,4 @@ class SupervisorAgent(BaseAgent):
     """Primeiro contato, onboarding do escritório e roteamento da equipe."""
 
     system_prompt = SYSTEM_PROMPT
-    max_tokens = 2048
+    max_tokens = 32_000
