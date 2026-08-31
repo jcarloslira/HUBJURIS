@@ -1636,6 +1636,7 @@ function renderPeca(div, peca) {
       </div>
       <div class="peca-acts">
         <button class="peca-btn primary">⬇ Baixar PDF</button>
+        <button class="peca-btn">Impressão rápida</button>
         <button class="peca-btn">Copiar</button>
       </div>
     </div>
@@ -1644,8 +1645,9 @@ function renderPeca(div, peca) {
       <div class="peca-conteudo">${corpoHtml}</div>
       ${t.rodape ? `<div class="peca-rodape">${escapar(t.rodape)}</div>` : ''}
     </div>`;
-  const [bBaixar, bCopiar] = art.querySelectorAll('.peca-btn');
-  bBaixar.onclick = () => baixarPecaPDF(peca.titulo, corpoHtml);
+  const [bBaixar, bRapido, bCopiar] = art.querySelectorAll('.peca-btn');
+  bBaixar.onclick = () => baixarPecaDesenhado(bBaixar, peca);
+  bRapido.onclick = () => baixarPecaPDF(peca.titulo, corpoHtml);
   bCopiar.onclick = async () => {
     try {
       await navigator.clipboard.writeText(peca.conteudo);
@@ -1656,7 +1658,47 @@ function renderPeca(div, peca) {
   div.appendChild(art);
 }
 
-// Baixar em PDF de alta fidelidade via impressão do navegador (Salvar como PDF).
+// PDF desenhado: o agente escreve o código do documento no servidor. Leva alguns
+// minutos, então o botão vira barra de progresso honesta em vez de travar mudo.
+async function baixarPecaDesenhado(botao, peca) {
+  if (botao.dataset.gerando === '1') return;
+  botao.dataset.gerando = '1';
+  const rotulo = botao.textContent;
+  const fases = ['Projetando o layout…', 'Escrevendo o documento…',
+                 'Montando tabelas…', 'Conferindo as páginas…'];
+  let i = 0;
+  botao.textContent = '⏳ ' + fases[0];
+  const timer = setInterval(() => {
+    i = (i + 1) % fases.length;
+    botao.textContent = '⏳ ' + fases[i];
+  }, 12000);
+  try {
+    const r = await fetch('/api/documentos/pdf-desenhado', {
+      method: 'POST',
+      headers: authHeaders({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify({ titulo: peca.titulo, conteudo: peca.conteudo }),
+    });
+    if (!r.ok) throw new Error('falhou');
+    const blob = await r.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = (peca.titulo || 'documento').slice(0, 60) + '.pdf';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 4000);
+    botao.textContent = 'Pronto ✓';
+  } catch {
+    botao.textContent = 'Falhou — use a impressão rápida';
+  } finally {
+    clearInterval(timer);
+    botao.dataset.gerando = '';
+    setTimeout(() => { botao.textContent = rotulo; }, 4000);
+  }
+}
+
+// Impressão rápida do navegador (Salvar como PDF) — molde fixo, instantâneo.
 function baixarPecaPDF(titulo, corpoHtml) {
   const t = pecaTimbre();
   const cor = /^#[0-9a-fA-F]{6}$/.test(t.cor || '') ? t.cor : '#9A6A3A';

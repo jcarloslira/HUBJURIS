@@ -5,6 +5,20 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
+# O WeasyPrint (que renderiza o HTML das peças em PDF) depende de libs de sistema.
+# As fontes são as mesmas dos relatórios já aprovados pelo escritório: DejaVu Serif
+# no corpo, Nimbus Sans nos rótulos e Liberation como reserva.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        libpango-1.0-0 \
+        libpangoft2-1.0-0 \
+        libharfbuzz0b \
+        libgdk-pixbuf-2.0-0 \
+        fonts-dejavu-core \
+        fonts-urw-base35 \
+        fonts-liberation \
+    && rm -rf /var/lib/apt/lists/*
+
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 
 COPY pyproject.toml uv.lock ./

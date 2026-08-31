@@ -10,16 +10,18 @@ import re
 import unicodedata
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Request, Response
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.config import get_settings
 from app.dependencies import get_current_user
 from app.schemas.auth import AuthUser
 from app.schemas.branding import Branding, BrandingResponse
-from app.schemas.documentos import ExportarPayload
+from app.schemas.documentos import ExportarPayload, PdfDesenhadoPayload
+from app.services.anexos import construir_blocos
 from app.services.branding import BrandingService
 from app.services.contas import ContaService
 from app.services.documentos import Timbre, gerar_docx, gerar_pdf, gerar_xlsx
+from app.services.pdf_designer import PDFDesignerError, gerar_pdf_desenhado
 
 router = APIRouter(prefix="/api/documentos", tags=["documentos"])
 
@@ -125,5 +127,39 @@ async def exportar(
     return Response(
         content=dados,
         media_type=_MEDIA[payload.formato],
+        headers={"Content-Disposition": f'attachment; filename="{nome}"'},
+    )
+
+
+@router.post("/pdf-desenhado")
+async def pdf_desenhado(
+    payload: PdfDesenhadoPayload,
+    request: Request,
+    user: Annotated[AuthUser, Depends(get_current_user)],
+) -> Response:
+    """Gera o PDF com o agente escrevendo o código do documento.
+
+    Mais lento e mais caro que ``/exportar`` (roda um laço de execução de código),
+    em troca de layout projetado para a peça: capa, indicadores, tabelas e linha
+    do tempo. Aceita anexos de referência para copiar um design existente.
+    """
+    timbre = await _timbre_do_usuario(request, user)
+    referencias = construir_blocos("", payload.referencias) if payload.referencias else None
+    try:
+        dados = await gerar_pdf_desenhado(
+            request.app.state.anthropic,
+            titulo=payload.titulo,
+            conteudo=payload.conteudo,
+            timbre=timbre,
+            referencias=referencias,
+            instrucoes=payload.instrucoes,
+        )
+    except PDFDesignerError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+    nome = f"{_slug(payload.titulo)}.pdf"
+    return Response(
+        content=dados,
+        media_type=_MEDIA["pdf"],
         headers={"Content-Disposition": f'attachment; filename="{nome}"'},
     )
