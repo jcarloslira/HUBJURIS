@@ -10,6 +10,15 @@ from app.schemas.health import HealthResponse
 router = APIRouter(tags=["health"])
 
 
+def _weasyprint_ok() -> bool:
+    """Indica se o WeasyPrint consegue carregar (precisa das libs de sistema)."""
+    try:
+        import weasyprint  # noqa: F401 - só queremos saber se importa
+    except Exception:  # noqa: BLE001 - ambiente sem as libs nativas
+        return False
+    return True
+
+
 @router.get("/health", response_model=HealthResponse, status_code=200)
 async def health(settings: Annotated[Settings, Depends(get_settings)]) -> HealthResponse:
     """Verifica se a API está no ar."""
@@ -33,6 +42,9 @@ async def health_full(
         },
         "anthropic": bool(settings.ANTHROPIC_API_KEY),
         "composio_drive": bool(settings.COMPOSIO_API_KEY),
+        # Diz se o motor que renderiza as peças subiu de verdade: o WeasyPrint
+        # exige libs de sistema (pango/cairo) que só existem se o Dockerfile rodar.
+        "weasyprint": _weasyprint_ok(),
         "mcp_ai": bool(settings.MCP_AI_API_KEY),
         "mercado_pago": {
             "token_configurado": bool(settings.MERCADO_PAGO_ACCESS_TOKEN),
