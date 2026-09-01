@@ -2,7 +2,7 @@
 
 import pytest
 
-from app.services.design_system import ESPECIFICACAO, PALETA
+from app.services.design_system import ESPECIFICACAO, PALETA, SEMANTICA
 from app.services.documentos import Timbre
 from app.services.pdf_designer import (
     PDFDesignerError,
@@ -90,5 +90,14 @@ def test_especificacao_carrega_a_paleta_aprovada() -> None:
     """A spec é o que garante o visual; se perder a paleta, perde tudo."""
     for cor in PALETA.values():
         assert cor in ESPECIFICACAO
-    for componente in ("FAIXA DE INDICADORES", "LINHA DO TEMPO", "BADGE DE SEVERIDADE"):
+    for cor in SEMANTICA.values():
+        assert cor in ESPECIFICACAO
+    # Os componentes que separam um painel de um texto corrido.
+    for componente in (
+        "CARTÃO DE INDICADOR",
+        "CARTÕES DE PRIORIDADE",
+        "LINHA DO TEMPO",
+        "LISTA DE MOVIMENTAÇÕES",
+        "FAIXA DE ALERTA",
+    ):
         assert componente in ESPECIFICACAO
