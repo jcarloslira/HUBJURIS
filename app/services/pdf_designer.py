@@ -26,6 +26,11 @@ _MAX_TOKENS = 32_000
 # A geração leva ~1 minuto; damos folga para peças longas sem prender o worker.
 _TIMEOUT_S = 300.0
 _TENTATIVAS = 2
+# Quantas páginas voltam como imagem para o modelo conferir o próprio trabalho.
+# Os defeitos de layout (cartão vazando, logo sumindo, texto cortado) aparecem
+# nas primeiras; mandar o documento inteiro só encarece.
+_PAGINAS_REVISAO = 3
+_ESCALA_REVISAO = 1.4
 # O modelo referencia o logo por este marcador; trocamos pelo data URI depois,
 # para não gastar milhares de tokens mandando a imagem em base64 no prompt.
 _MARCADOR_LOGO = "__LOGO_DO_ESCRITORIO__"
@@ -180,6 +185,88 @@ async def gerar_html(
     return html
 
 
+_PROMPT_REVISAO = """As imagens acima são as primeiras páginas do PDF que o SEU
+HTML produziu. Olhe cada uma como um revisor exigente e procure defeitos:
+
+- texto ou cartão vazando da margem, cortado ou sobreposto
+- coluna espremida a ponto de quebrar palavra de forma feia
+- logotipo ilegível (colorido sobre fundo escuro) ou desproporcional
+- cabeçalho/rodapé errado, "Pág. 0", numeração fora de lugar
+- espaço vazio grande no meio da página, ou seção órfã no fim
+- contraste insuficiente entre texto e fundo
+- campo com "não informado" que deveria ter sido omitido
+
+Devolva o documento HTML COMPLETO corrigido — de <!doctype html> a </html>, com
+todo o CSS embutido. Mantenha o conteúdo e o sistema de design; mude só o que for
+preciso para eliminar os defeitos. Se estiver tudo certo, devolva o mesmo HTML.
+Sem crases, sem explicação antes ou depois."""
+
+
+def _paginas_png(pdf: bytes, limite: int = _PAGINAS_REVISAO) -> list[bytes]:
+    """Rasteriza as primeiras páginas do PDF para o modelo poder olhá-las."""
+    import io
+
+    import pypdfium2
+
+    documento = pypdfium2.PdfDocument(io.BytesIO(pdf))
+    imagens: list[bytes] = []
+    try:
+        for indice in range(min(limite, len(documento))):
+            imagem = documento[indice].render(scale=_ESCALA_REVISAO).to_pil()
+            buffer = io.BytesIO()
+            imagem.save(buffer, "PNG", optimize=True)
+            imagens.append(buffer.getvalue())
+    finally:
+        documento.close()
+    return imagens
+
+
+async def revisar_html(
+    client: AsyncAnthropic,
+    *,
+    html: str,
+    paginas: list[bytes],
+    modelo: str = MODELO_PADRAO,
+) -> str:
+    """Mostra ao modelo as páginas renderizadas e pede o HTML corrigido.
+
+    É o passo que faltava para igualar o claude.ai: renderizar, OLHAR o
+    resultado e consertar. Como a renderização roda no nosso servidor, o
+    custo extra é só o desta passada.
+
+    Returns:
+        O HTML corrigido; o original se a revisão não devolver documento válido.
+    """
+    partes: list[dict[str, Any]] = [
+        {
+            "type": "image",
+            "source": {
+                "type": "base64",
+                "media_type": "image/png",
+                "data": base64.b64encode(png).decode(),
+            },
+        }
+        for png in paginas
+    ]
+    texto_revisao = f"""{_PROMPT_REVISAO}
+
+HTML ATUAL:
+
+{html}"""
+    partes.append({"type": "text", "text": texto_revisao})
+
+    resiliente = client.with_options(timeout=_TIMEOUT_S, max_retries=_TENTATIVAS)
+    async with resiliente.messages.stream(
+        model=modelo,
+        max_tokens=_MAX_TOKENS,
+        messages=[{"role": "user", "content": partes}],
+    ) as stream:
+        bruto = "".join([texto async for texto in stream.text_stream])
+
+    revisado = _limpar_html(bruto)
+    return revisado if "<html" in revisado.lower() else html
+
+
 async def gerar_pdf_desenhado(
     client: AsyncAnthropic,
     *,
@@ -189,8 +276,9 @@ async def gerar_pdf_desenhado(
     referencias: list[dict[str, Any]] | None = None,
     instrucoes: str = "",
     modelo: str = MODELO_PADRAO,
+    revisar: bool = True,
 ) -> bytes:
-    """Gera o PDF: o modelo escreve o HTML e o WeasyPrint renderiza.
+    """Gera o PDF: o modelo escreve o HTML, renderizamos e ele confere o resultado.
 
     Args:
         client: Cliente Anthropic assíncrono da aplicação.
@@ -201,6 +289,8 @@ async def gerar_pdf_desenhado(
             referência de design, no formato da Messages API.
         instrucoes: Pedidos extras do usuário sobre o design.
         modelo: Modelo a usar.
+        revisar: Se True, renderiza, devolve as páginas como imagem para o
+            modelo revisar e re-renderiza o HTML corrigido.
 
     Returns:
         Os bytes do PDF pronto para download.
@@ -217,4 +307,20 @@ async def gerar_pdf_desenhado(
         instrucoes=instrucoes,
         modelo=modelo,
     )
-    return renderizar_pdf(_aplicar_logo(html, timbre.logo))
+    pdf = renderizar_pdf(_aplicar_logo(html, timbre.logo))
+    if not revisar:
+        return pdf
+
+    # Renderiza, mostra ao modelo o que saiu e aplica a correção. Uma revisão que
+    # falhe (imagem, rede, HTML inválido) não pode custar o documento inteiro:
+    # nesse caso fica o PDF da primeira passada, que já é entregável.
+    try:
+        paginas = _paginas_png(pdf)
+        if not paginas:
+            return pdf
+        corrigido = await revisar_html(client, html=html, paginas=paginas, modelo=modelo)
+        if corrigido == html:
+            return pdf
+        return renderizar_pdf(_aplicar_logo(corrigido, timbre.logo))
+    except Exception:  # noqa: BLE001 - revisão é melhoria, não pode derrubar a entrega
+        return pdf

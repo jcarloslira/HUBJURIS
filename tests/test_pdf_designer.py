@@ -101,3 +101,48 @@ def test_especificacao_carrega_a_paleta_aprovada() -> None:
         "FAIXA DE ALERTA",
     ):
         assert componente in ESPECIFICACAO
+
+
+def test_rasteriza_so_as_primeiras_paginas() -> None:
+    """Mandar o documento inteiro como imagem encarece sem achar mais defeito."""
+    import io
+
+    import pypdfium2
+
+    from app.services.pdf_designer import _PAGINAS_REVISAO, _paginas_png, renderizar_pdf
+
+    corpo = "<p>x</p><div style='page-break-after:always'></div>" * 6
+    try:
+        pdf = renderizar_pdf(f"<html><body>{corpo}</body></html>")
+    except Exception:  # noqa: BLE001 - só roda onde as libs do WeasyPrint existem
+        pytest.skip("sem as bibliotecas de sistema do WeasyPrint")
+
+    assert len(pypdfium2.PdfDocument(io.BytesIO(pdf))) > _PAGINAS_REVISAO
+    assert len(_paginas_png(pdf)) == _PAGINAS_REVISAO
+
+
+async def test_revisao_ignora_resposta_que_nao_e_html() -> None:
+    """Uma revisão malsucedida não pode trocar a peça por lixo."""
+    from unittest.mock import MagicMock
+
+    from app.services.pdf_designer import revisar_html
+
+    class _Stream:
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *a):
+            return False
+
+        @property
+        def text_stream(self):
+            async def gen():
+                yield "desculpe, nao consegui revisar"
+
+            return gen()
+
+    client = MagicMock()
+    client.with_options.return_value.messages.stream = MagicMock(return_value=_Stream())
+    original = "<html><body>peça boa</body></html>"
+
+    assert await revisar_html(client, html=original, paginas=[b"\x89PNG"]) == original
