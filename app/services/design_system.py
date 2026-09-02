@@ -46,11 +46,23 @@ visuais a 7 páginas de prosa: se uma seção virou três parágrafos seguidos s
 nenhum componente, ela está errada — reescreva como cartões ou lista com ícone.
 
 PÁGINA
-- A4, margens 1,8cm. Cabeçalho corrido em toda página (inclusive a 2ª em diante):
+- A4, margens 1,8cm. A área útil é de 17,4cm — TUDO tem de caber nela.
+- Cabeçalho corrido da 2ª página em diante (NUNCA na capa):
   "<escritório> · Documento Confidencial · Pág. X", sans 8pt,
-  {PALETA['cinza_secundario']}, com filete fino embaixo.
-- Use `@page` e `counter(page)`. Nada de quebra dentro de cartão, tabela ou
-  bloco de assinatura (`page-break-inside: avoid`).
+  {PALETA['cinza_secundario']}, com filete fino embaixo. Use `@page` com
+  `counter(page)` e uma `@page :first` sem cabeçalho — a capa não é paginada e
+  nunca deve exibir "Pág. 0".
+- Nada de quebra dentro de cartão, tabela ou assinatura (`page-break-inside: avoid`).
+
+LARGURA — REGRA QUE NÃO PODE SER VIOLADA
+Cartão vazando da margem é o defeito mais comum e corta texto no papel. Portanto:
+- `*{{ box-sizing: border-box; }}` obrigatório.
+- Grids com `display: grid` + `grid-template-columns: repeat(N, 1fr)` e `gap`;
+  NUNCA largura fixa em px/cm nas colunas, nunca `width` maior que 100%.
+- Cartões de indicador: no máximo 4 colunas (conteúdo curto).
+- Cartões de prioridade e qualquer cartão com parágrafo: NO MÁXIMO 2 COLUNAS —
+  em 3 colunas o texto não cabe em A4 e é cortado.
+- Tabela sempre `width: 100%` com `table-layout: fixed` e `word-wrap: break-word`.
 
 PALETA INSTITUCIONAL
 - {PALETA['petroleo_escuro']} títulos e faixa da capa
@@ -128,4 +140,13 @@ está sob controle, o que exige decisão, colocação à disposição. Assinatur
 REGRAS DE OFÍCIO
 - Valores em R$ no padrão brasileiro (1.234,56); datas em dd/mm/aaaa.
 - Preserve integralmente acentos e pontuação do português.
-- Nunca invente dado: se algo não veio na fonte, escreva "não informado"."""
+- Nunca invente dado. E não polua a peça com ausências: se um campo não veio na
+  fonte (número do processo, vara, valor), OMITA a linha inteira em vez de
+  escrever "não informado". Só registre a ausência quando ela for, em si, o
+  achado (ex.: "processo sem número CNJ cadastrado").
+
+LOGOTIPO
+O logotipo do escritório é colorido e feito para fundo claro. Coloque-o SEMPRE
+sobre fundo branco ou muito claro — se a capa tiver fundo escuro, ou use a capa
+clara, ou apoie o logotipo numa faixa/retângulo branco com respiro ao redor.
+Nunca o coloque direto sobre cor escura: ele some."""
