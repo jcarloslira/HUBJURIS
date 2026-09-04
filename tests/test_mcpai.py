@@ -85,3 +85,36 @@ async def test_handler_erro_vira_mensagem_amigavel() -> None:
     saida = await handlers["tiflux_tickets"]({})
 
     assert "Tiflux" in saida and "boom" in saida
+
+
+def test_tickets_do_tiflux_sao_enxugados() -> None:
+    """O Tiflux devolve a lista em 'value' (não 'data') com 21 campos por ticket:
+    sem tratar esse formato, uma página estoura o orçamento e some com metade."""
+    from app.agents.ferramentas_mcpai import _enxugar
+
+    bruto = {
+        "value": [
+            {
+                "ticket_number": 6331,
+                "title": "Proposta eletro posto",
+                "client": {"id": 1889559, "name": "COND. SQB"},
+                "responsible": {"id": 1008331, "name": "Pedro Martinez"},
+                "created_by_id": 1026775,
+                "followers": "",
+                "reopen_count": 0,
+                "is_revised": False,
+            }
+        ],
+        "total_items": 156,
+        "raw_data": "x" * 9000,
+    }
+
+    enxuto = _enxugar("/api/tiflux/list/tickets", bruto)
+    ticket = enxuto["value"][0]
+
+    assert enxuto["total_items"] == 156  # o total real precisa sobreviver
+    assert "raw_data" not in enxuto
+    assert ticket["client"] == "COND. SQB"  # {id, name} vira só o nome
+    assert ticket["responsible"] == "Pedro Martinez"
+    assert "created_by_id" not in ticket  # ruído fora
+    assert "reopen_count" not in ticket

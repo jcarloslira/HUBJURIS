@@ -44,6 +44,23 @@ _CAMPOS_PROCESSO = (
     "data_distribuicao",
     "ultimo_andamento",
 )
+# Campos úteis de cada TICKET do Tiflux. A resposta vem com 21 campos por ticket
+# e uma página cheia dá ~23k chars — o dobro do orçamento, o que fazia metade dos
+# tickets sumir do relatório sem aviso.
+_CAMPOS_TICKET = (
+    "ticket_number",
+    "title",
+    "client",
+    "requestor",
+    "responsible",
+    "desk",
+    "stage",
+    "status",
+    "priority",
+    "is_closed",
+    "created_at",
+    "updated_at",
+)
 # Campos úteis de cada PESSOA/cliente (dropa campos_personalizados e ruído).
 _CAMPOS_PESSOA = (
     "id",
@@ -70,6 +87,13 @@ def _limpar_html(valor: Any) -> Any:
     return re.sub(r"\s+", " ", texto).strip()
 
 
+def _achatar(valor: Any) -> Any:
+    """Reduz os objetos {id, name} do Tiflux ao nome — o id não diz nada ao leitor."""
+    if isinstance(valor, dict):
+        return valor.get("name") or valor.get("nome") or valor
+    return valor
+
+
 def _enxugar(path: str, resultado: Any) -> Any:
     """Enxuga a resposta do EasyJur/Tiflux: remove ``raw_data`` (duplica tudo) e,
     em listagens de processos/pessoas, projeta cada item nos campos essenciais e
@@ -77,6 +101,23 @@ def _enxugar(path: str, resultado: Any) -> Any:
     if not isinstance(resultado, dict):
         return resultado
     resultado = {k: v for k, v in resultado.items() if k != "raw_data"}
+
+    # O Tiflux devolve a lista em "value" e o total em "total_items"; o EasyJur usa
+    # "data" e "meta". Sem tratar os dois, os tickets passavam inteiros e estouravam.
+    if "tickets" in path and isinstance(resultado.get("value"), list):
+        enxutos = []
+        for item in resultado["value"]:
+            if not isinstance(item, dict):
+                continue
+            linha = {
+                c: _achatar(item.get(c))
+                for c in _CAMPOS_TICKET
+                if item.get(c) not in (None, "", [], {})
+            }
+            enxutos.append(linha)
+        resultado["value"] = enxutos
+        return resultado
+
     itens = resultado.get("data")
     if isinstance(itens, list) and itens and isinstance(itens[0], dict):
         if "processos" in path:
