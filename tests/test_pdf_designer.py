@@ -146,3 +146,61 @@ async def test_revisao_ignora_resposta_que_nao_e_html() -> None:
     original = "<html><body>peça boa</body></html>"
 
     assert await revisar_html(client, html=original, paginas=[b"\x89PNG"]) == original
+
+
+async def test_revisao_injeta_css_no_fim_da_folha_de_estilo() -> None:
+    """O remendo tem de entrar por último para vencer na cascata."""
+    from unittest.mock import MagicMock
+
+    from app.services.pdf_designer import revisar_html
+
+    class _Stream:
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *a):
+            return False
+
+        @property
+        def text_stream(self):
+            async def gen():
+                yield ".cartao { max-width: 100%; }"
+
+            return gen()
+
+    client = MagicMock()
+    client.with_options.return_value.messages.stream = MagicMock(return_value=_Stream())
+    html = "<html><head><style>.cartao{width:900px}</style></head><body>x</body></html>"
+
+    saida = await revisar_html(client, html=html, paginas=[b"\x89PNG"])
+
+    assert ".cartao { max-width: 100%; }" in saida
+    assert saida.index("max-width") < saida.index("</style>")  # dentro do <style>
+    assert saida.index("width:900px") < saida.index("max-width")  # e depois da regra original
+
+
+async def test_revisao_sem_defeito_devolve_o_html_intacto() -> None:
+    """Responder NADA não pode sujar o documento com CSS vazio."""
+    from unittest.mock import MagicMock
+
+    from app.services.pdf_designer import revisar_html
+
+    class _Stream:
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *a):
+            return False
+
+        @property
+        def text_stream(self):
+            async def gen():
+                yield "NADA"
+
+            return gen()
+
+    client = MagicMock()
+    client.with_options.return_value.messages.stream = MagicMock(return_value=_Stream())
+    html = "<html><head><style>a{}</style></head><body>ok</body></html>"
+
+    assert await revisar_html(client, html=html, paginas=[b"\x89PNG"]) == html

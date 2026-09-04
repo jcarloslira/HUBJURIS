@@ -194,12 +194,11 @@ HTML produziu. Olhe cada uma como um revisor exigente e procure defeitos:
 - cabeçalho/rodapé errado, "Pág. 0", numeração fora de lugar
 - espaço vazio grande no meio da página, ou seção órfã no fim
 - contraste insuficiente entre texto e fundo
-- campo com "não informado" que deveria ter sido omitido
 
-Devolva o documento HTML COMPLETO corrigido — de <!doctype html> a </html>, com
-todo o CSS embutido. Mantenha o conteúdo e o sistema de design; mude só o que for
-preciso para eliminar os defeitos. Se estiver tudo certo, devolva o mesmo HTML.
-Sem crases, sem explicação antes ou depois."""
+Responda APENAS com regras CSS que corrijam o que você viu — sem <style>, sem
+HTML, sem explicação, sem crases. As regras serão coladas no FIM da folha de
+estilo, então elas vencem as anteriores; use seletores específicos o bastante
+para acertar o alvo. Se o documento estiver correto, responda exatamente: NADA"""
 
 
 def _paginas_png(pdf: bytes, limite: int = _PAGINAS_REVISAO) -> list[bytes]:
@@ -228,7 +227,11 @@ async def revisar_html(
     paginas: list[bytes],
     modelo: str = MODELO_PADRAO,
 ) -> str:
-    """Mostra ao modelo as páginas renderizadas e pede o HTML corrigido.
+    """Mostra ao modelo as páginas renderizadas e pede um REMENDO de CSS.
+
+    Pedir o documento inteiro de volta custava outros ~8.000 tokens de saída e
+    ~2,5 minutos — mais que a geração original. O remendo resolve os mesmos
+    defeitos de layout em ~400 tokens, porque quase todo defeito visual é CSS.
 
     É o passo que faltava para igualar o claude.ai: renderizar, OLHAR o
     resultado e consertar. Como a renderização roda no nosso servidor, o
@@ -258,13 +261,23 @@ HTML ATUAL:
     resiliente = client.with_options(timeout=_TIMEOUT_S, max_retries=_TENTATIVAS)
     async with resiliente.messages.stream(
         model=modelo,
-        max_tokens=_MAX_TOKENS,
+        max_tokens=2_000,
         messages=[{"role": "user", "content": partes}],
     ) as stream:
         bruto = "".join([texto async for texto in stream.text_stream])
 
-    revisado = _limpar_html(bruto)
-    return revisado if "<html" in revisado.lower() else html
+    css = bruto.strip().strip("`").removeprefix("css").strip()
+    if not css or css.upper().startswith("NADA") or "<" in css[:200]:
+        return html
+    # Injeta no fim da folha de estilo: o que vem por último vence na cascata.
+    corte = html.lower().rfind("</style>")
+    if corte == -1:
+        return html
+    remendo = f"""
+/* revisão visual */
+{css}
+"""
+    return html[:corte] + remendo + html[corte:]
 
 
 async def gerar_pdf_desenhado(
