@@ -1489,6 +1489,8 @@ async function addFato(ev) {
 /* ---------- Anexos ---------- */
 let anexos = [];
 let anexosEnvio = [];
+// Últimos anexos enviados, reaproveitados como referência visual ao gerar o PDF.
+let referenciasDesign = [];
 const MAX_ANEXO = 5 * 1024 * 1024;  // 5 MB por arquivo
 const IC_CLIP = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>';
 
@@ -1676,7 +1678,11 @@ async function baixarPecaDesenhado(botao, peca) {
     const r = await fetch('/api/documentos/pdf-desenhado', {
       method: 'POST',
       headers: authHeaders({ 'Content-Type': 'application/json' }),
-      body: JSON.stringify({ titulo: peca.titulo, conteudo: peca.conteudo }),
+      body: JSON.stringify({
+        titulo: peca.titulo,
+        conteudo: peca.conteudo,
+        referencias: referenciasDesign,
+      }),
     });
     if (!r.ok) throw new Error('falhou');
     const blob = await r.blob();
@@ -2050,6 +2056,9 @@ async function gerarResposta() {
   $('send').classList.add('gerando');
 
   const anexosReq = anexosEnvio;
+  // O modelo que o usuário anexa ("faz igual a esse") também precisa chegar no
+  // gerador de PDF, não só no chat — senão o design nunca muda.
+  if (anexosReq.length) referenciasDesign = anexosReq.slice(0, 4);
   anexosEnvio = [];
   try {
     const resp = await fetch('/api/chat', {

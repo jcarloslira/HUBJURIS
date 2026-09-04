@@ -106,21 +106,40 @@ _CATALOGO: list[dict[str, Any]] = [
         "path": "/api/easyjur/list/processos",
         "escrita": False,
         "descricao": (
-            "Lista processos do EasyJur (paginado, 20 por página — o escritório tem MILHARES; "
-            "um único condomínio pode ter dezenas). Para achar os processos de um condomínio, "
-            "PRIMEIRO use easyjur_clientes(nome=...) para pegar o id do cliente e depois passe "
-            "'id_cliente' aqui. O campo 'meta.total' e 'meta.total_pages' dizem QUANTOS existem "
-            "no total — se houver mais de uma página, chame de novo com 'page'=2, 3… até cobrir "
-            "todas ANTES de concluir. Nunca afirme um total sem ter percorrido todas as páginas."
+            "Lista/busca processos no EasyJur. USE OS FILTROS — o escritório tem ~4.800 "
+            "processos. Filtros: id_cliente, numero, nome_parte, cpf, cnpj, advogado_nome, "
+            "status, comarca, uf, movimentacao, dias_movimentacao. "
+            "SEMPRE passe page_size alto (200) para varrer em poucas chamadas: 4.800 "
+            "processos cabem em 25 páginas com page_size=200, contra 241 com o padrão de 20. "
+            "NÃO existe filtro por data na API — para 'distribuídos em agosto/2026', varra as "
+            "páginas com page_size=200 e filtre pelo campo 'data_distribuicao' que vem em cada "
+            "registro. É viável e é o caminho certo: nunca diga ao usuário que não dá para "
+            "filtrar por data. Confira 'meta.total' e 'meta.total_pages' e percorra tudo antes "
+            "de concluir."
         ),
         "props": {
             "id_cliente": {
                 "type": "integer",
                 "description": "Filtra os processos deste cliente (id de easyjur_clientes).",
             },
-            # ATENÇÃO: a API ignora em silêncio qualquer outro nome (ex.: "pagina") e
-            # devolve sempre a página 1 — o que faz o agente concluir que não há mais nada.
-            "page": {"type": "integer", "description": "Página (20 por página; padrão 1)."},
+            "numero": {"type": "string", "description": "Número do processo (CNJ ou interno)."},
+            "nome_parte": {"type": "string", "description": "Nome da parte."},
+            "cpf": {"type": "string", "description": "CPF da parte."},
+            "cnpj": {"type": "string", "description": "CNPJ da parte."},
+            "advogado_nome": {"type": "string", "description": "Advogado responsável."},
+            "status": {"type": "string", "description": "Situação do processo (ex.: Ativo)."},
+            "comarca": {"type": "string", "description": "Comarca."},
+            "uf": {"type": "string", "description": "UF (ex.: DF, GO)."},
+            "movimentacao": {"type": "string", "description": "Texto do andamento."},
+            "dias_movimentacao": {
+                "type": "integer",
+                "description": "Movimentados nos últimos N dias.",
+            },
+            "page": {"type": "integer", "description": "Página (padrão 1)."},
+            "page_size": {
+                "type": "integer",
+                "description": "Registros por página; use 200 para varrer rápido.",
+            },
         },
         "obrig": [],
     },
@@ -169,7 +188,11 @@ _CATALOGO: list[dict[str, Any]] = [
             "nome": {
                 "type": "string",
                 "description": "Filtra clientes cujo nome contém este texto (ex.: 'Casablanca').",
-            }
+            },
+            "cpf": {"type": "string", "description": "CPF da pessoa."},
+            "cnpj": {"type": "string", "description": "CNPJ da pessoa."},
+            "page": {"type": "integer", "description": "Página (padrão 1)."},
+            "page_size": {"type": "integer", "description": "Registros por página (use 200)."},
         },
         "obrig": [],
     },
