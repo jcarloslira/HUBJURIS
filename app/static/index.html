@@ -761,6 +761,10 @@ body, aside, .composer, .modal-lg, .cfg-nav, .peca, .bubble, .conn-row2, .agente
 .msg { animation: msgIn .28s ease; }
 @keyframes msgIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 
+#pane-timbre input[type=text] { background: var(--panel-3); border: 1px solid var(--border); border-radius: 9px;
+  padding: 9px 11px; font: inherit; font-size: 0.85rem; color: var(--text); width: 100%; }
+#pane-timbre input[type=file] { font-size: 0.8rem; color: var(--text-dim); }
+
 /* ---------- Gestão da carteira ---------- */
 .side-gestao {
   display: flex; align-items: center; gap: 8px; width: 100%;
@@ -887,6 +891,10 @@ body, aside, .composer, .modal-lg, .cfg-nav, .peca, .bubble, .conn-row2, .agente
       <button class="pm-item" onclick="abrirConfig('conta')">
         <span class="ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>
         Conta e equipe
+      </button>
+      <button class="pm-item" onclick="abrirConfig('timbre')">
+        <span class="ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/></svg></span>
+        Timbre e logo
       </button>
       <button class="pm-item" onclick="abrirConfig('condominios')">
         <span class="ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 9h.01M9 13h.01M9 17h.01M15 9h.01M15 13h.01M15 17h.01"/></svg></span>
@@ -1051,6 +1059,10 @@ body, aside, .composer, .modal-lg, .cfg-nav, .peca, .bubble, .conn-row2, .agente
         <span class="ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>
         Conta
       </button>
+      <button class="cfg-tab" id="tab-timbre" onclick="cfgTab('timbre')">
+        <span class="ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/></svg></span>
+        Timbre e logo
+      </button>
       <button class="cfg-tab" id="tab-condominios" onclick="cfgTab('condominios')">
         <span class="ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 9h.01M9 13h.01M9 17h.01M15 9h.01M15 13h.01M15 17h.01"/></svg></span>
         Condomínios
@@ -1076,6 +1088,27 @@ body, aside, .composer, .modal-lg, .cfg-nav, .peca, .bubble, .conn-row2, .agente
           </select>
           <div class="cfg-hint">O seletor de cliente é ativado quando o acervo do escritório estiver sincronizado.</div>
         </div>
+      </div>
+
+      <div id="pane-timbre" style="display:none">
+        <h3>Timbre e logo</h3>
+        <div class="cfg-hint" style="margin-bottom:16px">A identidade do escritório nas peças: o logo vai na capa dos relatórios em PDF e no cabeçalho do Word. O nome vem da sua conta.</div>
+        <form class="cfg-section" onsubmit="salvarTimbre(event)">
+          <label class="ctx-label">Logo (PNG ou JPG, até 600 KB)</label>
+          <input type="file" id="tb-logo-file" accept="image/png,image/jpeg" onchange="carregarLogoTimbre(event)">
+          <div id="tb-logo-prev" style="margin-top:8px"></div>
+          <label class="ctx-label" style="margin-top:12px">Subtítulo (OAB, área de atuação)</label>
+          <input type="text" id="tb-subtitulo" placeholder="Ex.: OAB/DF 12.345 · Direito Condominial" maxlength="160">
+          <label class="ctx-label" style="margin-top:12px">Cor do timbre</label>
+          <input type="color" id="tb-cor" value="#9A6A3A" style="width:56px;height:34px;padding:2px;border-radius:8px;cursor:pointer">
+          <label class="ctx-label" style="margin-top:12px">Rodapé (confidencialidade)</label>
+          <input type="text" id="tb-rodape" placeholder="Ex.: Documento confidencial — uso interno do escritório e do cliente." maxlength="300">
+          <div class="membro-form" style="margin-top:16px">
+            <button class="vincular-btn" type="submit">Salvar timbre</button>
+            <button class="vincular-btn" type="button" onclick="removerLogoTimbre()" style="background:none;border:1px solid var(--border);color:var(--text-dim)">Remover logo</button>
+          </div>
+          <div class="cfg-hint" id="tb-msg"></div>
+        </form>
       </div>
 
       <div id="pane-condominios" style="display:none">
@@ -1374,12 +1407,13 @@ function abrirConfig(tab = 'geral') {
 }
 function fecharConfig() { $('cfg-modal').style.display = 'none'; }
 function cfgTab(nome) {
-  ['geral', 'conta', 'condominios', 'uso', 'conectores'].forEach(n => {
+  ['geral', 'conta', 'timbre', 'condominios', 'uso', 'conectores'].forEach(n => {
     const pane = $('pane-' + n), tab = $('tab-' + n);
     if (pane) pane.style.display = n === nome ? 'block' : 'none';
     if (tab) tab.classList.toggle('active', n === nome);
   });
   if (nome === 'conta') carregarConta();
+  if (nome === 'timbre') carregarTimbre();
   if (nome === 'condominios') carregarProjetos();
   if (nome === 'uso') carregarUso();
   if (nome === 'conectores') { carregarConectores(); checarGoogle(); }
@@ -1429,7 +1463,8 @@ async function salvarTimbre(ev) {
         logo: timbreLogo
       })
     });
-    $('tb-msg').textContent = r.ok ? 'Timbre salvo ✓ — vale para as próximas exportações.' : 'Não foi possível salvar agora.';
+    $('tb-msg').textContent = r.ok ? 'Timbre salvo ✓ — vale para os próximos PDFs e documentos.' : 'Não foi possível salvar agora.';
+    if (r.ok) carregarTimbreGlobal();
   } catch { $('tb-msg').textContent = 'Falha de conexão ao salvar.'; }
 }
 
