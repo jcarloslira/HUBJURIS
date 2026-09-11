@@ -129,6 +129,7 @@ class BaseAgent:
         historico: list[MessageParam] = list(mensagens)
         tokens_in = tokens_out = 0
         final = None
+        ultimo_texto = ""
 
         for _ in range(MAX_ITERACOES_FERRAMENTAS if usa_tools else 1):
             extra: dict[str, Any] = {"tools": ferramentas} if usa_tools else {}
@@ -142,6 +143,8 @@ class BaseAgent:
                 **extra,
             ) as stream:
                 async for texto in stream.text_stream:
+                    if texto:
+                        ultimo_texto = texto
                     yield texto
                 final = await stream.get_final_message() if precisa_final else None
 
@@ -165,6 +168,11 @@ class BaseAgent:
                         {"type": "tool_result", "tool_use_id": bloco.id, "content": saida}
                     )
             historico.append({"role": "user", "content": resultados})
+            # O texto da próxima passada continua a mensagem; sem quebra, um "# Título"
+            # gruda na frase de antes ("…as duas coisas.# 1)") e deixa de ser título.
+            if ultimo_texto and not ultimo_texto.endswith("\n"):
+                ultimo_texto = "\n\n"
+                yield ultimo_texto
 
         # Se bateu o teto de iterações ainda pedindo ferramentas, o laço acabou SEM
         # gerar a resposta — força UMA passada final SEM ferramentas para o agente

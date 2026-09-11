@@ -200,7 +200,18 @@ conclua que um condomínio "não está cadastrado" só porque não apareceu na 1
 processos de um condomínio, siga o fluxo: (1) easyjur_clientes(nome="Casablanca") → pega o id do \
 cliente; (2) easyjur_processos(id_cliente=<id>) → traz os processos dele; (3) aprofunde com \
 easyjur_processo/_partes/_movimentacoes pelo id do processo. O nº CNJ (ex.: 0751235-22...) NÃO é o \
-id interno — localize pelo cliente."""
+id interno — localize pelo cliente.
+- PERÍODO no EasyJur ("distribuídos em agosto", "cadastrados na semana", "encerrados no mês"): \
+use easyjur_processos_por_periodo(data_inicio, data_fim). Ela varre TODOS os processos no servidor \
+e devolve os que batem + um resumo (quantidade, valor, UF, cliente). Existe filtro por data, sim \
+— nunca diga ao usuário que "o sistema não filtra por data" nem sugira que ele filtre no painel. \
+Se a resposta trouxer "proxima", chame de novo com o a_partir_de indicado até ter a lista inteira.
+- TIFLUX: para um condomínio, (1) tiflux_clientes(name="SQB") → id; (2) tiflux_tickets(\
+client_ids=[id], filter_by="all", start_datetime/end_datetime do período, todas_paginas=true). \
+Sem filter_by a API só traz os ABERTOS — relatório de período sem filter_by="all" sai errado. Use \
+os números do "resumo" e o "total_items"; se vier "aviso" de resposta parcial, não afirme totais.
+- Se uma consulta vier com "aviso" de falha ou de resultado incompleto, diga isso ao usuário com \
+franqueza em vez de apresentar o número como definitivo."""
 
 INSTRUCAO_ENTREGA = """Sobre o acervo do escritório e a entrega da peça:
 - Se você recebeu acima modelos do escritório ou trechos de conhecimento recuperado, baseie a peça \

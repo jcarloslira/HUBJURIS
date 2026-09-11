@@ -1,5 +1,6 @@
 """Testes de Projetos: service multi-tenant, executor de ferramentas e loop agêntico."""
 
+import re
 from collections.abc import AsyncIterator
 from typing import Any
 
@@ -318,6 +319,41 @@ async def test_loop_forca_resposta_final_ao_bater_o_teto() -> None:
     assert "Segue o resultado" in texto  # forçou a resposta final (não ficou "carregando e para")
     assert len(client.messages.chamadas) == MAX_ITERACOES_FERRAMENTAS + 1  # 5 + a de fechamento
     assert "tools" not in client.messages.chamadas[-1]  # a passada final é SEM ferramentas
+
+
+async def test_texto_depois_da_ferramenta_comeca_em_linha_nova() -> None:
+    """A UI apaga os marcadores [[PASSO]]; sem quebra, o título da resposta final
+    grudava na frase anterior ("…as duas coisas.# 1)") e não virava título."""
+    passo1 = _FakeStream(
+        ["Vou buscar as duas coisas."],
+        _FinalMsg(
+            content=[
+                _Bloco("text", text="Vou buscar as duas coisas."),
+                _Bloco("tool_use", name="easyjur_processos", id="t1", input={}),
+            ],
+            stop_reason="tool_use",
+            usage=_Usage(1, 1),
+        ),
+    )
+    passo2 = _FakeStream(
+        ["# 1) EasyJur"],
+        _FinalMsg(content=[_Bloco("text", text="# 1) EasyJur")], stop_reason="end_turn",
+                  usage=_Usage(1, 1)),
+    )
+    agente = _Agente(_FakeClient([passo1, passo2]))  # type: ignore[arg-type]
+
+    async def executar(nome: str, entrada: dict[str, Any]) -> str:
+        return "{}"
+
+    ferramentas = [{"name": "easyjur_processos", "input_schema": {"type": "object"}}]
+    texto = ""
+    async for trecho in agente.responder_stream(
+        [{"role": "user", "content": "x"}], ferramentas=ferramentas, executar_ferramenta=executar
+    ):
+        texto += trecho
+
+    como_a_ui_mostra = re.sub(r"\[\[PASSO [^\]]*\]\]", "", texto)
+    assert "coisas.\n\n# 1) EasyJur" in como_a_ui_mostra
 
 
 async def test_sem_ferramentas_mantem_stream_simples() -> None:
