@@ -95,7 +95,7 @@ def _montar_registro_uso(svc: ContaService, perfil: PerfilResponse):
     return registrar
 
 
-def _montar_ferramentas(
+async def _montar_ferramentas(
     request: Request,
     perfil: PerfilResponse,
     settings: Settings,
@@ -121,14 +121,16 @@ def _montar_ferramentas(
         handlers = {**handlers, **montar_handlers_drive(composio, perfil.escritorio_id)}
         tools_drive = FERRAMENTAS_DRIVE
     # mcp.ai ("Banco MCP"): EasyJur + Tiflux, quando a API key está configurada.
+    # A chave do mcp.ai é de UM escritório: só ele vê EasyJur/Tiflux. Outra conta
+    # logada não pode consultar (nem importar) os clientes daquele escritório.
     mcpai = MCPAIClient(http, settings)
+    gestao = GestaoService(request.app.state.supabase, mcpai)
     tools_mcpai: list[dict] = []
-    if mcpai.ativo:
+    if await gestao.integracao_ativa(perfil.escritorio_id):
         handlers = {**handlers, **montar_handlers_mcpai(mcpai)}
         tools_mcpai = FERRAMENTAS_MCPAI
     # Gestão condominial: o diário e o cadastro do Hub. A coleta do dia dispara
     # sozinha na primeira conversa do dia (não segura a resposta).
-    gestao = GestaoService(request.app.state.supabase, mcpai)
     handlers = {**handlers, **montar_handlers_gestao(gestao, perfil.escritorio_id)}
     executar = montar_executor(
         projetos,
@@ -176,9 +178,8 @@ async def conversar(
     if contexto is not None:
         svc, perfil = contexto
         on_usage = _montar_registro_uso(svc, perfil)
-        ferramentas, ferramentas_especialista, executar_ferramenta, gestao = _montar_ferramentas(
-            request, perfil, settings, composio
-        )
+        montadas = await _montar_ferramentas(request, perfil, settings, composio)
+        ferramentas, ferramentas_especialista, executar_ferramenta, gestao = montadas
         try:
             await gestao.garantir_coleta_do_dia(perfil.escritorio_id)
         except Exception:  # noqa: BLE001 - a coleta é bônus; o chat não pode cair por ela

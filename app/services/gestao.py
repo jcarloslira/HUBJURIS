@@ -338,9 +338,31 @@ class GestaoService:
         except Exception:  # noqa: BLE001 - o erro fica registrado em `sincronizacoes`
             pass
 
+    async def integracao_ativa(self, escritorio_id: str) -> bool:
+        """Se ESTE escritório é o dono da conexão EasyJur/Tiflux do servidor.
+
+        A chave do mcp.ai é de um escritório só. Sem esta trava, qualquer conta
+        que abrisse o painel importaria os clientes daquele escritório para dentro
+        da própria carteira — dado de cliente vazando entre escritórios.
+        """
+        if self._mcp is None or not self._mcp.ativo:
+            return False
+        try:
+            result = (
+                await self._db.table("escritorios")
+                .select("usa_easyjur_tiflux")
+                .eq("id", escritorio_id)
+                .limit(1)
+                .execute()
+            )
+        except Exception:  # noqa: BLE001 - na dúvida, fechado: nada vaza entre escritórios
+            return False
+        linhas = result.data or []
+        return bool(linhas and linhas[0].get("usa_easyjur_tiflux"))
+
     async def garantir_coleta_do_dia(self, escritorio_id: str) -> bool:
         """Dispara a coleta se ainda não houve uma hoje. Devolve se disparou."""
-        if self._mcp is None or not self._mcp.ativo:
+        if not await self.integracao_ativa(escritorio_id):
             return False
         ultima = await self.ultima_coleta(escritorio_id)
         if ultima:
@@ -395,8 +417,10 @@ class GestaoService:
         Returns:
             Resumo da coleta (processos, tickets, eventos novos, condomínios).
         """
-        if self._mcp is None or not self._mcp.ativo:
-            raise GestaoError("EasyJur/Tiflux não configurados neste servidor.", status=503)
+        if not await self.integracao_ativa(escritorio_id):
+            raise GestaoError(
+                "O EasyJur e o Tiflux não estão conectados a este escritório.", status=403
+            )
         dia = hoje()
         registro = (
             await self._db.table("sincronizacoes")
@@ -579,7 +603,7 @@ class GestaoService:
             if ident and nome:
                 clientes_ej.setdefault(ident, nome)
 
-        vinculos: list[dict[str, Any]] = []
+        vinculos: dict[str, dict[str, Any]] = {}
         novos: dict[str, dict[str, Any]] = {}
 
         def achar(nome: str, campo: str) -> dict[str, Any] | None:
@@ -607,7 +631,7 @@ class GestaoService:
             elif not alvo.get("easyjur_cliente_id"):
                 alvo["easyjur_cliente_id"] = ident
                 if alvo.get("id"):
-                    vinculos.append(alvo)
+                    vinculos[str(alvo["id"])] = alvo
             else:
                 # Cliente duplicado no EasyJur (mesmo nome, outro id): as duas
                 # fichas apontam para o mesmo condomínio do Hub.
@@ -630,7 +654,7 @@ class GestaoService:
             elif not alvo.get("tiflux_cliente_id"):
                 alvo["tiflux_cliente_id"] = ident
                 if alvo.get("id"):
-                    vinculos.append(alvo)
+                    vinculos[str(alvo["id"])] = alvo
 
         if novos:
             criados = await self._db.table("condominios").insert(list(novos.values())).execute()
@@ -639,6 +663,8 @@ class GestaoService:
                     mapa_ej[str(linha["easyjur_cliente_id"])] = str(linha["id"])
                 if linha.get("tiflux_cliente_id"):
                     mapa_tf[str(linha["tiflux_cliente_id"])] = str(linha["id"])
+        # Um condomínio pode ganhar o vínculo do EasyJur E o do Tiflux na mesma coleta;
+        # repetido no mesmo upsert, o Postgres recusa o lote inteiro (erro 21000).
         if vinculos:
             await self._db.table("condominios").upsert(
                 [
@@ -649,11 +675,11 @@ class GestaoService:
                         "easyjur_cliente_id": c.get("easyjur_cliente_id"),
                         "tiflux_cliente_id": c.get("tiflux_cliente_id"),
                     }
-                    for c in vinculos
+                    for c in vinculos.values()
                 ],
                 on_conflict="id",
             ).execute()
-            for c in vinculos:
+            for c in vinculos.values():
                 if c.get("easyjur_cliente_id"):
                     mapa_ej[str(c["easyjur_cliente_id"])] = str(c["id"])
                 if c.get("tiflux_cliente_id"):
@@ -930,6 +956,7 @@ class GestaoService:
         com_dados = [c for c in condominios if c["processos_total"] or c["tickets_abertos"]]
         return {
             "dia": dia.isoformat(),
+            "integracao": await self.integracao_ativa(escritorio_id),
             "ultima_coleta": await self.ultima_coleta(escritorio_id),
             "totais": {
                 "condominios": len(com_dados) or len(condominios),

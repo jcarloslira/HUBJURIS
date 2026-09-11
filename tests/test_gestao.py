@@ -22,6 +22,13 @@ from tests.banco_falso import BancoFalso
 ESC = "esc-1"
 
 
+def _banco(integracao: bool = True) -> BancoFalso:
+    """Banco com o escritório dono (ou não) da conexão EasyJur/Tiflux."""
+    banco = BancoFalso()
+    banco.tabelas["escritorios"] = [{"id": ESC, "usa_easyjur_tiflux": integracao}]
+    return banco
+
+
 # ─── Nomes ───────────────────────────────────────────────────────────────────
 
 
@@ -168,7 +175,7 @@ class _MCPFalso:
 
 @pytest.mark.asyncio
 async def test_coleta_cria_condominios_vincula_e_nao_duplica() -> None:
-    banco, mcp = BancoFalso(), _MCPFalso()
+    banco, mcp = _banco(), _MCPFalso()
     svc = GestaoService(banco, mcp)  # type: ignore[arg-type]
 
     resumo = await svc.sincronizar(ESC)
@@ -200,7 +207,7 @@ async def test_coleta_cria_condominios_vincula_e_nao_duplica() -> None:
 
 @pytest.mark.asyncio
 async def test_ticket_que_sumiu_dos_abertos_vira_encerramento() -> None:
-    banco, mcp = BancoFalso(), _MCPFalso()
+    banco, mcp = _banco(), _MCPFalso()
     svc = GestaoService(banco, mcp)  # type: ignore[arg-type]
     await svc.sincronizar(ESC)
 
@@ -217,7 +224,7 @@ async def test_ticket_que_sumiu_dos_abertos_vira_encerramento() -> None:
 
 @pytest.mark.asyncio
 async def test_ferramentas_leem_e_escrevem_no_hub() -> None:
-    banco, mcp = BancoFalso(), _MCPFalso()
+    banco, mcp = _banco(), _MCPFalso()
     svc = GestaoService(banco, mcp)  # type: ignore[arg-type]
     await svc.sincronizar(ESC)
     h = montar_handlers_gestao(svc, ESC)
@@ -242,7 +249,7 @@ async def test_ferramentas_leem_e_escrevem_no_hub() -> None:
 
 @pytest.mark.asyncio
 async def test_nome_ambiguo_pede_para_escolher() -> None:
-    banco, mcp = BancoFalso(), _MCPFalso()
+    banco, mcp = _banco(), _MCPFalso()
     svc = GestaoService(banco, mcp)  # type: ignore[arg-type]
     await svc.sincronizar(ESC)
 
@@ -256,7 +263,7 @@ async def test_nome_ambiguo_pede_para_escolher() -> None:
 
 @pytest.mark.asyncio
 async def test_diario_de_periodo_resume_por_tipo_e_valor() -> None:
-    banco, mcp = BancoFalso(), _MCPFalso()
+    banco, mcp = _banco(), _MCPFalso()
     svc = GestaoService(banco, mcp)  # type: ignore[arg-type]
     await svc.sincronizar(ESC)
 
@@ -274,3 +281,34 @@ def test_catalogo_das_ferramentas_de_gestao() -> None:
     }
     for ferramenta in FERRAMENTAS_GESTAO:
         assert ferramenta["input_schema"]["type"] == "object"
+
+
+@pytest.mark.asyncio
+async def test_escritorio_sem_a_conexao_nao_importa_clientes_de_outro() -> None:
+    """A chave do mcp.ai é de UM escritório; outra conta não pode puxar esses clientes."""
+    banco, mcp = _banco(integracao=False), _MCPFalso()
+    svc = GestaoService(banco, mcp)  # type: ignore[arg-type]
+
+    assert await svc.garantir_coleta_do_dia(ESC) is False
+    with pytest.raises(GestaoError) as erro:
+        await svc.sincronizar(ESC)
+
+    assert erro.value.status == 403
+    assert mcp.chamadas == []
+    assert not banco.tabelas.get("condominios")
+
+
+@pytest.mark.asyncio
+async def test_condominio_que_ganha_os_dois_vinculos_nao_repete_no_upsert() -> None:
+    """Já cadastrado sem vínculo: ganha EasyJur e Tiflux na mesma coleta (erro 21000)."""
+    banco, mcp = _banco(), _MCPFalso()
+    banco.tabelas["condominios"] = [
+        {"id": "c-sqb", "escritorio_id": ESC, "nome": "Condomínio Superquadra Brasília"}
+    ]
+    svc = GestaoService(banco, mcp)  # type: ignore[arg-type]
+
+    await svc.sincronizar(ESC)
+
+    sqb = next(c for c in banco.tabelas["condominios"] if c["id"] == "c-sqb")
+    assert sqb["easyjur_cliente_id"] == "1"
+    assert sqb["tiflux_cliente_id"] == "1889559"

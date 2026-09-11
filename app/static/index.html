@@ -1578,8 +1578,9 @@ function renderPainel(p) {
   if (rodando) status = 'Coletando EasyJur e Tiflux agora… a tela se atualiza sozinha.';
   else if (c.status === 'ok') status = `Última coleta: ${dataBR(c.dia)} às ${horaBR(c.concluida_em)}`;
   else if (c.status === 'erro') status = 'A última coleta falhou: ' + (c.erro || 'erro desconhecido');
+  if (p.integracao === false) status = 'O EasyJur e o Tiflux não estão conectados a este escritório — a carteira mostra só os condomínios cadastrados aqui.';
   $('g-coleta').textContent = status;
-  $('g-coletar').disabled = rodando;
+  $('g-coletar').disabled = rodando || p.integracao === false;
   clearTimeout(gestaoPoll);
   if (rodando) gestaoPoll = setTimeout(() => { carregarPainel(); carregarCarteira(); }, 15000);
 

@@ -76,6 +76,12 @@ class _Consulta:
         linhas = self._banco.tabelas.setdefault(self._tabela, [])
         if self._acao in ("insert", "upsert"):
             novas = self._dados if isinstance(self._dados, list) else [self._dados]
+            if self._acao == "upsert" and not self._ignorar:
+                # Como o Postgres: a mesma chave duas vezes no MESMO upsert derruba o
+                # lote ("ON CONFLICT DO UPDATE command cannot affect row a second time").
+                chaves = [tuple(str(n.get(c)) for c in self._conflito) for n in novas]
+                if len(chaves) != len(set(chaves)):
+                    raise RuntimeError("21000: ON CONFLICT DO UPDATE cannot affect row twice")
             gravadas = []
             for nova in novas:
                 nova = dict(nova)
