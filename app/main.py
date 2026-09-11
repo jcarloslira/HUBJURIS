@@ -18,6 +18,7 @@ from app.routers import (
     condominios,
     contas,
     documentos,
+    gestao,
     google,
     health,
     projetos,
@@ -105,6 +106,7 @@ app.include_router(contas.router)
 app.include_router(projetos.router)
 app.include_router(admin_agentes.router)
 app.include_router(documentos.router)
+app.include_router(gestao.router)
 
 app.mount("/static", StaticFiles(directory=_STATIC_DIR), name="static")
 

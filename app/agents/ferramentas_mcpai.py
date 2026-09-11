@@ -331,6 +331,10 @@ async def _varrer_processos(
     lotes, falhas = await _em_paralelo([pagina(n) for n in range(2, total_paginas + 1)])
     for lote in lotes:
         itens.extend(lote)
+    # `raw_data` repete o registro inteiro: metade da memória de 4.800 processos,
+    # e o servidor gratuito tem 512 MB.
+    for processo in itens:
+        processo.pop("raw_data", None)
 
     unicos: dict[Any, dict[str, Any]] = {}
     for indice, processo in enumerate(itens):
@@ -752,3 +756,13 @@ def montar_handlers_mcpai(client: MCPAIClient) -> dict[str, Handler]:
         return handler
 
     return {t["name"]: _fazer(t) for t in _CATALOGO}
+
+
+# Usados pela coleta diária do Hub (app/services/gestao.py), que varre as mesmas
+# APIs com os mesmos limites.
+varrer_processos = _varrer_processos
+em_paralelo = _em_paralelo
+limpar_html = _limpar_html
+data_iso = _data_iso
+ROTA_TICKETS = _ROTA_TICKETS
+TIFLUX_LIMIT_MAX = _TIFLUX_LIMIT_MAX

@@ -11,6 +11,7 @@ from app.agents.ferramentas import (
     montar_executor,
 )
 from app.agents.ferramentas_drive import FERRAMENTAS_DRIVE, montar_handlers_drive
+from app.agents.ferramentas_gestao import FERRAMENTAS_GESTAO, montar_handlers_gestao
 from app.agents.ferramentas_google import (
     ferramentas_google_disponiveis,
     montar_handlers_google,
@@ -26,6 +27,7 @@ from app.services.composio_drive import ComposioClient, ComposioDriveConnector
 from app.services.conectores import client_para
 from app.services.conhecimento import ConhecimentoService, formatar_conhecimento
 from app.services.contas import ContaService
+from app.services.gestao import GestaoService
 from app.services.google_escritorio import GoogleEscritorioService
 from app.services.mcpai import MCPAIClient
 from app.services.projetos import ProjetoService
@@ -101,7 +103,7 @@ def _montar_ferramentas(
 ):
     """Ferramentas dos agentes.
 
-    Retorna ``(tools_supervisor, tools_especialista, executar)``:
+    Retorna ``(tools_supervisor, tools_especialista, executar, gestao)``:
     - ``tools_supervisor``: internas (condomínio, memória) + ações Google + Drive;
     - ``tools_especialista``: leitura do Hub (recordar contexto) + Drive — dadas aos
       especialistas para vasculharem o acervo e recordarem o condomínio;
@@ -124,6 +126,10 @@ def _montar_ferramentas(
     if mcpai.ativo:
         handlers = {**handlers, **montar_handlers_mcpai(mcpai)}
         tools_mcpai = FERRAMENTAS_MCPAI
+    # Gestão condominial: o diário e o cadastro do Hub. A coleta do dia dispara
+    # sozinha na primeira conversa do dia (não segura a resposta).
+    gestao = GestaoService(request.app.state.supabase, mcpai)
+    handlers = {**handlers, **montar_handlers_gestao(gestao, perfil.escritorio_id)}
     executar = montar_executor(
         projetos,
         escritorio_id=perfil.escritorio_id,
@@ -132,13 +138,14 @@ def _montar_ferramentas(
     )
     tools_supervisor = [
         *FERRAMENTAS_SISTEMA,
+        *FERRAMENTAS_GESTAO,
         *ferramentas_google_disponiveis(clients),
         *tools_drive,
         *tools_mcpai,
     ]
-    # Especialistas: leem o Hub (contexto do condomínio) + agem no Drive + EasyJur/Tiflux.
-    tools_especialista = [*FERRAMENTAS_HUB_LEITURA, *tools_drive, *tools_mcpai]
-    return tools_supervisor, tools_especialista, executar
+    # Especialistas: o Hub inteiro (contexto e diário do condomínio) + Drive + EasyJur/Tiflux.
+    tools_especialista = [*FERRAMENTAS_HUB_LEITURA, *FERRAMENTAS_GESTAO, *tools_drive, *tools_mcpai]
+    return tools_supervisor, tools_especialista, executar, gestao
 
 
 @router.post("/chat", status_code=200)
@@ -169,9 +176,13 @@ async def conversar(
     if contexto is not None:
         svc, perfil = contexto
         on_usage = _montar_registro_uso(svc, perfil)
-        ferramentas, ferramentas_especialista, executar_ferramenta = _montar_ferramentas(
+        ferramentas, ferramentas_especialista, executar_ferramenta, gestao = _montar_ferramentas(
             request, perfil, settings, composio
         )
+        try:
+            await gestao.garantir_coleta_do_dia(perfil.escritorio_id)
+        except Exception:  # noqa: BLE001 - a coleta é bônus; o chat não pode cair por ela
+            pass
         # Grounding por escritório: o agente se baseia no Drive DELE (entity =
         # escritorio_id) e na pasta de acervo que ESTE escritório escolheu.
         if composio is not None:

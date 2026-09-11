@@ -10,6 +10,7 @@ from app.agents.base import BaseAgent
 from app.agents.consulta_historica import ConsultaHistoricaAgent
 from app.agents.contratos import ContratosAgent
 from app.agents.ferramentas_drive import NOMES_DRIVE
+from app.agents.ferramentas_gestao import NOMES_GESTAO
 from app.agents.ferramentas_mcpai import NOMES_MCPAI
 from app.agents.juridico_geral import JuridicoGeralAgent
 from app.agents.notificacoes import NotificacoesAgent
@@ -19,6 +20,7 @@ from app.agents.supervisor import SupervisorAgent
 from app.schemas.agentes import AgenteConfig
 from app.schemas.chat import AgenteInfo, ChatRequest
 from app.services.anexos import construir_blocos
+from app.services.gestao import hoje
 from app.services.modelos import LeitorDrive, carregar_modelos, formatar_referencia
 
 _REGISTRO: dict[str, tuple[type[BaseAgent], AgenteInfo]] = {
@@ -122,7 +124,9 @@ contrato, vencimento ou rescisão; 'pareceres' para pareceres fundamentados; 'co
 para perguntas factuais do acervo (síndico atual, reajuste, deliberações, atas); 'juridico-geral' \
 para dúvidas jurídicas gerais de direito condominial; 'supervisor' para saudações, onboarding, \
 dúvidas sobre a plataforma, para CADASTRAR/ORGANIZAR condomínios (projetos) ou registrar fatos na \
-memória de um condomínio, ou quando não estiver claro.
+memória de um condomínio, para GESTÃO DA CARTEIRA (o que aconteceu hoje, relatório de semana/mês/ \
+ano, processos e tickets de um condomínio, dados do EasyJur e do Tiflux), ou quando não estiver \
+claro.
 
 REGRA DECISIVA: se a mensagem contém uma tarefa jurídica clara, roteie para o especialista MESMO \
 que ela venha junto de uma saudação ("boa noite, preciso de uma notificação" → 'notificacoes'). \
@@ -212,6 +216,46 @@ Sem filter_by a API só traz os ABERTOS — relatório de período sem filter_by
 os números do "resumo" e o "total_items"; se vier "aviso" de resposta parcial, não afirme totais.
 - Se uma consulta vier com "aviso" de falha ou de resultado incompleto, diga isso ao usuário com \
 franqueza em vez de apresentar o número como definitivo."""
+
+INSTRUCAO_HUB = """GESTÃO CONDOMINIAL — o Hub é o banco de dados do escritório e você o opera \
+por inteiro (ferramentas hub_*). Hoje é {hoje}.
+- Todo dia o Hub coleta o EasyJur e o Tiflux e grava um DIÁRIO por condomínio (processo novo, \
+andamento, processo encerrado, ticket aberto, ticket encerrado, anotações do escritório) e uma \
+FOTO DIÁRIA (processos ativos, valor em causa, tickets abertos). É a memória de anos da carteira.
+- ORDEM DE CONSULTA: (1) o Hub, que responde na hora — hub_painel (um dia), hub_diario (qualquer \
+período), hub_condominio (ficha de um condomínio), hub_condominios (carteira inteira); (2) EasyJur \
+e Tiflux só para o que o Hub não guarda: texto integral e partes de um processo, financeiro, \
+agenda, respostas de ticket, ou a lista exata de processos DISTRIBUÍDOS num período com vara e \
+valor (easyjur_processos_por_periodo). Se o painel avisar que a coleta não é de hoje, rode \
+hub_coletar.
+- Relatório de período (semana, mês, ano, "desde 2024"): hub_diario com as datas. Os números do \
+"resumo" valem para o período inteiro, mesmo quando a lista de eventos vem cortada.
+- AJA COMO UM SÓCIO ATENTO, não como um balcão de perguntas:
+  • Ao tratar de um condomínio, abra a ficha (hub_condominio) ANTES de responder e traga, sem ser \
+perguntado, o que importa: processo novo, andamento relevante, ticket aberto há dias, mudança na \
+carteira.
+  • Dado de cadastro dito de passagem (síndico novo, administradora, CNPJ, telefone) → registre \
+na hora com hub_atualizar_condominio e diga numa linha que registrou.
+  • Fato que não está em sistema nenhum (reunião, assembleia, decisão do conselho, ligação do \
+síndico) → hub_anotar.
+  • "Bom dia", "o que temos hoje?", primeira mensagem do dia → hub_painel e um briefing curto: o \
+que chegou desde ontem, o que exige decisão, o que vence.
+  • Feche respostas de gestão com 1 a 3 próximos passos concretos (o quê, quem, até quando) e \
+ofereça o passo seguinte que você mesmo pode fazer (relatório em PDF, notificação, ticket).
+  • Ler e registrar no Hub é interno, reversível e auditado: não peça licença para isso. Peça \
+confirmação só para o que sai do escritório (e-mail, ticket no Tiflux, evento na agenda)."""
+
+_DIAS_DA_SEMANA = (
+    "segunda-feira", "terça-feira", "quarta-feira", "quinta-feira", "sexta-feira",
+    "sábado", "domingo",
+)
+
+
+def _hoje_por_extenso() -> str:
+    """Ex.: "sexta-feira, 11/09/2026" — o modelo não sabe a data sem que digamos."""
+    dia = hoje()
+    return f"{_DIAS_DA_SEMANA[dia.weekday()]}, {dia:%d/%m/%Y}"
+
 
 INSTRUCAO_ENTREGA = """Sobre o acervo do escritório e a entrega da peça:
 - Se você recebeu acima modelos do escritório ou trechos de conhecimento recuperado, baseie a peça \
@@ -435,6 +479,14 @@ async def gerar_resposta_stream(
     )
     if mcpai_disponivel:
         referencia = f"{referencia}\n\n{INSTRUCAO_MCPAI}"
+
+    # Gestão condominial (diário e cadastro do Hub) → o agente opera o Hub e é proativo.
+    hub_disponivel = executar_ferramenta is not None and any(
+        t.get("name") in NOMES_GESTAO for t in (ferramentas_especialista or [])
+    )
+    if hub_disponivel:
+        instrucao_hub = INSTRUCAO_HUB.format(hoje=_hoje_por_extenso())
+        referencia = f"{referencia}\n\n{instrucao_hub}"
 
     registrar = None
     if on_usage is not None:
