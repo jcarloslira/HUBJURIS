@@ -490,6 +490,9 @@ def _limpar_corpo(bruto: str) -> str:
     texto = re.sub(r"<title>[\s\S]*?</title>|<meta[^>]*>", "", texto, flags=re.I)
     # O visual é da folha de estilo; estilo inline é o modelo improvisando.
     texto = re.sub(r'\sstyle="[^"]*"', "", texto)
+    # Quebra forçada deixava meia página em branco (o relatório de agosto teve uma
+    # página com um cartão só): a paginação fica por conta do break-inside do CSS.
+    texto = re.sub(r'<div class="quebra">\s*</div>', "", texto)
     inicio = texto.find("<")
     return texto[inicio:].strip() if inicio > 0 else texto.strip()
 

@@ -255,6 +255,7 @@ def test_corpo_do_molde_perde_css_e_estilo_inline() -> None:
     corpo = _limpar_corpo(bruto)
 
     assert corpo.startswith("<h2>1. Panorama</h2>")
+    assert "quebra" not in _limpar_corpo('<p>a</p><div class="quebra"></div><h2>b</h2>')
     assert "style" not in corpo
     assert "<body" not in corpo and "<html" not in corpo
 

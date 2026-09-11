@@ -272,7 +272,8 @@ PEÇA DE TEXTO CORRIDO (petição, notificação, parecer, contrato): envolva o 
 <div class="peca">…</div> — parágrafos justificados — e feche com
 <div class="assinatura"><div class="linha"></div>Nome<br>OAB/UF 00.000</div>.
 
-QUEBRA DE PÁGINA antes de uma seção longa: <div class="quebra"></div>
+NÃO force quebra de página: a folha de estilo já não deixa título, cartão ou tabela
+órfãos no fim da página. Quebra forçada deixa meia página em branco.
 
 FECHO (último bloco de relatórios):
 <div class="fecho"><h3>Como ler este relatório</h3><p>…</p>
