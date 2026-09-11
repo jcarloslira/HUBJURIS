@@ -17,13 +17,15 @@ class ExportarPayload(BaseModel):
 
 
 class PdfDesenhadoPayload(BaseModel):
-    """Pedido de PDF "desenhado" — o agente escreve o código do documento.
+    """Pedido de PDF "desenhado" — o modelo diagrama a peça e o WeasyPrint renderiza.
 
-    Diferente de :class:`ExportarPayload` (molde fixo), aqui o modelo projeta o
-    layout. Aceita anexos de referência para reproduzir um design existente.
+    ``modo="molde"`` usa a folha de estilo do escritório (a dos relatórios
+    aprovados) e é o rápido; ``modo="livre"`` deixa o modelo desenhar o CSS a
+    partir dos anexos de referência, para copiar outro visual.
     """
 
     conteudo: str = Field(min_length=1, max_length=200_000)
     titulo: str = Field(default="Documento", max_length=200)
     instrucoes: str = Field(default="", max_length=4_000)
     referencias: list[AnexoIn] = Field(default_factory=list, max_length=4)
+    modo: Literal["molde", "livre"] = "molde"

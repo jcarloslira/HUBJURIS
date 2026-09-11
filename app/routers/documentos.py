@@ -137,14 +137,16 @@ async def pdf_desenhado(
     request: Request,
     user: Annotated[AuthUser, Depends(get_current_user)],
 ) -> Response:
-    """Gera o PDF com o agente escrevendo o código do documento.
+    """Gera o PDF diagramado: capa, indicadores, alertas, cartões de caso.
 
-    Mais lento e mais caro que ``/exportar`` (roda um laço de execução de código),
-    em troca de layout projetado para a peça: capa, indicadores, tabelas e linha
-    do tempo. Aceita anexos de referência para copiar um design existente.
+    No modo "molde" (padrão) o visual é o dos relatórios aprovados pelo
+    escritório e a peça sai em segundos; no "livre" o modelo desenha o CSS a
+    partir dos anexos de referência.
     """
     timbre = await _timbre_do_usuario(request, user)
-    referencias = construir_blocos("", payload.referencias) if payload.referencias else None
+    referencias = None
+    if payload.modo == "livre" and payload.referencias:
+        referencias = construir_blocos("", payload.referencias)
     try:
         dados = await gerar_pdf_desenhado(
             request.app.state.anthropic,
@@ -153,6 +155,7 @@ async def pdf_desenhado(
             timbre=timbre,
             referencias=referencias,
             instrucoes=payload.instrucoes,
+            modo=payload.modo,
         )
     except PDFDesignerError as exc:
         raise HTTPException(status_code=502, detail=str(exc)) from exc

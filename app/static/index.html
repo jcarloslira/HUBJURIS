@@ -1660,20 +1660,21 @@ function renderPeca(div, peca) {
   div.appendChild(art);
 }
 
-// PDF desenhado: o agente escreve o código do documento no servidor. Leva alguns
-// minutos, então o botão vira barra de progresso honesta em vez de travar mudo.
+// PDF desenhado: o servidor diagrama a peça no molde do escritório, com as
+// seções escritas em paralelo (~40 s num relatório de 9 páginas). O botão mostra
+// as fases em vez de travar mudo.
 async function baixarPecaDesenhado(botao, peca) {
   if (botao.dataset.gerando === '1') return;
   botao.dataset.gerando = '1';
   const rotulo = botao.textContent;
-  const fases = ['Projetando o layout…', 'Escrevendo o documento…',
-                 'Montando tabelas…', 'Conferindo as páginas…'];
+  const fases = ['Diagramando a peça…', 'Montando capa e indicadores…',
+                 'Escrevendo os cartões…', 'Fechando o PDF…'];
   let i = 0;
   botao.textContent = '⏳ ' + fases[0];
   const timer = setInterval(() => {
-    i = (i + 1) % fases.length;
+    i = Math.min(i + 1, fases.length - 1);
     botao.textContent = '⏳ ' + fases[i];
-  }, 12000);
+  }, 10000);
   try {
     const r = await fetch('/api/documentos/pdf-desenhado', {
       method: 'POST',
