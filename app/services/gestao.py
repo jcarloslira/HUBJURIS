@@ -360,6 +360,45 @@ class GestaoService:
         linhas = result.data or []
         return bool(linhas and linhas[0].get("usa_easyjur_tiflux"))
 
+    async def token_cron_valido(self, token: str) -> bool:
+        """Confere o token da coleta agendada contra o cofre (vault) do Supabase.
+
+        A comparação acontece dentro do banco (função ``lexhub_cron_confere``): o
+        segredo nunca sai do cofre nem passa pelo servidor.
+        """
+        if not token:
+            return False
+        try:
+            result = await self._db.rpc("lexhub_cron_confere", {"token": token}).execute()
+        except Exception:  # noqa: BLE001 - na dúvida, fechado
+            return False
+        return result.data is True
+
+    async def coletar_agendado(self) -> list[str]:
+        """Dispara a coleta de todo escritório dono de uma conexão EasyJur/Tiflux.
+
+        Chamado pelo pg_cron do Supabase 3x por dia. O EasyJur só guarda o último
+        andamento de cada processo; várias coletas por dia é o que impede um
+        andamento de sumir quando chega o seguinte.
+        """
+        if self._mcp is None or not self._mcp.ativo:
+            return []
+        result = (
+            await self._db.table("escritorios")
+            .select("id")
+            .eq("usa_easyjur_tiflux", True)
+            .execute()
+        )
+        disparados: list[str] = []
+        for linha in result.data or []:
+            escritorio_id = str(linha["id"])
+            ultima = await self.ultima_coleta(escritorio_id)
+            if ultima and ultima.get("status") == "rodando" and not self.travada(ultima):
+                continue
+            self.disparar_coleta(escritorio_id)
+            disparados.append(escritorio_id)
+        return disparados
+
     async def garantir_coleta_do_dia(self, escritorio_id: str) -> bool:
         """Dispara a coleta se ainda não houve uma hoje. Devolve se disparou."""
         if not await self.integracao_ativa(escritorio_id):

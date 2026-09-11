@@ -147,6 +147,19 @@ FERRAMENTAS_GESTAO: list[dict[str, Any]] = [
 NOMES_GESTAO = {f["name"] for f in FERRAMENTAS_GESTAO}
 
 
+# Dito ao agente quando o escritório logado não é o dono da conexão EasyJur/Tiflux.
+# Sem isso ele "diagnosticava" conector desligado e mandava o usuário configurar
+# algo que não existe na tela.
+SEM_INTEGRACAO = (
+    "Este escritório NÃO tem EasyJur nem Tiflux conectados ao Hub: a conexão deste "
+    "servidor pertence a outro escritório e, por sigilo, os processos e tickets dele "
+    "não aparecem aqui. Diga isso ao usuário com clareza. NÃO sugira 'Configurações → "
+    "Conectores' (EasyJur e Tiflux não se conectam por lá) nem rodar hub_coletar: a "
+    "ligação é feita pela equipe do LexHub. O que existe aqui são os condomínios "
+    "cadastrados neste escritório e as anotações feitas no Hub."
+)
+
+
 def _json(obj: Any) -> str:
     return json.dumps(obj, ensure_ascii=False, separators=(",", ":"), default=str)
 
@@ -206,7 +219,9 @@ def montar_handlers_gestao(gestao: GestaoService, escritorio_id: str) -> dict[st
         dia = _dia(entrada.get("dia"), hoje())
         dados = await gestao.painel(escritorio_id, dia)
         coleta = dados.get("ultima_coleta") or {}
-        if coleta.get("dia") != hoje().isoformat() or coleta.get("status") != "ok":
+        if not dados.get("integracao"):
+            dados["aviso_integracao"] = SEM_INTEGRACAO
+        elif coleta.get("dia") != hoje().isoformat() or coleta.get("status") != "ok":
             dados["aviso_coleta"] = (
                 "A última coleta concluída não é de hoje — os números podem estar "
                 "atrasados. Ofereça rodar hub_coletar."
@@ -229,6 +244,7 @@ def montar_handlers_gestao(gestao: GestaoService, escritorio_id: str) -> dict[st
             return "Informe data_inicio e data_fim (AAAA-MM-DD ou DD/MM/AAAA)."
         if fim < inicio:
             inicio, fim = fim, inicio
+        integracao = await gestao.integracao_ativa(escritorio_id)
         condominio_id = None
         nome = None
         if entrada.get("condominio"):
@@ -248,6 +264,8 @@ def montar_handlers_gestao(gestao: GestaoService, escritorio_id: str) -> dict[st
             "total_eventos": dados["total"],
             "resumo": dados["resumo"],
         }
+        if not integracao:
+            saida["aviso_integracao"] = SEM_INTEGRACAO
         if dados["cortado"]:
             saida["aviso"] = "Período grande demais: o total foi limitado. Divida o período."
         saida["eventos"] = [_enxuto(e) for e in dados["eventos"]]
@@ -307,6 +325,8 @@ def montar_handlers_gestao(gestao: GestaoService, escritorio_id: str) -> dict[st
         return f"Anotado no diário de '{achado['nome']}' em {evento.get('ocorrido_em')}: {titulo}"
 
     async def coletar(_: dict[str, Any]) -> str:
+        if not await gestao.integracao_ativa(escritorio_id):
+            return SEM_INTEGRACAO
         resumo = await gestao.sincronizar(escritorio_id)
         resumo.pop("tickets_abertos_ids", None)
         return "Coleta concluída: " + _json(resumo)

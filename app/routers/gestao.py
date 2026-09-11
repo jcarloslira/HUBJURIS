@@ -7,7 +7,7 @@ agentes usam pelas ferramentas ``hub_*``: tela e agente enxergam o mesmo Hub.
 from datetime import date
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request
 
 from app.config import get_settings
 from app.dependencies import get_current_user, get_supabase
@@ -153,3 +153,19 @@ async def coletar(user: _User, contas: _Contas, svc: _Svc) -> dict[str, Any]:
         return {"status": "rodando", "desde": ultima.get("iniciada_em")}
     svc.disparar_coleta(escritorio_id)
     return {"status": "iniciada"}
+
+
+@router.post("/cron", status_code=202)
+async def coleta_agendada(
+    svc: _Svc,
+    x_cron_token: Annotated[str | None, Header()] = None,
+) -> dict[str, Any]:
+    """Coleta agendada — chamada pelo pg_cron do Supabase (7h, 12h30 e 18h30).
+
+    Sem login de usuário: autentica pelo token guardado no cofre do Supabase.
+    Responde na hora e coleta em segundo plano (o servidor gratuito acorda com
+    a própria chamada).
+    """
+    if not await svc.token_cron_valido(x_cron_token or ""):
+        raise HTTPException(status_code=403, detail="Token da coleta agendada inválido.")
+    return {"coletas_disparadas": len(await svc.coletar_agendado())}

@@ -497,7 +497,13 @@ _CATALOGO: list[dict[str, Any]] = [
             "cpf": {"type": "string", "description": "CPF da parte."},
             "cnpj": {"type": "string", "description": "CNPJ da parte."},
             "advogado_nome": {"type": "string", "description": "Advogado responsável."},
-            "status": {"type": "string", "description": "Situação do processo (ex.: Ativo)."},
+            "status": {
+                "type": "string",
+                "description": (
+                    "Situação por CÓDIGO (a API recusa texto): 1 Ativo, 3 Arquivado "
+                    "definitivo, 4 Baixado, 5 Substabelecido, 7 Suspenso. Vários: '1,7'."
+                ),
+            },
             "comarca": {"type": "string", "description": "Comarca."},
             "uf": {"type": "string", "description": "UF (ex.: DF, GO)."},
             "movimentacao": {"type": "string", "description": "Texto do andamento."},
@@ -533,7 +539,10 @@ _CATALOGO: list[dict[str, Any]] = [
             },
             "id_cliente": {"type": "integer", "description": "Restringe a um cliente."},
             "uf": {"type": "string", "description": "Restringe a uma UF."},
-            "status": {"type": "string", "description": "Restringe à situação (ex.: Ativo)."},
+            "status": {
+                "type": "string",
+                "description": "Situação por CÓDIGO: 1 Ativo, 3 Arquivado, 4 Baixado, 7 Suspenso.",
+            },
             "nome_parte": {"type": "string", "description": "Restringe a uma parte."},
             "advogado_nome": {"type": "string", "description": "Restringe a um advogado."},
             "comarca": {"type": "string", "description": "Restringe a uma comarca."},

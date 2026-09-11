@@ -312,3 +312,49 @@ async def test_condominio_que_ganha_os_dois_vinculos_nao_repete_no_upsert() -> N
     sqb = next(c for c in banco.tabelas["condominios"] if c["id"] == "c-sqb")
     assert sqb["easyjur_cliente_id"] == "1"
     assert sqb["tiflux_cliente_id"] == "1889559"
+
+
+@pytest.mark.asyncio
+async def test_agente_sabe_por_que_nao_ha_dados_sem_a_conexao() -> None:
+    """Sem isso o agente mandava 'configurar conectores', que nem existe para EasyJur."""
+    banco, mcp = _banco(integracao=False), _MCPFalso()
+    h = montar_handlers_gestao(GestaoService(banco, mcp), ESC)  # type: ignore[arg-type]
+
+    painel = json.loads(await h["hub_painel"]({}))
+    coleta = await h["hub_coletar"]({})
+
+    assert "NÃO tem EasyJur" in painel["aviso_integracao"]
+    assert "NÃO tem EasyJur" in coleta
+    assert mcp.chamadas == []
+
+
+@pytest.mark.asyncio
+async def test_coleta_agendada_so_para_o_escritorio_dono_da_conexao() -> None:
+    banco = _banco()
+    banco.tabelas["escritorios"].append({"id": "outro", "usa_easyjur_tiflux": False})
+    svc = GestaoService(banco, _MCPFalso())  # type: ignore[arg-type]
+    disparados: list[str] = []
+    svc.disparar_coleta = disparados.append  # type: ignore[method-assign]
+
+    assert await svc.coletar_agendado() == [ESC]
+    assert disparados == [ESC]
+
+
+@pytest.mark.asyncio
+async def test_token_da_coleta_agendada_confere_no_banco() -> None:
+    from types import SimpleNamespace
+
+    class _Banco(BancoFalso):
+        def rpc(self, nome: str, args: dict[str, Any]) -> Any:
+            assert nome == "lexhub_cron_confere"
+
+            async def execute() -> SimpleNamespace:
+                return SimpleNamespace(data=args["token"] == "certo")
+
+            return SimpleNamespace(execute=execute)
+
+    svc = GestaoService(_Banco(), _MCPFalso())  # type: ignore[arg-type]
+
+    assert await svc.token_cron_valido("certo") is True
+    assert await svc.token_cron_valido("errado") is False
+    assert await svc.token_cron_valido("") is False
