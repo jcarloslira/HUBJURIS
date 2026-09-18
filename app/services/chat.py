@@ -395,6 +395,7 @@ async def gerar_resposta_stream(
     configs: dict[str, AgenteConfig] | None = None,
     buscar_conhecimento: Callable[[str], Awaitable[str]] | None = None,
     diretrizes: str | None = None,
+    memoria: str | None = None,
 ) -> AsyncIterator[str]:
     """Gera a resposta em streaming, roteando quando o alvo é o Supervisor.
 
@@ -473,6 +474,11 @@ async def gerar_resposta_stream(
             "diretamente na resposta; NUNCA diga que não consegue acessar, abrir ou ler anexos."
         )
         referencia = f"{referencia}\n\n{nota}" if referencia else nota
+
+    # Memória entre conversas: últimas demandas e a ficha do condomínio citado.
+    if memoria and memoria.strip():
+        lembranca = memoria.strip()
+        referencia = f"{referencia}\n\n{lembranca}" if referencia else lembranca
 
     # As diretrizes do escritório vêm ANTES do padrão da casa: estilo e método não
     # podem depender de a busca semântica acertar o trecho certo.

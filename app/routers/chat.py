@@ -1,5 +1,6 @@
 """Router do chat com os agentes do hub."""
 
+from collections.abc import AsyncIterator
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Request, status
@@ -30,6 +31,7 @@ from app.services.contas import ContaService
 from app.services.gestao import GestaoService
 from app.services.google_escritorio import GoogleEscritorioService
 from app.services.mcpai import MCPAIClient
+from app.services.memoria import MemoriaService
 from app.services.projetos import ProjetoService
 
 _SERVICOS_ACAO = ("agenda", "gmail", "docs", "sheets")
@@ -150,6 +152,36 @@ async def _montar_ferramentas(
     return tools_supervisor, tools_especialista, executar, gestao
 
 
+async def _lembrando(
+    resposta: AsyncIterator[str],
+    memoria: MemoriaService,
+    *,
+    escritorio_id: str,
+    user_id: str | None,
+    agente: str,
+    pedido: str,
+) -> AsyncIterator[str]:
+    """Repassa a resposta ao usuário e, no fim, grava o turno na memória.
+
+    O registro roda DEPOIS do último trecho (não atrasa nada em tela) e num
+    modelo barato; falhar nele não pode custar a resposta que o usuário já leu.
+    """
+    trechos: list[str] = []
+    async for trecho in resposta:
+        trechos.append(trecho)
+        yield trecho
+    try:
+        await memoria.registrar(
+            escritorio_id,
+            user_id=user_id,
+            agente=agente,
+            pedido=pedido,
+            resposta="".join(trechos),
+        )
+    except Exception:  # noqa: BLE001 - memória é bônus; a resposta já foi entregue
+        pass
+
+
 @router.post("/chat", status_code=200)
 async def conversar(
     payload: ChatRequest,
@@ -229,19 +261,42 @@ async def conversar(
         except Exception:  # noqa: BLE001 - sem diretrizes o agente segue no padrão da casa
             diretrizes = None
 
-    return StreamingResponse(
-        chat_service.gerar_resposta_stream(
-            payload,
-            request.app.state.anthropic,
-            conector=conector,
-            acervo_raiz=acervo_raiz,
-            on_usage=on_usage,
-            ferramentas=ferramentas,
-            ferramentas_especialista=ferramentas_especialista,
-            executar_ferramenta=executar_ferramenta,
-            configs=configs,
-            buscar_conhecimento=buscar_conhecimento,
-            diretrizes=diretrizes,
-        ),
-        media_type="text/plain; charset=utf-8",
+    # Memória viva: o que o escritório pediu antes, onde parou e a ficha do
+    # condomínio citado — o agente começa a conversa já sabendo.
+    memoria_svc = MemoriaService(supabase, request.app.state.anthropic) if supabase else None
+    memoria = None
+    ultima_user = next(
+        (m.content for m in reversed(payload.mensagens) if m.role == "user"), ""
     )
+    if memoria_svc is not None and contexto is not None:
+        try:
+            memoria = await memoria_svc.contexto(contexto[1].escritorio_id, ultima_user)
+        except Exception:  # noqa: BLE001 - memória é bônus; o chat não pode cair por ela
+            memoria = None
+
+    resposta = chat_service.gerar_resposta_stream(
+        payload,
+        request.app.state.anthropic,
+        conector=conector,
+        acervo_raiz=acervo_raiz,
+        on_usage=on_usage,
+        ferramentas=ferramentas,
+        ferramentas_especialista=ferramentas_especialista,
+        executar_ferramenta=executar_ferramenta,
+        configs=configs,
+        buscar_conhecimento=buscar_conhecimento,
+        diretrizes=diretrizes,
+        memoria=memoria,
+    )
+
+    if memoria_svc is not None and contexto is not None:
+        resposta = _lembrando(
+            resposta,
+            memoria_svc,
+            escritorio_id=contexto[1].escritorio_id,
+            user_id=contexto[1].user_id,
+            agente=payload.agente,
+            pedido=ultima_user,
+        )
+
+    return StreamingResponse(resposta, media_type="text/plain; charset=utf-8")
