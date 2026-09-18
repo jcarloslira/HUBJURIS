@@ -257,7 +257,22 @@ def _hoje_por_extenso() -> str:
     return f"{_DIAS_DA_SEMANA[dia.weekday()]}, {dia:%d/%m/%Y}"
 
 
-INSTRUCAO_ENTREGA = """Sobre o acervo do escritório e a entrega da peça:
+def bloco_diretrizes(diretrizes: str) -> str:
+    """As regras de estilo e método DAQUELE escritório, acima do padrão da casa.
+
+    Vêm de ``escritorios.diretrizes`` (migração 016) e ficam no prompt de todo
+    agente: pedir "redija a peça" tem de sair no português do escritório mesmo
+    quando a busca semântica traz outro assunto.
+    """
+    return (
+        "COMO ESTE ESCRITÓRIO TRABALHA — regras do próprio escritório, que "
+        "PREVALECEM sobre o padrão geral em caso de conflito. Siga-as em toda peça, "
+        "análise e resposta, sem esperar que o usuário repita:\n\n"
+        f"{diretrizes.strip()}"
+    )
+
+
+INSTRUCAO_ENTREGA ="""Sobre o acervo do escritório e a entrega da peça:
 - Se você recebeu acima modelos do escritório ou trechos de conhecimento recuperado, baseie a peça \
 no padrão e no estilo deles — é o jeito da casa.
 - Se não houver modelos do escritório (Drive não conectado ou pasta do acervo não escolhida), você \
@@ -379,6 +394,7 @@ async def gerar_resposta_stream(
     executar_ferramenta: Callable[[str, dict], Awaitable[str]] | None = None,
     configs: dict[str, AgenteConfig] | None = None,
     buscar_conhecimento: Callable[[str], Awaitable[str]] | None = None,
+    diretrizes: str | None = None,
 ) -> AsyncIterator[str]:
     """Gera a resposta em streaming, roteando quando o alvo é o Supervisor.
 
@@ -457,6 +473,12 @@ async def gerar_resposta_stream(
             "diretamente na resposta; NUNCA diga que não consegue acessar, abrir ou ler anexos."
         )
         referencia = f"{referencia}\n\n{nota}" if referencia else nota
+
+    # As diretrizes do escritório vêm ANTES do padrão da casa: estilo e método não
+    # podem depender de a busca semântica acertar o trecho certo.
+    if diretrizes and diretrizes.strip():
+        bloco = bloco_diretrizes(diretrizes)
+        referencia = f"{referencia}\n\n{bloco}" if referencia else bloco
 
     referencia = f"{referencia}\n\n{INSTRUCAO_OPCOES}" if referencia else INSTRUCAO_OPCOES
     referencia = f"{referencia}\n\n{INSTRUCAO_ESTILO}\n\n{INSTRUCAO_MEMORIA}"

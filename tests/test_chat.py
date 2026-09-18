@@ -305,3 +305,33 @@ async def test_sem_conector_nao_injeta_referencia() -> None:
 
     system = fake.messages.stream.call_args.kwargs["system"]
     assert "MODELOS DO ESCRITÓRIO" not in system
+
+
+async def test_diretrizes_do_escritorio_entram_no_prompt_de_todo_agente() -> None:
+    """Estilo e método da casa não podem depender de a busca semântica acertar."""
+    fake = _mock_anthropic_stream(["ok"])
+    payload = ChatRequest(
+        agente="peticoes",
+        mensagens=[MensagemChat(role="user", content="redija a impugnação")],
+    )
+
+    async for _ in gerar_resposta_stream(
+        payload, fake, diretrizes="Sempre em texto corrido, sem marcadores."
+    ):
+        pass
+
+    system = fake.messages.stream.call_args.kwargs["system"]
+    assert "COMO ESTE ESCRITÓRIO TRABALHA" in system
+    assert "Sempre em texto corrido, sem marcadores." in system
+
+
+async def test_escritorio_sem_diretrizes_segue_no_padrao_da_casa() -> None:
+    fake = _mock_anthropic_stream(["ok"])
+    payload = ChatRequest(
+        agente="peticoes", mensagens=[MensagemChat(role="user", content="oi")]
+    )
+
+    async for _ in gerar_resposta_stream(payload, fake, diretrizes="   "):
+        pass
+
+    assert "COMO ESTE ESCRITÓRIO TRABALHA" not in fake.messages.stream.call_args.kwargs["system"]

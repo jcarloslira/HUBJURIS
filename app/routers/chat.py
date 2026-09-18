@@ -213,6 +213,22 @@ async def conversar(
             trechos = await kb.buscar(consulta, escritorio_id)
             return formatar_conhecimento(trechos)
 
+    # Como ESTE escritório trabalha (estilo, método, teses) — vai no prompt de todo
+    # agente, não na busca semântica.
+    diretrizes = None
+    if supabase is not None and contexto is not None:
+        try:
+            linha = (
+                await supabase.table("escritorios")
+                .select("diretrizes")
+                .eq("id", contexto[1].escritorio_id)
+                .limit(1)
+                .execute()
+            )
+            diretrizes = (linha.data or [{}])[0].get("diretrizes")
+        except Exception:  # noqa: BLE001 - sem diretrizes o agente segue no padrão da casa
+            diretrizes = None
+
     return StreamingResponse(
         chat_service.gerar_resposta_stream(
             payload,
@@ -225,6 +241,7 @@ async def conversar(
             executar_ferramenta=executar_ferramenta,
             configs=configs,
             buscar_conhecimento=buscar_conhecimento,
+            diretrizes=diretrizes,
         ),
         media_type="text/plain; charset=utf-8",
     )
