@@ -1215,7 +1215,46 @@ const icone = slug => {
   return ICONES[a ? a.icone : 'scale'] || ICONES.scale;
 };
 
-const TOKEN = localStorage.getItem('lexhub_token');
+let TOKEN = localStorage.getItem('lexhub_token');
+let REFRESH = localStorage.getItem('lexhub_refresh');
+
+// O token do Supabase expira em 1 hora. Antes, expirado, o servidor deixava de
+// reconhecer o usuário e o chat respondia SEM ferramentas (o agente dizia que o
+// EasyJur "não estava conectado"). Agora a sessão se renova sozinha.
+function tokenVenceEm() {
+  try {
+    const carga = JSON.parse(atob(TOKEN.split('.')[1]));
+    return (carga.exp || 0) * 1000 - Date.now();
+  } catch { return 0; }
+}
+
+async function renovarSessao() {
+  if (!REFRESH) return false;
+  try {
+    const r = await fetch('/api/auth/refresh', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refresh_token: REFRESH }),
+    });
+    if (!r.ok) return false;
+    const d = await r.json();
+    TOKEN = d.access_token;
+    localStorage.setItem('lexhub_token', TOKEN);
+    if (d.refresh_token) {
+      REFRESH = d.refresh_token;
+      localStorage.setItem('lexhub_refresh', REFRESH);
+    }
+    if (d.perfil) localStorage.setItem('lexhub_perfil', JSON.stringify(d.perfil));
+    return true;
+  } catch { return false; }
+}
+
+// Chamada antes de cada pedido: renova com 5 minutos de folga.
+async function garantirSessao() {
+  if (!TOKEN) return false;
+  if (tokenVenceEm() > 5 * 60 * 1000) return true;
+  return await renovarSessao();
+}
 let perfil = JSON.parse(localStorage.getItem('lexhub_perfil') || 'null');
 const authHeaders = (extra = {}) => TOKEN ? { ...extra, 'Authorization': 'Bearer ' + TOKEN } : extra;
 
@@ -1235,6 +1274,8 @@ function alternarTema() {
 
 async function init() {
   if (!TOKEN) { location.replace('/login'); return; }
+  await garantirSessao();
+  setInterval(garantirSessao, 30 * 60 * 1000);
   aplicarTema(document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light');
   aplicarPerfil();
   try {
@@ -1277,6 +1318,7 @@ async function carregarPerfil() {
 
 function sair() {
   localStorage.removeItem('lexhub_token');
+  localStorage.removeItem('lexhub_refresh');
   localStorage.removeItem('lexhub_perfil');
   location.replace('/login');
 }
@@ -1587,6 +1629,7 @@ function fecharGestao() {
 }
 
 async function carregarPainel() {
+  await garantirSessao();
   const dia = $('g-dia').value;
   try {
     const r = await fetch('/api/gestao/painel' + (dia ? '?dia=' + dia : ''), { headers: authHeaders() });
@@ -2472,6 +2515,13 @@ async function gerarResposta() {
         anexos: anexosReq
       })
     });
+    if (resp.status === 401) {
+      // O servidor recusa em vez de responder sem EasyJur/Tiflux/memória.
+      const renovou = await renovarSessao();
+      throw new Error(renovou
+        ? 'Sua sessão foi renovada. Envie a mensagem de novo, por favor.'
+        : 'Sua sessão expirou. Entre novamente para o agente voltar a ter acesso ao EasyJur, ao Tiflux e à memória do escritório.');
+    }
     if (!resp.ok) {
       const err = await resp.json().catch(() => ({}));
       throw new Error(err.detail || 'Erro ' + resp.status);
@@ -2518,6 +2568,7 @@ async function enviar() {
   const input = $('input');
   const texto = input.value.trim();
   if ((!texto && !anexos.length) || gerando) return;
+  await garantirSessao();
   const conteudo = texto || 'Segue o(s) anexo(s) para análise.';
   input.value = '';
   input.style.height = 'auto';

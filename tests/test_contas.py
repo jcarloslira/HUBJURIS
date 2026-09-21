@@ -138,3 +138,50 @@ async def test_resumo_uso_agrupa_por_modelo() -> None:
     por_modelo = {m.modelo: (m.tokens_entrada, m.tokens_saida) for m in resumo.por_modelo}
     assert por_modelo["claude-sonnet-4-6"] == (150, 210)
     assert por_modelo["claude-haiku-4-5-20251001"] == (5, 5)
+
+
+async def test_login_devolve_a_chave_de_renovacao() -> None:
+    """Sem refresh_token a sessão morre em 1 hora e o chat passa a responder sem ferramentas."""
+    http = MagicMock()
+    http.post = AsyncMock(
+        return_value=_Resp({"access_token": "tok123", "refresh_token": "ref456"})
+    )
+    db = _FakeDB({"membros": [[{"user_id": "u1", "escritorio_id": "esc1", "nome": "Wilker",
+                                "email": "w@x.com", "papel": "admin"}]],
+                  "escritorios": [[{"nome": "Jales"}]]})
+    svc = ContaService(db, http, _settings())  # type: ignore[arg-type]
+
+    sessao = await svc.login(LoginPayload(email="w@x.com", senha="12345678"))
+
+    assert sessao.access_token == "tok123"
+    assert sessao.refresh_token == "ref456"
+
+
+async def test_renovar_troca_o_refresh_por_sessao_nova() -> None:
+    http = MagicMock()
+    http.post = AsyncMock(
+        return_value=_Resp({"access_token": "novo", "refresh_token": "ref789"})
+    )
+    db = _FakeDB({"membros": [[{"user_id": "u1", "escritorio_id": "esc1", "nome": "Wilker",
+                                "email": "w@x.com", "papel": "admin"}]],
+                  "escritorios": [[{"nome": "Jales"}]]})
+    db.auth = MagicMock()  # type: ignore[attr-defined]
+    db.auth.get_user = AsyncMock(return_value=MagicMock(user=MagicMock(id="u1")))
+    svc = ContaService(db, http, _settings())  # type: ignore[arg-type]
+
+    sessao = await svc.renovar("ref456")
+
+    assert sessao.access_token == "novo"
+    assert sessao.refresh_token == "ref789"
+    assert sessao.perfil.escritorio_id == "esc1"
+
+
+async def test_refresh_vencido_vira_401() -> None:
+    http = MagicMock()
+    http.post = AsyncMock(return_value=_Resp({"error": "invalid"}, status=400))
+    svc = ContaService(_FakeDB({}), http, _settings())  # type: ignore[arg-type]
+
+    with pytest.raises(ContaError) as erro:
+        await svc.renovar("ref-velho")
+
+    assert erro.value.status == 401

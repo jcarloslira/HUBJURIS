@@ -161,6 +161,8 @@ function mostrarErro(msg) {
 
 function guardarSessao(d) {
   localStorage.setItem('lexhub_token', d.access_token);
+  // O token do Supabase vale 1 hora; sem esta chave a sessão morre calada.
+  if (d.refresh_token) localStorage.setItem('lexhub_refresh', d.refresh_token);
   localStorage.setItem('lexhub_perfil', JSON.stringify(d.perfil));
   location.replace('/');
 }

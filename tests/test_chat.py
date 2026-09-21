@@ -335,3 +335,33 @@ async def test_escritorio_sem_diretrizes_segue_no_padrao_da_casa() -> None:
         pass
 
     assert "COMO ESTE ESCRITÓRIO TRABALHA" not in fake.messages.stream.call_args.kwargs["system"]
+
+
+async def test_sessao_vencida_recusa_em_vez_de_responder_sem_ferramentas() -> None:
+    """Sem isto o agente respondia capado e dizia que o EasyJur não estava conectado."""
+    from types import SimpleNamespace
+
+    from fastapi import HTTPException
+
+    from app.config import get_settings
+    from app.routers.chat import conversar
+
+    pedido = ChatRequest(
+        agente="supervisor", mensagens=[MensagemChat(role="user", content="tickets do SQB")]
+    )
+    # supabase=None faz _resolver_perfil devolver None, como um token vencido.
+    request = SimpleNamespace(
+        app=SimpleNamespace(state=SimpleNamespace(supabase=None, anthropic=None))
+    )
+
+    with pytest.raises(HTTPException) as erro:
+        await conversar(
+            pedido,
+            request,  # type: ignore[arg-type]
+            get_settings(),
+            None,
+            authorization="Bearer token-vencido",
+        )
+
+    assert erro.value.status_code == 401
+    assert "Sessão expirada" in str(erro.value.detail)

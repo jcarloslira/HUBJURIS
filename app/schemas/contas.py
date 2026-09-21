@@ -38,7 +38,15 @@ class SessaoResponse(BaseModel):
     """Sessão criada após signup/login."""
 
     access_token: str
+    # Sem ele a sessão morre em 1 hora e o chat passa a responder sem ferramentas.
+    refresh_token: str = ""
     perfil: PerfilResponse
+
+
+class RenovarPayload(BaseModel):
+    """Troca do refresh_token por uma sessão nova."""
+
+    refresh_token: str = Field(min_length=10)
 
 
 class MembroCreate(BaseModel):

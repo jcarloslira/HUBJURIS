@@ -203,6 +203,15 @@ async def conversar(
         )
 
     contexto = await _resolver_perfil(request, authorization)
+    # Sessão vencida NÃO pode virar resposta sem ferramentas: sem EasyJur, Tiflux,
+    # memória e diretrizes, o agente "conclui" que nada está conectado e manda o
+    # usuário configurar conector — foi o que o Dr. Wilker viu. Melhor dizer a
+    # verdade e deixar o app renovar a sessão.
+    if contexto is None and authorization:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Sessão expirada — entre novamente para o agente voltar a ter acesso.",
+        )
     on_usage = None
     ferramentas = ferramentas_especialista = executar_ferramenta = None
     conector = None

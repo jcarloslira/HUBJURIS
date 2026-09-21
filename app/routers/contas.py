@@ -4,7 +4,6 @@ from typing import Annotated
 
 import httpx
 from fastapi import APIRouter, Depends, HTTPException, Request, status
-from supabase import AsyncClient
 
 from app.config import Settings, get_settings
 from app.dependencies import get_current_user, get_supabase
@@ -14,11 +13,13 @@ from app.schemas.contas import (
     MembroCreate,
     MembroResponse,
     PerfilResponse,
+    RenovarPayload,
     SessaoResponse,
     SignupPayload,
     UsoResumo,
 )
 from app.services.contas import ContaError, ContaService
+from supabase import AsyncClient
 
 router = APIRouter(prefix="/api", tags=["contas"])
 
@@ -48,6 +49,15 @@ async def signup(payload: SignupPayload, svc: _Svc) -> SessaoResponse:
         return await svc.signup(payload)
     except ContaError as exc:
         raise _erro(exc) from exc
+
+
+@router.post("/auth/refresh", response_model=SessaoResponse, status_code=200)
+async def renovar(payload: RenovarPayload, svc: _Svc) -> SessaoResponse:
+    """Renova a sessão sem novo login — o token do Supabase dura 1 hora."""
+    try:
+        return await svc.renovar(payload.refresh_token)
+    except ContaError as exc:
+        raise HTTPException(status_code=exc.status, detail=str(exc)) from exc
 
 
 @router.post("/auth/login", response_model=SessaoResponse, status_code=200)

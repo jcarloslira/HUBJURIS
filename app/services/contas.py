@@ -7,7 +7,6 @@ e-mail de confirmação.
 """
 
 import httpx
-from supabase import AsyncClient
 
 from app.config import Settings
 from app.schemas.contas import (
@@ -20,6 +19,7 @@ from app.schemas.contas import (
     UsoModelo,
     UsoResumo,
 )
+from supabase import AsyncClient
 
 
 class ContaError(Exception):
@@ -75,13 +75,18 @@ class ContaService:
             raise ContaError("Resposta inesperada do servidor de autenticação", status=502)
         return str(user_id)
 
-    async def _login_auth(self, email: str, senha: str) -> str:
-        """Autentica no GoTrue e retorna o access_token."""
+    async def _token_auth(self, grant: str, corpo: dict[str, str], erro: str) -> tuple[str, str]:
+        """Fala com o GoTrue e devolve (access_token, refresh_token).
+
+        O access_token do Supabase vale 1 hora. Sem guardar o refresh_token, a
+        sessão morria calada: o servidor deixava de reconhecer o usuário e o chat
+        respondia SEM ferramentas, como se nada estivesse conectado.
+        """
         try:
             resp = await self._http.post(
-                f"{self._url}/auth/v1/token?grant_type=password",
+                f"{self._url}/auth/v1/token?grant_type={grant}",
                 headers={"apikey": self._anon},
-                json={"email": email, "password": senha},
+                json=corpo,
             )
         except httpx.HTTPError as exc:
             raise ContaError(
@@ -93,8 +98,28 @@ class ContaService:
         except ValueError:
             dados = {}
         if resp.status_code >= 400 or "access_token" not in dados:
-            raise ContaError("E-mail ou senha incorretos", status=401)
-        return str(dados["access_token"])
+            raise ContaError(erro, status=401)
+        return str(dados["access_token"]), str(dados.get("refresh_token") or "")
+
+    async def _login_auth(self, email: str, senha: str) -> tuple[str, str]:
+        """Autentica no GoTrue e retorna (access_token, refresh_token)."""
+        return await self._token_auth(
+            "password", {"email": email, "password": senha}, "E-mail ou senha incorretos"
+        )
+
+    async def renovar(self, refresh_token: str) -> SessaoResponse:
+        """Troca o refresh_token por uma sessão nova (o usuário não faz login de novo)."""
+        access, refresh = await self._token_auth(
+            "refresh_token", {"refresh_token": refresh_token}, "Sessão expirada"
+        )
+        resp = await self._db.auth.get_user(access)
+        if resp is None or resp.user is None:
+            raise ContaError("Sessão expirada", status=401)
+        return SessaoResponse(
+            access_token=access,
+            refresh_token=refresh,
+            perfil=await self.perfil(str(resp.user.id)),
+        )
 
     # ── Fluxos ──────────────────────────────────────────────────
 
@@ -118,7 +143,7 @@ class ContaService:
             }
         ).execute()
 
-        token = await self._login_auth(payload.email, payload.senha)
+        token, refresh = await self._login_auth(payload.email, payload.senha)
         perfil = PerfilResponse(
             user_id=user_id,
             nome=payload.nome,
@@ -127,16 +152,18 @@ class ContaService:
             escritorio_id=escritorio_id,
             escritorio_nome=payload.nome_escritorio,
         )
-        return SessaoResponse(access_token=token, perfil=perfil)
+        return SessaoResponse(access_token=token, refresh_token=refresh, perfil=perfil)
 
     async def login(self, payload: LoginPayload) -> SessaoResponse:
         """Login: valida credenciais e devolve token + perfil."""
-        token = await self._login_auth(payload.email, payload.senha)
+        token, refresh = await self._login_auth(payload.email, payload.senha)
         result = await self._db.table("membros").select("*").eq("email", payload.email).execute()
         rows = result.data or []
         if not rows:
             raise ContaError("Usuário sem perfil no LexHub", status=403)
-        return SessaoResponse(access_token=token, perfil=await self._montar_perfil(rows[0]))
+        return SessaoResponse(
+            access_token=token, refresh_token=refresh, perfil=await self._montar_perfil(rows[0])
+        )
 
     async def perfil(self, user_id: str) -> PerfilResponse:
         """Perfil do usuário logado (via user_id validado pelo JWT)."""
