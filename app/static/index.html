@@ -1274,7 +1274,9 @@ function alternarTema() {
 
 async function init() {
   if (!TOKEN) { location.replace('/login'); return; }
-  await garantirSessao();
+  // Sessão de antes da renovação automática (sem a chave guardada): melhor pedir
+  // o login uma vez do que deixar o agente responder sem acesso a nada.
+  if (!(await garantirSessao())) { sair(); return; }
   setInterval(garantirSessao, 30 * 60 * 1000);
   aplicarTema(document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light');
   aplicarPerfil();
@@ -2518,9 +2520,12 @@ async function gerarResposta() {
     if (resp.status === 401) {
       // O servidor recusa em vez de responder sem EasyJur/Tiflux/memória.
       const renovou = await renovarSessao();
-      throw new Error(renovou
-        ? 'Sua sessão foi renovada. Envie a mensagem de novo, por favor.'
-        : 'Sua sessão expirou. Entre novamente para o agente voltar a ter acesso ao EasyJur, ao Tiflux e à memória do escritório.');
+      if (!renovou) {
+        setTimeout(sair, 2500);
+        throw new Error('Sua sessão expirou. Estamos te levando para a tela de login — '
+          + 'ao entrar, o agente volta a ter acesso ao EasyJur, ao Tiflux e à memória do escritório.');
+      }
+      throw new Error('Sua sessão foi renovada. Envie a mensagem de novo, por favor.');
     }
     if (!resp.ok) {
       const err = await resp.json().catch(() => ({}));
