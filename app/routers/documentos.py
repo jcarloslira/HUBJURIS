@@ -166,3 +166,22 @@ async def pdf_desenhado(
         media_type=_MEDIA["pdf"],
         headers={"Content-Disposition": f'attachment; filename="{nome}"'},
     )
+
+
+@router.get("/arquivo/{identificador}")
+async def arquivo_gerado(
+    identificador: str,
+    request: Request,
+    user: Annotated[AuthUser, Depends(get_current_user)],
+) -> Response:
+    """Baixa um arquivo que o agente gerou nesta conversa (Word revisado, planilha)."""
+    escritorio_id = await _escritorio_id(request, user)
+    cofre = getattr(request.app.state, "arquivos", None)
+    arquivo = cofre.pegar(identificador, escritorio_id or "") if cofre else None
+    if arquivo is None:
+        raise HTTPException(status_code=404, detail="Arquivo não está mais disponível.")
+    return Response(
+        content=arquivo.dados,
+        media_type=arquivo.tipo,
+        headers={"Content-Disposition": f'attachment; filename="{_slug(arquivo.nome)}"'},
+    )

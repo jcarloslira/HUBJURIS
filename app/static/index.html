@@ -765,6 +765,14 @@ body, aside, .composer, .modal-lg, .cfg-nav, .peca, .bubble, .conn-row2, .agente
   padding: 9px 11px; font: inherit; font-size: 0.85rem; color: var(--text); width: 100%; }
 #pane-timbre input[type=file] { font-size: 0.8rem; color: var(--text-dim); }
 
+.arquivos-gerados { margin-top: 10px; display: flex; flex-direction: column; gap: 8px; }
+.arq-item { display: flex; align-items: center; gap: 10px; background: var(--panel); border: 1px solid var(--border);
+  border-left: 3px solid var(--accent); border-radius: 10px; padding: 10px 12px; }
+.arq-ic { color: var(--accent); display: flex; }
+.arq-txt { flex: 1; min-width: 0; font-size: 0.82rem; }
+.arq-txt b { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.arq-txt small { color: var(--text-dim); font-size: 0.72rem; }
+
 /* ---------- Gestão da carteira ---------- */
 .side-gestao {
   display: flex; align-items: center; gap: 8px; width: 100%;
@@ -2000,7 +2008,7 @@ function atualizarLabelBolha(div, slug) {
 function soTexto(t) {
   // durante o stream, corta no 1º marcador (opções ou peça) ainda incompleto
   let corte = -1;
-  for (const marca of ['[[OPCOES', '[[PECA']) {
+  for (const marca of ['[[OPCOES', '[[PECA', '[[ARQUIVO']) {
     const i = t.indexOf(marca);
     if (i !== -1 && (corte === -1 || i < corte)) corte = i;
   }
@@ -2021,6 +2029,52 @@ function parsePeca(t) {
 }
 function limparPeca(t) {
   return t.replace(/\[\[PECA[\s\S]*?\[\[\/PECA\]\]/g, '').trim();
+}
+
+/* ---------- Arquivo gerado pelo agente (Word revisado, planilha) ---------- */
+// A ferramenta devolve texto ao modelo, então o arquivo fica guardado no servidor
+// e o agente cita o id. Aqui o id vira botão de download.
+function parseArquivos(t) {
+  return [...t.matchAll(/\[\[ARQUIVO\s+id="([^"]+)"\s+nome="([^"]+)"\]\]/g)]
+    .map(m => ({ id: m[1], nome: m[2] }));
+}
+function limparArquivos(t) {
+  return t.replace(/\[\[ARQUIVO[^\]]*\]\]/g, '').trim();
+}
+
+async function baixarArquivoGerado(botao, arquivo) {
+  const rotulo = botao.textContent;
+  botao.textContent = 'Baixando…';
+  try {
+    await garantirSessao();
+    const r = await fetch('/api/documentos/arquivo/' + encodeURIComponent(arquivo.id), { headers: authHeaders() });
+    if (!r.ok) throw new Error(r.status);
+    const url = URL.createObjectURL(await r.blob());
+    const a = document.createElement('a');
+    a.href = url; a.download = arquivo.nome;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 4000);
+    botao.textContent = 'Baixado ✓';
+  } catch {
+    botao.textContent = 'Expirou — peça de novo';
+  }
+  setTimeout(() => { botao.textContent = rotulo; }, 4000);
+}
+
+function renderArquivos(div, arquivos) {
+  if (!arquivos.length) return;
+  const caixa = document.createElement('div');
+  caixa.className = 'arquivos-gerados';
+  caixa.innerHTML = arquivos.map(a => `
+    <div class="arq-item">
+      <span class="arq-ic">${IC_DOWN}</span>
+      <div class="arq-txt"><b>${escapar(a.nome)}</b><small>Word com controle de alterações · abra e use "Aceitar todas"</small></div>
+      <button class="g-btn pri" type="button">Baixar</button>
+    </div>`).join('');
+  caixa.querySelectorAll('button').forEach((b, i) => {
+    b.onclick = () => baixarArquivoGerado(b, arquivos[i]);
+  });
+  div.appendChild(caixa);
 }
 
 /* ---------- Passos do agente (etapas animadas, estilo Claude) ---------- */
@@ -2051,14 +2105,17 @@ function aplicarArtefatos(div, bruto) {
   renderPassos(div, passosDe(bruto), false);
   const peca = parsePeca(bruto);
   const opcoes = parseOpcoes(bruto);
+  const arquivos = parseArquivos(bruto);
   let limpo = limparPassos(bruto);
   if (peca) limpo = limparPeca(limpo);
   if (opcoes) limpo = limparOpcoes(limpo);
+  if (arquivos.length) limpo = limparArquivos(limpo);
   const bubble = div.querySelector('.bubble');
   bubble.innerHTML = limpo
     ? md(limpo)
     : (peca ? '<p class="peca-nota">Documento gerado abaixo. 📄</p>' : '');
   addAcoes(div, limpo || (peca ? peca.conteudo : ''));
+  if (arquivos.length) renderArquivos(div, arquivos);
   if (peca) renderPeca(div, peca);
   if (opcoes) renderOpcoes(div, opcoes);
 }

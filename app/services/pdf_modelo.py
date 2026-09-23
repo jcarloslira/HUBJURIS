@@ -167,6 +167,10 @@ table.simples td:first-child { font-weight: normal; }
 .caso .rotulo:first-of-type { margin-top: 2pt; }
 .proximo { background: #F1F4F3; border-left: 2pt solid __PETROLEO__; padding: 7pt 10pt;
            margin: 8pt 0 2pt; font-size: 8pt; }
+.expl { background: #F6F4EC; border-left: 2pt solid __DOURADO__; padding: 7pt 10pt;
+        margin: 7pt 0 2pt; font-size: 8pt; }
+.expl b { display: block; font-size: 6.8pt; font-weight: bold; letter-spacing: 0.09em;
+          text-transform: uppercase; color: #6B5F2E; margin-bottom: 2pt; }
 
 /* ---------- linha do tempo ---------- */
 .linha-tempo { list-style: none; margin: 4pt 0 10pt; padding: 0 0 0 4pt; }
@@ -256,6 +260,8 @@ dourado neutro/em curso, verde favorável, azul informativo):
   <p class="rotulo">O que já foi feito</p><p>…</p>
   <p class="rotulo">Onde está agora</p><p>…</p>
   <p class="rotulo">Leitura franca</p><p>…</p>
+  <div class="expl"><b>Por que o valor parece alto</b>Explicação que contextualiza o número,
+  DENTRO do cartão a que se refere.</div>
   <div class="proximo"><b>Próximo passo:</b> acompanhar o saneamento e impugnar o laudo.</div>
 </div>
 Etiquetas: tag (neutra), tag vermelho, tag verde, tag dourado. Rótulos possíveis:

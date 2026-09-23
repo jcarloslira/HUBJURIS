@@ -11,6 +11,10 @@ from app.agents.ferramentas import (
     FERRAMENTAS_SISTEMA,
     montar_executor,
 )
+from app.agents.ferramentas_documentos import (
+    FERRAMENTAS_DOCUMENTOS,
+    montar_handlers_documentos,
+)
 from app.agents.ferramentas_drive import FERRAMENTAS_DRIVE, montar_handlers_drive
 from app.agents.ferramentas_gestao import FERRAMENTAS_GESTAO, montar_handlers_gestao
 from app.agents.ferramentas_google import (
@@ -102,6 +106,8 @@ async def _montar_ferramentas(
     perfil: PerfilResponse,
     settings: Settings,
     composio: "ComposioClient | None",
+    anexos: list | None = None,
+    diretrizes: str = "",
 ):
     """Ferramentas dos agentes.
 
@@ -134,6 +140,19 @@ async def _montar_ferramentas(
     # Gestão condominial: o diário e o cadastro do Hub. A coleta do dia dispara
     # sozinha na primeira conversa do dia (não segura a resposta).
     handlers = {**handlers, **montar_handlers_gestao(gestao, perfil.escritorio_id)}
+    # Revisão de contrato em Word: aplica as mudanças NO ARQUIVO anexado, com
+    # controle de alterações, para o advogado só conferir e aceitar.
+    handlers = {
+        **handlers,
+        **montar_handlers_documentos(
+            request.app.state.anthropic,
+            request.app.state.arquivos,
+            anexos=anexos or [],
+            escritorio_id=perfil.escritorio_id,
+            escritorio_nome=perfil.escritorio_nome,
+            diretrizes=diretrizes,
+        ),
+    }
     executar = montar_executor(
         projetos,
         escritorio_id=perfil.escritorio_id,
@@ -143,12 +162,19 @@ async def _montar_ferramentas(
     tools_supervisor = [
         *FERRAMENTAS_SISTEMA,
         *FERRAMENTAS_GESTAO,
+        *FERRAMENTAS_DOCUMENTOS,
         *ferramentas_google_disponiveis(clients),
         *tools_drive,
         *tools_mcpai,
     ]
     # Especialistas: o Hub inteiro (contexto e diário do condomínio) + Drive + EasyJur/Tiflux.
-    tools_especialista = [*FERRAMENTAS_HUB_LEITURA, *FERRAMENTAS_GESTAO, *tools_drive, *tools_mcpai]
+    tools_especialista = [
+        *FERRAMENTAS_HUB_LEITURA,
+        *FERRAMENTAS_GESTAO,
+        *FERRAMENTAS_DOCUMENTOS,
+        *tools_drive,
+        *tools_mcpai,
+    ]
     return tools_supervisor, tools_especialista, executar, gestao
 
 
@@ -216,10 +242,30 @@ async def conversar(
     ferramentas = ferramentas_especialista = executar_ferramenta = None
     conector = None
     acervo_raiz = None
+
+    # Como ESTE escritório trabalha (estilo, método, teses). Carregado antes das
+    # ferramentas porque a revisão de contrato também segue estas regras.
+    diretrizes = None
+    supabase = request.app.state.supabase
+    if supabase is not None and contexto is not None:
+        try:
+            linha = (
+                await supabase.table("escritorios")
+                .select("diretrizes")
+                .eq("id", contexto[1].escritorio_id)
+                .limit(1)
+                .execute()
+            )
+            diretrizes = (linha.data or [{}])[0].get("diretrizes")
+        except Exception:  # noqa: BLE001 - sem diretrizes o agente segue no padrão da casa
+            diretrizes = None
+
     if contexto is not None:
         svc, perfil = contexto
         on_usage = _montar_registro_uso(svc, perfil)
-        montadas = await _montar_ferramentas(request, perfil, settings, composio)
+        montadas = await _montar_ferramentas(
+            request, perfil, settings, composio, payload.anexos, diretrizes or ""
+        )
         ferramentas, ferramentas_especialista, executar_ferramenta, gestao = montadas
         try:
             await gestao.garantir_coleta_do_dia(perfil.escritorio_id)
@@ -239,7 +285,6 @@ async def conversar(
         conector = ComposioDriveConnector(composio, USER_ID_PADRAO)
         acervo_raiz = settings.COMPOSIO_ACERVO_FOLDER_ID
 
-    supabase = request.app.state.supabase
     configs = await AgenteConfigService(supabase).mapa() if supabase is not None else None
 
     # Busca na base de conhecimento (RAG) escopada ao escritório logado (ou só o
@@ -253,22 +298,6 @@ async def conversar(
         async def buscar_conhecimento(consulta: str) -> str:
             trechos = await kb.buscar(consulta, escritorio_id)
             return formatar_conhecimento(trechos)
-
-    # Como ESTE escritório trabalha (estilo, método, teses) — vai no prompt de todo
-    # agente, não na busca semântica.
-    diretrizes = None
-    if supabase is not None and contexto is not None:
-        try:
-            linha = (
-                await supabase.table("escritorios")
-                .select("diretrizes")
-                .eq("id", contexto[1].escritorio_id)
-                .limit(1)
-                .execute()
-            )
-            diretrizes = (linha.data or [{}])[0].get("diretrizes")
-        except Exception:  # noqa: BLE001 - sem diretrizes o agente segue no padrão da casa
-            diretrizes = None
 
     # Memória viva: o que o escritório pediu antes, onde parou e a ficha do
     # condomínio citado — o agente começa a conversa já sabendo.

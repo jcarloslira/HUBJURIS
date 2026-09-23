@@ -28,6 +28,7 @@ from app.routers import (
     webhook_pix,
 )
 from app.services.agentes_config import AgenteConfigService
+from app.services.arquivos import CofreArquivos
 from app.services.chat import configs_padrao
 from app.utils.supabase import create_supabase_client
 
@@ -62,6 +63,8 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     app.state.supabase = await create_supabase_client(settings)
     app.state.anthropic = AsyncAnthropic(api_key=settings.ANTHROPIC_API_KEY)
     app.state.http_client = httpx.AsyncClient(timeout=30.0)
+    # Arquivos que os agentes geram (Word revisado) esperam aqui pelo download.
+    app.state.arquivos = CofreArquivos()
     # Semeia a config dos agentes (só os que faltam) — treinar sem redeploy.
     if app.state.supabase is not None:
         try:

@@ -272,6 +272,34 @@ def bloco_diretrizes(diretrizes: str) -> str:
     )
 
 
+INSTRUCAO_RELATORIO = """RELATÓRIO PARA O CLIENTE (síndico e conselho) — o padrão que o \
+sócio já aprova:
+- O relatório é DO CLIENTE, não do escritório. Nunca exponha falha interna, atraso da equipe ou \
+cadastro errado. Processo parado por ato do Judiciário: diga com naturalidade e informe a \
+providência. Parado por questão interna: resolva internamente e apresente só o encaminhamento.
+- NUNCA crie seção de "esclarecimentos", "correções" ou "divergências": a explicação vai DENTRO \
+do cartão do processo a que se refere (componente expl, título começando por "Por que…").
+- NUNCA crie seção de agenda, de prazos futuros ou de "próximos 30 dias". Compromisso entra no \
+"Próximo passo" do próprio item.
+- NUNCA escreva "pontos que exigem deliberação do condomínio": decisão em processo é do \
+escritório. O que de fato depende do síndico (autorizar ajuizamento, aceitar acordo, liberar \
+despesa) vira pedido objetivo dentro do cartão.
+- Cada processo relevante tem O QUE ACONTECEU NO PERÍODO (fatos com data), LEITURA (o que isso \
+significa para o condomínio) e PRÓXIMO PASSO (verbo de ação). Para chegar nisso, cruze a capa do \
+processo, os andamentos, as publicações e as tarefas — não repita o "último andamento" cru.
+- Demandas do Tiflux são DEMANDAS ADMINISTRATIVAS, não processos: ficam em seção própria.
+- Confira as contas: a soma da tabela tem de bater com o indicador e a contagem por frente tem \
+de dar o total de processos. Se duas fontes não baterem, PERGUNTE antes de gerar.
+- Explique em uma linha, sempre que o número aparecer: o valor da causa soma o débito vencido \
+MAIS doze prestações vincendas (art. 292, §§ 1º e 2º, CPC), por isso parece alto; "decorrido \
+prazo" é andamento FAVORÁVEL (o prazo era do devedor), não prazo perdido pelo escritório; o \
+valor da carteira é dimensão, não previsão de recebimento; em habilitação de crédito, o valor do \
+espólio não é crédito do condomínio.
+- Nunca invente processo, data, valor ou decisão: o que não puder confirmar vira lacuna \
+declarada, nunca estimativa.
+- Em título de cartão use dois-pontos, não travessão ("Unidade 204-B: sentença transitada em \
+julgado")."""
+
 INSTRUCAO_ENTREGA ="""Sobre o acervo do escritório e a entrega da peça:
 - Se você recebeu acima modelos do escritório ou trechos de conhecimento recuperado, baseie a peça \
 no padrão e no estilo deles — é o jeito da casa.
@@ -514,7 +542,7 @@ async def gerar_resposta_stream(
     )
     if hub_disponivel:
         instrucao_hub = INSTRUCAO_HUB.format(hoje=_hoje_por_extenso())
-        referencia = f"{referencia}\n\n{instrucao_hub}"
+        referencia = f"{referencia}\n\n{instrucao_hub}\n\n{INSTRUCAO_RELATORIO}"
 
     registrar = None
     if on_usage is not None:

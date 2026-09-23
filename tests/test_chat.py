@@ -365,3 +365,12 @@ async def test_sessao_vencida_recusa_em_vez_de_responder_sem_ferramentas() -> No
 
     assert erro.value.status_code == 401
     assert "Sessão expirada" in str(erro.value.detail)
+
+
+async def test_regras_de_relatorio_do_escritorio_entram_com_o_hub() -> None:
+    """Feedback do sócio: nada de seção de agenda nem de "deliberação do condomínio"."""
+    from app.services.chat import INSTRUCAO_RELATORIO
+
+    for regra in ("deliberação do condomínio", "esclarecimentos", "agenda",
+                  "DEMANDAS ADMINISTRATIVAS", "art. 292", "decorrido \nprazo".replace("\n", "")):
+        assert regra in INSTRUCAO_RELATORIO
