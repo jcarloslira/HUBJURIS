@@ -34,6 +34,7 @@ from app.schemas.contas import PerfilResponse
 from app.services import chat as chat_service
 from app.services.agentes_config import AgenteConfigService
 from app.services.aprendizado import AprendizadoService
+from app.services.branding import BrandingService
 from app.services.composio_drive import ComposioClient, ComposioDriveConnector
 from app.services.conectores import client_para
 from app.services.conhecimento import ConhecimentoService, formatar_conhecimento
@@ -157,6 +158,7 @@ async def _montar_ferramentas(
             escritorio_id=perfil.escritorio_id,
             escritorio_nome=perfil.escritorio_nome,
             diretrizes=diretrizes,
+            branding=BrandingService(request.app.state.supabase),
         ),
     }
     # O agente aprende com o escritório: a ordem dita em conversa vira regra fixa.

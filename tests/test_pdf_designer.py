@@ -272,12 +272,12 @@ def test_molde_tem_capa_sem_numero_e_rodape_com_total_de_paginas() -> None:
 
 def test_cor_da_marca_so_troca_o_petroleo_se_for_escura() -> None:
     """Dourado do logo ou o marrom padrão deixariam a faixa clara demais."""
-    from app.services.pdf_modelo import PETROLEO, _cor_primaria
+    from app.services.pdf_modelo import PETROLEO, cor_primaria
 
-    assert _cor_primaria("#9A6A3A") == PETROLEO  # cor padrão de quem nunca escolheu
-    assert _cor_primaria("#A79E6E") == PETROLEO  # dourado: claro demais
-    assert _cor_primaria("#0B2545") == "#0B2545"  # azul-marinho: vale
-    assert _cor_primaria("") == PETROLEO
+    assert cor_primaria("#9A6A3A") == PETROLEO  # cor padrão de quem nunca escolheu
+    assert cor_primaria("#A79E6E") == PETROLEO  # dourado: claro demais
+    assert cor_primaria("#0B2545") == "#0B2545"  # azul-marinho: vale
+    assert cor_primaria("") == PETROLEO
 
 
 def test_guia_so_poe_logo_na_capa_quando_existe() -> None:

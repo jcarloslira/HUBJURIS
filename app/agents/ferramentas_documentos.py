@@ -24,6 +24,7 @@ from anthropic import AsyncAnthropic
 
 from app.schemas.chat import AnexoIn
 from app.services.arquivos import ArquivoGerado, CofreArquivos
+from app.services.branding import BrandingService
 from app.services.docx_revisao import (
     DocxRevisaoError,
     alteracoes_do_modelo,
@@ -218,8 +219,13 @@ def montar_handlers_documentos(
     escritorio_id: str,
     escritorio_nome: str = "",
     diretrizes: str = "",
+    branding: BrandingService | None = None,
 ) -> dict[str, Handler]:
-    """Handlers das ferramentas de documento, presos aos anexos desta mensagem."""
+    """Handlers das ferramentas de documento, presos aos anexos desta mensagem.
+
+    O ``branding`` só é consultado quando uma planilha é realmente gerada: ele
+    custa uma consulta ao banco e a maioria das mensagens não produz arquivo.
+    """
 
     async def revisar(entrada: dict[str, Any]) -> str:
         anexo = _ultimo_docx(anexos)
@@ -297,8 +303,12 @@ def montar_handlers_documentos(
                 "Não veio nenhuma aba com colunas. Monte 'abas' com 'colunas' (título e "
                 "tipo) e 'linhas' na mesma ordem das colunas."
             )
+        # A planilha sai do escritório para a administradora: vai carimbada.
+        timbre = await branding.timbre(escritorio_id) if branding is not None else None
         try:
-            dados = montar_planilha(abas, autor=escritorio_nome or "LexHub")
+            dados = montar_planilha(
+                abas, autor=escritorio_nome or "LexHub", timbre=timbre
+            )
         except PlanilhaError as exc:
             return f"Não consegui montar a planilha: {exc}"
 

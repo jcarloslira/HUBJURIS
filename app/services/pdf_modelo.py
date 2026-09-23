@@ -339,7 +339,7 @@ FECHO (último bloco de relatórios):
 <p class="assinatura-fecho">Escritório · Cidade/UF · 17 de agosto de 2026</p></div>"""
 
 
-def _cor_primaria(cor: str) -> str:
+def cor_primaria(cor: str) -> str:
     """A cor da marca só substitui o petróleo se for escura o bastante.
 
     O timbre tem um marrom padrão para quem nunca escolheu cor, e há escritório
@@ -360,7 +360,7 @@ def _cor_primaria(cor: str) -> str:
 
 def css(timbre: Timbre) -> str:
     """Folha de estilo do molde, com o rodapé e a cor do escritório aplicados."""
-    primaria = _cor_primaria(timbre.cor)
+    primaria = cor_primaria(timbre.cor)
     rodape = f"{timbre.nome or 'Documento'} · Documento confidencial"
     trocas = {
         "__LARGURAS_BARRA__": _LARGURAS_BARRA,
