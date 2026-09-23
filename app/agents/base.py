@@ -25,22 +25,45 @@ THINKING: dict[str, Any] = {"type": "adaptive"}
 OUTPUT_CONFIG: dict[str, Any] = {"effort": "medium"}
 
 
+_ROTULOS = {
+    "dossie_da_demanda": "Abrindo a pasta do condomínio",
+    "hub_painel": "Vendo o dia no Hub",
+    "hub_diario": "Levantando o período no Hub",
+    "hub_condominios": "Consultando a carteira",
+    "hub_condominio": "Abrindo a ficha do condomínio",
+    "hub_atualizar_condominio": "Atualizando o cadastro",
+    "hub_anotar": "Anotando no diário do condomínio",
+    "hub_coletar": "Coletando EasyJur e Tiflux agora",
+    "revisar_contrato_word": "Marcando as alterações no Word",
+    "gerar_planilha": "Montando a planilha",
+    "aprender": "Guardando o padrão do escritório",
+    "aprendizados": "Lembrando o padrão do escritório",
+    "esquecer_regra": "Atualizando o padrão do escritório",
+    "listar_projetos": "Consultando a memória do Hub",
+    "detalhar_projeto": "Consultando a memória do Hub",
+    "criar_projeto": "Organizando no Hub",
+    "registrar_fato": "Organizando no Hub",
+    "criar_evento_agenda": "Agindo no Google Workspace",
+    "rascunhar_email": "Agindo no Google Workspace",
+    "criar_documento_google": "Agindo no Google Workspace",
+    "criar_planilha_google": "Agindo no Google Workspace",
+}
+
+
 def _rotulo_passo(nome: str) -> str:
-    """Rótulo amigável do passo, a partir do nome da ferramenta (mostrado ao usuário)."""
+    """Rótulo amigável do passo, a partir do nome da ferramenta (mostrado ao usuário).
+
+    O rótulo é o que a pessoa vê enquanto espera: "Trabalhando" não diz nada, e
+    quem está olhando a tela merece saber que o agente foi abrir a pasta do
+    condomínio antes de escrever.
+    """
     if nome.startswith("easyjur"):
         return "Consultando o EasyJur"
     if nome.startswith("tiflux"):
         return "Consultando o Tiflux"
     if "drive" in nome:
         return "Acessando o Google Drive"
-    if nome in ("criar_evento_agenda", "rascunhar_email", "criar_documento_google",
-                "criar_planilha_google"):
-        return "Agindo no Google Workspace"
-    if nome in ("listar_projetos", "detalhar_projeto"):
-        return "Consultando a memória do Hub"
-    if nome in ("criar_projeto", "registrar_fato"):
-        return "Organizando no Hub"
-    return "Trabalhando"
+    return _ROTULOS.get(nome, "Trabalhando")
 
 
 class BaseAgent:
