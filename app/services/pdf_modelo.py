@@ -117,6 +117,19 @@ h4 { font-size: 8.4pt; font-weight: bold; color: __PETROLEO__; margin: 10pt 0 3p
 .kpi.verde { border-top-color: #3D6B4A; }
 .kpi.dourado { border-top-color: #9A7A20; }
 
+/* ---------- barras de distribuição ---------- */
+/* Quantos de cada tipo, lado a lado: comparação que a tabela não dá de relance. */
+.barras { margin: 0 0 12pt; break-inside: avoid; }
+.barra { display: grid; grid-template-columns: 38mm 1fr 18mm; align-items: center;
+         gap: 2.5mm; margin-bottom: 4pt; }
+.barra .rot { font-size: 8.2pt; color: __TINTA__; }
+.barra .trilho { background: #EAEFEE; height: 5mm; }
+/* A largura vem por classe (p5…p100) porque estilo inline é removido do corpo. */
+.barra .preenche { display: block; height: 5mm; background: __PETROLEO__; width: 0; }
+__LARGURAS_BARRA__
+.barra .val { text-align: right; font-size: 8pt; font-weight: bold;
+              color: __PETROLEO_ESCURO__; }
+
 /* ---------- tabela ---------- */
 table { width: 100%; border-collapse: collapse; table-layout: auto; margin: 4pt 0 8pt;
         font-size: 8.6pt; line-height: 1.4; }
@@ -192,6 +205,19 @@ blockquote { margin: 6pt 0 9pt; padding: 6pt 12pt; border-left: 2pt solid __DOUR
 .assinatura { margin-top: 26pt; text-align: center; break-inside: avoid; }
 .assinatura .linha { width: 70mm; margin: 0 auto 4pt; border-top: 1px solid __TINTA__; }
 
+/* ---------- assinaturas do relatório ---------- */
+/* Quem assina responde pelo envio: nome, OAB e o papel de cada um, lado a lado. */
+.assinaturas { margin-top: 30pt; text-align: center; break-inside: avoid; }
+.assinaturas .local { font-size: 8.6pt; color: __CINZA__; margin: 0 0 34pt; }
+.assinaturas .colunas { display: flex; gap: 8mm; justify-content: center; }
+.assinaturas .quem { flex: 0 0 72mm; }
+.assinaturas .linha { border-top: 1px solid __TINTA__; margin: 0 auto 4pt; }
+.assinaturas .nome { font-family: "DejaVu Serif", Georgia, serif; font-size: 9pt;
+                     font-weight: bold; color: __PETROLEO_ESCURO__; white-space: nowrap; }
+.assinaturas .oab { font-size: 8pt; color: __CINZA__; margin-top: 1.5pt; }
+.assinaturas .papel { font-size: 7pt; font-weight: bold; text-transform: uppercase;
+                      letter-spacing: 0.08em; color: __DOURADO__; margin-top: 4pt; }
+
 /* ---------- fecho ---------- */
 .fecho { background: __PETROLEO__; color: #E8EDEC; padding: 14pt 16pt 12pt;
          margin: 14pt 0 0; break-inside: avoid; font-size: 8.4pt; }
@@ -201,6 +227,10 @@ blockquote { margin: 6pt 0 9pt; padding: 6pt 12pt; border-left: 2pt solid __DOUR
                            border-top: 1px solid rgba(255, 255, 255, 0.22);
                            color: __DOURADO__; }
 """
+
+_LARGURAS_BARRA = "\n".join(
+    f".barra .preenche.p{n} {{ width: {n}%; }}" for n in range(5, 101, 5)
+)
 
 GUIA_COMPONENTES = """VOCABULÁRIO DE COMPONENTES (a folha de estilo já existe — use SÓ
 estas classes, sem atributo style, sem <style>, sem CSS próprio)
@@ -268,6 +298,17 @@ Etiquetas: tag (neutra), tag vermelho, tag verde, tag dourado. Rótulos possíve
 "O que aconteceu", "Onde está agora", "Do que se trata", "Leitura", "Trajetória",
 "Pendência operacional" — escolha os que o caso pede, não todos.
 
+BARRAS (distribuição por natureza, mesa ou frente; a maior fica com p100 e as
+outras recebem a classe proporcional, de p5 a p100, de 5 em 5):
+<div class="barras">
+  <div class="barra"><span class="rot">Consultas e orientações</span>
+  <span class="trilho"><span class="preenche p100"></span></span>
+  <span class="val">136</span></div>
+  <div class="barra"><span class="rot">Cobrança de cotas</span>
+  <span class="trilho"><span class="preenche p35"></span></span>
+  <span class="val">48</span></div>
+</div>
+
 LINHA DO TEMPO (marcos em ordem; li vermelho | verde | dourado para o estado):
 <ul class="linha-tempo"><li class="verde"><span class="quando">abr 2022</span>
 <b>Perícia favorável</b> — o laudo confirmou os vícios.</li></ul>
@@ -280,6 +321,18 @@ PEÇA DE TEXTO CORRIDO (petição, notificação, parecer, contrato): envolva o 
 
 NÃO force quebra de página: a folha de estilo já não deixa título, cartão ou tabela
 órfãos no fim da página. Quebra forçada deixa meia página em branco.
+
+ASSINATURAS DO RELATÓRIO (depois do fecho; uma coluna por signatário — quem gerou
+e envia vem SEMPRE primeiro):
+<div class="assinaturas">
+  <p class="local">Brasília/DF, 17 de setembro de 2026.</p>
+  <div class="colunas">
+    <div class="quem"><div class="linha"></div><div class="nome">NOME DO COLABORADOR</div>
+    <div class="oab">OAB/DF 00.000</div><div class="papel">Responsável pelo relatório</div></div>
+    <div class="quem"><div class="linha"></div><div class="nome">NOME DO PATRONO</div>
+    <div class="oab">OAB/DF 00.000</div><div class="papel">Patrono da causa</div></div>
+  </div>
+</div>
 
 FECHO (último bloco de relatórios):
 <div class="fecho"><h3>Como ler este relatório</h3><p>…</p>
@@ -310,6 +363,7 @@ def css(timbre: Timbre) -> str:
     primaria = _cor_primaria(timbre.cor)
     rodape = f"{timbre.nome or 'Documento'} · Documento confidencial"
     trocas = {
+        "__LARGURAS_BARRA__": _LARGURAS_BARRA,
         "__RODAPE__": rodape.replace("\\", "").replace('"', "'"),
         "__PETROLEO_ESCURO__": PETROLEO_ESCURO,
         "__PETROLEO__": primaria,

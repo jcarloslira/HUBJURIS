@@ -11,10 +11,15 @@ from app.agents.ferramentas import (
     FERRAMENTAS_SISTEMA,
     montar_executor,
 )
+from app.agents.ferramentas_aprendizado import (
+    FERRAMENTAS_APRENDIZADO,
+    montar_handlers_aprendizado,
+)
 from app.agents.ferramentas_documentos import (
     FERRAMENTAS_DOCUMENTOS,
     montar_handlers_documentos,
 )
+from app.agents.ferramentas_dossie import FERRAMENTAS_DOSSIE, montar_handlers_dossie
 from app.agents.ferramentas_drive import FERRAMENTAS_DRIVE, montar_handlers_drive
 from app.agents.ferramentas_gestao import FERRAMENTAS_GESTAO, montar_handlers_gestao
 from app.agents.ferramentas_google import (
@@ -28,6 +33,7 @@ from app.schemas.chat import AgenteInfo, ChatRequest
 from app.schemas.contas import PerfilResponse
 from app.services import chat as chat_service
 from app.services.agentes_config import AgenteConfigService
+from app.services.aprendizado import AprendizadoService
 from app.services.composio_drive import ComposioClient, ComposioDriveConnector
 from app.services.conectores import client_para
 from app.services.conhecimento import ConhecimentoService, formatar_conhecimento
@@ -153,6 +159,18 @@ async def _montar_ferramentas(
             diretrizes=diretrizes,
         ),
     }
+    # O agente aprende com o escritório: a ordem dita em conversa vira regra fixa.
+    aprendizado = AprendizadoService(request.app.state.supabase)
+    handlers = {
+        **handlers,
+        **montar_handlers_aprendizado(aprendizado, perfil.escritorio_id, perfil.user_id),
+    }
+    # Dossiê da tratativa: Hub + Drive numa chamada, antes de redigir qualquer peça.
+    memoria = MemoriaService(request.app.state.supabase, request.app.state.anthropic)
+    handlers = {
+        **handlers,
+        **montar_handlers_dossie(gestao, memoria, perfil.escritorio_id, composio),
+    }
     executar = montar_executor(
         projetos,
         escritorio_id=perfil.escritorio_id,
@@ -163,15 +181,21 @@ async def _montar_ferramentas(
         *FERRAMENTAS_SISTEMA,
         *FERRAMENTAS_GESTAO,
         *FERRAMENTAS_DOCUMENTOS,
+        *FERRAMENTAS_DOSSIE,
+        *FERRAMENTAS_APRENDIZADO,
         *ferramentas_google_disponiveis(clients),
         *tools_drive,
         *tools_mcpai,
     ]
     # Especialistas: o Hub inteiro (contexto e diário do condomínio) + Drive + EasyJur/Tiflux.
+    # O dossiê e o aprendizado vão para os dois: quem redige a peça é quem mais
+    # precisa saber o que já foi feito, e quem mais leva correção do advogado.
     tools_especialista = [
         *FERRAMENTAS_HUB_LEITURA,
         *FERRAMENTAS_GESTAO,
         *FERRAMENTAS_DOCUMENTOS,
+        *FERRAMENTAS_DOSSIE,
+        *FERRAMENTAS_APRENDIZADO,
         *tools_drive,
         *tools_mcpai,
     ]
@@ -312,6 +336,14 @@ async def conversar(
         except Exception:  # noqa: BLE001 - memória é bônus; o chat não pode cair por ela
             memoria = None
 
+    # O que este escritório já ensinou ao agente — vale em toda conversa, sem repetir.
+    aprendizados = None
+    if supabase is not None and contexto is not None:
+        try:
+            aprendizados = await AprendizadoService(supabase).bloco(contexto[1].escritorio_id)
+        except Exception:  # noqa: BLE001 - sem as regras o agente segue no padrão da casa
+            aprendizados = None
+
     resposta = chat_service.gerar_resposta_stream(
         payload,
         request.app.state.anthropic,
@@ -325,6 +357,7 @@ async def conversar(
         buscar_conhecimento=buscar_conhecimento,
         diretrizes=diretrizes,
         memoria=memoria,
+        aprendizados=aprendizados,
     )
 
     if memoria_svc is not None and contexto is not None:

@@ -168,3 +168,72 @@ def test_fato_repetido_tolera_reescrita() -> None:
     assert not fato_repetido(
         "A síndica do SQB é a Sra. Marta.", "A administradora do SQB é a Lisboa Gestão."
     )
+
+
+# ─── Aprendizado: a correção dita uma vez vira regra permanente ──────────────
+
+_ORDEM = {
+    "condominio": None,
+    "assunto": "Padrão de relatório",
+    "onde_parou": "Regra registrada",
+    "proximo_passo": None,
+    "fatos": [],
+    "regras": [
+        {
+            "regra": "Em relatório ao síndico, nunca criar seção de agenda ou de prazos "
+            "futuros; o compromisso entra no Próximo passo do item.",
+            "escopo": "relatorio",
+        }
+    ],
+}
+
+
+@pytest.mark.asyncio
+async def test_correcao_do_advogado_vira_regra_permanente() -> None:
+    """O Dr. Wilker corrige uma vez; a regra tem de valer em toda conversa seguinte."""
+    banco, ia = _banco(), _IAFalsa(_ORDEM)
+    svc = MemoriaService(banco, ia)  # type: ignore[arg-type]
+
+    await svc.registrar(
+        ESC,
+        user_id="u1",
+        agente="supervisor",
+        pedido="nunca ponha seção de agenda no relatório",
+        resposta="x" * 500,
+    )
+
+    regra = banco.tabelas["aprendizados"][0]
+    assert regra["escopo"] == "relatorio"
+    assert regra["origem"] == "conversa"
+    assert "seção de agenda" in regra["regra"]
+
+
+@pytest.mark.asyncio
+async def test_ordem_curta_e_aprendida_mesmo_sem_virar_demanda() -> None:
+    """"Não ponha agenda" → "Certo." é um turno curto: a lição não pode se perder nele."""
+    banco, ia = _banco(), _IAFalsa(_ORDEM)
+    svc = MemoriaService(banco, ia)  # type: ignore[arg-type]
+
+    await svc.registrar(
+        ESC,
+        user_id=None,
+        agente="supervisor",
+        pedido="de agora em diante nunca ponha seção de agenda",
+        resposta="Certo.",
+    )
+
+    assert len(banco.tabelas["aprendizados"]) == 1
+    assert not banco.tabelas.get("interacoes"), "turno de ordem não é demanda"
+
+
+@pytest.mark.asyncio
+async def test_pedido_comum_com_resposta_curta_nao_chama_o_modelo() -> None:
+    banco, ia = _banco(), _IAFalsa(_ORDEM)
+    svc = MemoriaService(banco, ia)  # type: ignore[arg-type]
+
+    await svc.registrar(
+        ESC, user_id=None, agente="supervisor", pedido="bom dia", resposta="Olá!"
+    )
+
+    assert ia.recebido == ""
+    assert not banco.tabelas.get("aprendizados")

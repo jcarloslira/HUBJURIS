@@ -1,4 +1,8 @@
-"""Ferramentas de documento: revisar contrato em Word com controle de alterações.
+"""Ferramentas de documento: contrato revisado em Word e planilha Excel sob demanda.
+
+São as duas entregas que o chat não conseguia fazer sozinho, porque não saem como
+texto: um .docx com controle de alterações e um .xlsx de verdade. As duas voltam
+pelo cofre de arquivos, como botão de download na resposta.
 
 O fluxo do escritório é este: chega o contrato do cliente em .docx, o advogado
 pede a análise e recebe **o mesmo arquivo de volta**, com o que foi cortado,
@@ -26,6 +30,7 @@ from app.services.docx_revisao import (
     aplicar_revisao,
     ler_paragrafos,
 )
+from app.services.planilha import PlanilhaError, abas_do_modelo, montar_planilha
 
 Handler = Callable[[dict[str, Any]], Awaitable[str]]
 
@@ -36,6 +41,7 @@ _TIMEOUT_S = 300.0
 # Parágrafo gigante estoura o pedido; o contrato inteiro cabe bem nisto.
 _MAX_CHARS_DOCUMENTO = 120_000
 _MIME_DOCX = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+_MIME_XLSX = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 
 FERRAMENTAS_DOCUMENTOS: list[dict[str, Any]] = [
     {
@@ -67,7 +73,88 @@ FERRAMENTAS_DOCUMENTOS: list[dict[str, Any]] = [
             },
             "required": ["instrucoes"],
         },
-    }
+    },
+    {
+        "name": "gerar_planilha",
+        "description": (
+            "Monta uma PLANILHA EXCEL (.xlsx) pronta para download, com cabeçalho "
+            "formatado, filtro, congelamento da primeira linha e linha de TOTAL com "
+            "fórmula de soma. Use sempre que o usuário pedir planilha, Excel, "
+            "'em tabela para eu trabalhar', controle de unidades inadimplentes, "
+            "lista de processos com valores, relação de tickets, ou algo para enviar à "
+            "administradora ou ao contador. Você mesmo monta as linhas com os dados que "
+            "já levantou (hub_diario, hub_condominio, EasyJur, Tiflux) — NÃO invente "
+            "dado para preencher. Depois de chamar, comente no chat os números que "
+            "importam; o arquivo já vai anexado à sua resposta."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "nome_arquivo": {
+                    "type": "string",
+                    "description": (
+                        "Nome do arquivo, sem extensão "
+                        "(ex.: 'Inadimplencia Residencial Ventura set2026')."
+                    ),
+                },
+                "abas": {
+                    "type": "array",
+                    "description": "Uma aba por assunto. Quase sempre basta uma.",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "nome": {"type": "string", "description": "Nome da aba."},
+                            "colunas": {
+                                "type": "array",
+                                "description": "As colunas, na ordem em que aparecem.",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "titulo": {"type": "string"},
+                                        "tipo": {
+                                            "type": "string",
+                                            "enum": [
+                                                "texto",
+                                                "numero",
+                                                "dinheiro",
+                                                "data",
+                                                "percentual",
+                                            ],
+                                            "description": (
+                                                "Tipo da coluna. Use 'dinheiro' para valores "
+                                                "em reais e 'data' para datas — assim o Excel "
+                                                "soma e ordena de verdade."
+                                            ),
+                                        },
+                                    },
+                                    "required": ["titulo"],
+                                },
+                            },
+                            "linhas": {
+                                "type": "array",
+                                "description": (
+                                    "Os dados: uma lista por linha, na MESMA ordem das "
+                                    "colunas. Valores em reais podem vir como número "
+                                    "(15462.33) ou como texto ('R$ 15.462,33')."
+                                ),
+                                "items": {"type": "array", "items": {"type": "string"}},
+                            },
+                            "somar": {
+                                "type": "array",
+                                "description": (
+                                    "Títulos das colunas que entram na linha de TOTAL. "
+                                    "Se omitir, todas as colunas numéricas são somadas."
+                                ),
+                                "items": {"type": "string"},
+                            },
+                        },
+                        "required": ["nome", "colunas", "linhas"],
+                    },
+                },
+            },
+            "required": ["nome_arquivo", "abas"],
+        },
+    },
 ]
 
 NOMES_DOCUMENTOS = {f["name"] for f in FERRAMENTAS_DOCUMENTOS}
@@ -116,6 +203,11 @@ def _documento_numerado(paragrafos: list[str]) -> str:
 def _nome_revisado(nome: str) -> str:
     base = re.sub(r"\.docx$", "", nome, flags=re.IGNORECASE) or "contrato"
     return f"{base} (revisado).docx"
+
+
+def _nome_planilha(nome: str) -> str:
+    base = re.sub(r"\.xlsx?$", "", nome, flags=re.IGNORECASE).strip() or "planilha"
+    return f"{base[:80]}.xlsx"
 
 
 def montar_handlers_documentos(
@@ -198,4 +290,30 @@ def montar_handlers_documentos(
             f'resposta: [[ARQUIVO id="{identificador}" nome="{_nome_revisado(anexo.nome)}"]]'
         )
 
-    return {"revisar_contrato_word": revisar}
+    async def planilha(entrada: dict[str, Any]) -> str:
+        abas = abas_do_modelo(entrada)
+        if not abas:
+            return (
+                "Não veio nenhuma aba com colunas. Monte 'abas' com 'colunas' (título e "
+                "tipo) e 'linhas' na mesma ordem das colunas."
+            )
+        try:
+            dados = montar_planilha(abas, autor=escritorio_nome or "LexHub")
+        except PlanilhaError as exc:
+            return f"Não consegui montar a planilha: {exc}"
+
+        nome = _nome_planilha(str(entrada.get("nome_arquivo") or "planilha"))
+        identificador = cofre.guardar(
+            ArquivoGerado(
+                nome=nome, tipo=_MIME_XLSX, dados=dados, escritorio_id=escritorio_id
+            )
+        )
+        resumo = " · ".join(f"{a.nome}: {len(a.linhas)} linhas" for a in abas)
+        return (
+            f"Planilha montada ({resumo}), com filtro, primeira linha congelada e linha "
+            f"de TOTAL somando por fórmula.\n"
+            f"ENTREGUE O ARQUIVO ao usuário colando esta linha, sozinha, ao final da sua "
+            f'resposta: [[ARQUIVO id="{identificador}" nome="{nome}"]]'
+        )
+
+    return {"revisar_contrato_word": revisar, "gerar_planilha": planilha}

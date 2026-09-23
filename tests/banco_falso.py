@@ -33,6 +33,10 @@ class _Consulta:
         self._filtros.append((coluna, "lte", valor))
         return self
 
+    def in_(self, coluna: str, valores: Any) -> "_Consulta":
+        self._filtros.append((coluna, "in", list(valores)))
+        return self
+
     def order(self, coluna: str, desc: bool = False) -> "_Consulta":
         self._ordem.append((coluna, desc))
         return self
@@ -69,6 +73,8 @@ class _Consulta:
             if op == "gte" and (atual is None or str(atual) < str(valor)):
                 return False
             if op == "lte" and (atual is None or str(atual) > str(valor)):
+                return False
+            if op == "in" and str(atual) not in [str(v) for v in valor]:
                 return False
         return True
 

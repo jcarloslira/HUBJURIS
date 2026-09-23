@@ -20,6 +20,7 @@ from typing import Any
 
 from anthropic import AsyncAnthropic
 
+from app.services.aprendizado import AprendizadoService, parece_instrucao
 from app.services.gestao import normalizar_nome
 from supabase import AsyncClient
 
@@ -27,7 +28,7 @@ from supabase import AsyncClient
 MODELO_EXTRACAO = "claude-haiku-4-5-20251001"
 _MAX_PEDIDO = 2_000
 _MAX_RESPOSTA = 6_000
-_MAX_TOKENS_EXTRACAO = 700
+_MAX_TOKENS_EXTRACAO = 900
 # Quanto da memória entra no prompt (o resto continua nas ferramentas hub_*).
 _INTERACOES_ESCRITORIO = 10
 _INTERACOES_CONDOMINIO = 6
@@ -35,6 +36,8 @@ _FATOS_CONDOMINIO = 20
 _EVENTOS_CONDOMINIO = 6
 # Um turno não pode despejar dezenas de "fatos" na memória do condomínio.
 _MAX_FATOS_POR_TURNO = 3
+# Nem virar um manual novo a cada conversa: regra demais deixa de ser regra.
+_MAX_REGRAS_POR_TURNO = 2
 # Resposta curta demais é saudação ou pedido de esclarecimento: nada a lembrar.
 _MINIMO_PARA_LEMBRAR = 200
 _PALAVRAS_IGNORADAS = {"condominio", "condominios", "cond", "residencial", "edificio"}
@@ -46,12 +49,21 @@ Leia o pedido do usuário e a resposta do assistente e devolva APENAS um JSON:
  "assunto": "o que foi tratado, em até 12 palavras",
  "onde_parou": "o estado em que a demanda ficou ao fim desta conversa, 1 frase",
  "proximo_passo": "a próxima ação concreta, ou null",
- "fatos": ["fato durável sobre o condomínio que valha lembrar daqui a meses"]}
+ "fatos": ["fato durável sobre o condomínio que valha lembrar daqui a meses"],
+ "regras": [{"regra": "ordem durável sobre COMO o escritório quer o trabalho feito",
+             "escopo": "geral|relatorio|notificacoes|peticoes|contratos|pareceres"}]}
 
 Regras:
 - "fatos" é para o que NÃO muda toda semana: síndico, administradora, convenção,
 particularidade do condomínio, decisão estratégica do escritório. No máximo 3,
 cada um numa frase curta e completa. Se nada for durável, devolva [].
+- "regras" é o que o USUÁRIO ensinou sobre o MÉTODO e o ESTILO do escritório:
+correção ("não é assim", "o certo é"), padrão imposto ("sempre assine com a OAB de
+quem gerou", "nunca ponha seção de agenda"), preferência de forma, ordem de
+memorizar. Escreva no imperativo, completa, como quem escreve um manual que será
+lido daqui a seis meses SEM esta conversa por perto — nada de "como combinamos".
+No máximo 2. Pedido pontual desta tarefa ("faça para o Ventura", "refaça com o
+valor certo") NÃO é regra: devolva [].
 - Não repita o conteúdo da peça nem transcreva jurisprudência.
 - Não invente: só o que está no texto. Sem condomínio identificado, use null.
 - Só o JSON, sem crases e sem comentário."""
@@ -83,6 +95,7 @@ class MemoriaService:
     def __init__(self, supabase: AsyncClient, anthropic: AsyncAnthropic | None = None) -> None:
         self._db = supabase
         self._ia = anthropic
+        self._aprendizado = AprendizadoService(supabase)
 
     # ── Leitura: o que entra no prompt ─────────────────────────────────────
 
@@ -118,6 +131,12 @@ class MemoriaService:
         if interacao.get("proximo_passo"):
             linha += f" (próximo: {interacao['proximo_passo']})"
         return f"- {linha}"
+
+    async def historico(
+        self, escritorio_id: str, condominio_id: str | None = None
+    ) -> list[dict[str, Any]]:
+        """As últimas demandas (do escritório, ou de um condomínio) já com o nome."""
+        return await self._interacoes(escritorio_id, condominio_id)
 
     async def _interacoes(
         self, escritorio_id: str, condominio_id: str | None = None
@@ -225,12 +244,24 @@ class MemoriaService:
         pedido: str,
         resposta: str,
     ) -> None:
-        """Lê o turno que acabou e grava assunto, onde parou e fatos duráveis."""
-        if self._ia is None or len(resposta.strip()) < _MINIMO_PARA_LEMBRAR:
+        """Lê o turno que acabou e grava assunto, onde parou, fatos e regras aprendidas.
+
+        A ordem do escritório costuma vir curta e sem cerimônia ("não põe seção de
+        agenda"), respondida com um "certo". Por isso um pedido com cara de ordem
+        liga o extrator mesmo quando a resposta é curta demais para virar demanda:
+        a lição não pode depender do tamanho do texto.
+        """
+        if self._ia is None:
+            return
+        instrucao = parece_instrucao(pedido)
+        if len(resposta.strip()) < _MINIMO_PARA_LEMBRAR and not instrucao:
             return
         extraido = await self._extrair(pedido, resposta)
         if not extraido:
             return
+        await self._gravar_regras(escritorio_id, extraido.get("regras") or [], user_id)
+        if len(resposta.strip()) < _MINIMO_PARA_LEMBRAR:
+            return  # turno de ordem, sem demanda a registrar
         condominio = await self._condominio_por_nome(
             escritorio_id, str(extraido.get("condominio") or "")
         )
@@ -249,6 +280,24 @@ class MemoriaService:
         ).execute()
         if condominio:
             await self._gravar_fatos(escritorio_id, condominio, extraido.get("fatos") or [])
+
+    async def _gravar_regras(
+        self, escritorio_id: str, regras: list[Any], user_id: str | None
+    ) -> None:
+        """O que o escritório ensinou neste turno passa a valer em todas as conversas."""
+        for item in regras[:_MAX_REGRAS_POR_TURNO]:
+            if isinstance(item, dict):
+                texto, escopo = str(item.get("regra") or ""), str(item.get("escopo") or "geral")
+            else:
+                texto, escopo = str(item), "geral"
+            if texto.strip():
+                await self._aprendizado.aprender(
+                    escritorio_id,
+                    texto,
+                    escopo=escopo,
+                    origem="conversa",
+                    criado_por=user_id,
+                )
 
     async def _extrair(self, pedido: str, resposta: str) -> dict[str, Any] | None:
         assert self._ia is not None

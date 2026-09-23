@@ -9,6 +9,8 @@ from anthropic.types import MessageParam
 from app.agents.base import BaseAgent
 from app.agents.consulta_historica import ConsultaHistoricaAgent
 from app.agents.contratos import ContratosAgent
+from app.agents.ferramentas_aprendizado import INSTRUCAO_APRENDIZADO, NOMES_APRENDIZADO
+from app.agents.ferramentas_dossie import INSTRUCAO_DOSSIE, NOMES_DOSSIE
 from app.agents.ferramentas_drive import NOMES_DRIVE
 from app.agents.ferramentas_gestao import NOMES_GESTAO
 from app.agents.ferramentas_mcpai import NOMES_MCPAI
@@ -22,6 +24,7 @@ from app.schemas.chat import AgenteInfo, ChatRequest
 from app.services.anexos import construir_blocos
 from app.services.gestao import hoje
 from app.services.modelos import LeitorDrive, carregar_modelos, formatar_referencia
+from app.services.relatorio import INSTRUCAO_RELATORIO
 
 _REGISTRO: dict[str, tuple[type[BaseAgent], AgenteInfo]] = {
     "supervisor": (
@@ -158,6 +161,9 @@ o usuário confirmar. E-mails saem como RASCUNHO (o usuário revisa e envia). Se
 estiver conectado, oriente a conectar em Configurações → Conectores."""
 
 INSTRUCAO_DRIVE = """Você tem ACESSO AO GOOGLE DRIVE do escritório.
+- Demanda de um condomínio ou unidade? Não comece por aqui: `dossie_da_demanda` já faz a busca \
+certa no Drive junto com o histórico do Hub, numa chamada. Estas ferramentas são para ir além \
+disso — ler um documento que o dossiê apontou, ou procurar algo que ele não achou.
 - Use o Drive APENAS quando a tarefa realmente precisar de um documento/modelo/peça específica do \
 acervo (ex.: "redija no padrão da última notificação do Bloco B", "consulte a convenção do \
 condomínio X"). NÃO vasculhe o Drive em perguntas de conhecimento jurídico geral, teses, leis ou \
@@ -182,12 +188,14 @@ passos ao usuário. Use as ferramentas em silêncio e entregue direto o resultad
 No máximo 1 emoji por resposta, e só quando couber. Seja claro e direto."""
 
 INSTRUCAO_MEMORIA = """Sobre MEMÓRIA (responda com precisão se perguntarem): você TEM memória. \
-Dentro desta conversa, lembra de tudo que já foi dito. Entre conversas, o que PERSISTE é: (1) a \
-memória de cada condomínio (fatos salvos — recupere com `detalhar_projeto`); (2) a base de \
-conhecimento jurídico (leis, doutrina, protocolos), que você consulta sempre; e (3) o acervo do \
-Google Drive do escritório, quando conectado. NUNCA diga que "não tem memória", "não guarda nada" \
-ou "começa do zero" — isso é FALSO e passa má impressão. Explique a memória de forma positiva e \
-convide a cadastrar condomínios e conectar o Drive para enriquecê-la."""
+Dentro desta conversa, lembra de tudo que já foi dito. Entre conversas, em qualquer sessão ou \
+computador, PERSISTEM: (1) as demandas do escritório, com o assunto, ONDE CADA UMA PAROU e o \
+próximo passo, gravados sozinhos ao fim de cada resposta; (2) a memória de cada condomínio \
+(cadastro e fatos duráveis — abra com `dossie_da_demanda`); (3) as REGRAS que este escritório te \
+ensinou, que você aplica sem ninguém repetir (veja com `aprendizados`); (4) o diário do Hub, com \
+os movimentos do EasyJur e do Tiflux dia a dia; (5) a base de conhecimento jurídico; e (6) o \
+acervo do Google Drive, quando conectado. NUNCA diga que "não tem memória", "não guarda nada" ou \
+"começa do zero" — isso é FALSO e passa má impressão."""
 
 INSTRUCAO_MCPAI = """Você tem acesso ao SISTEMA JURÍDICO (EasyJur) e ao HELPDESK (Tiflux) do \
 escritório:
@@ -271,34 +279,6 @@ def bloco_diretrizes(diretrizes: str) -> str:
         f"{diretrizes.strip()}"
     )
 
-
-INSTRUCAO_RELATORIO = """RELATÓRIO PARA O CLIENTE (síndico e conselho) — o padrão que o \
-sócio já aprova:
-- O relatório é DO CLIENTE, não do escritório. Nunca exponha falha interna, atraso da equipe ou \
-cadastro errado. Processo parado por ato do Judiciário: diga com naturalidade e informe a \
-providência. Parado por questão interna: resolva internamente e apresente só o encaminhamento.
-- NUNCA crie seção de "esclarecimentos", "correções" ou "divergências": a explicação vai DENTRO \
-do cartão do processo a que se refere (componente expl, título começando por "Por que…").
-- NUNCA crie seção de agenda, de prazos futuros ou de "próximos 30 dias". Compromisso entra no \
-"Próximo passo" do próprio item.
-- NUNCA escreva "pontos que exigem deliberação do condomínio": decisão em processo é do \
-escritório. O que de fato depende do síndico (autorizar ajuizamento, aceitar acordo, liberar \
-despesa) vira pedido objetivo dentro do cartão.
-- Cada processo relevante tem O QUE ACONTECEU NO PERÍODO (fatos com data), LEITURA (o que isso \
-significa para o condomínio) e PRÓXIMO PASSO (verbo de ação). Para chegar nisso, cruze a capa do \
-processo, os andamentos, as publicações e as tarefas — não repita o "último andamento" cru.
-- Demandas do Tiflux são DEMANDAS ADMINISTRATIVAS, não processos: ficam em seção própria.
-- Confira as contas: a soma da tabela tem de bater com o indicador e a contagem por frente tem \
-de dar o total de processos. Se duas fontes não baterem, PERGUNTE antes de gerar.
-- Explique em uma linha, sempre que o número aparecer: o valor da causa soma o débito vencido \
-MAIS doze prestações vincendas (art. 292, §§ 1º e 2º, CPC), por isso parece alto; "decorrido \
-prazo" é andamento FAVORÁVEL (o prazo era do devedor), não prazo perdido pelo escritório; o \
-valor da carteira é dimensão, não previsão de recebimento; em habilitação de crédito, o valor do \
-espólio não é crédito do condomínio.
-- Nunca invente processo, data, valor ou decisão: o que não puder confirmar vira lacuna \
-declarada, nunca estimativa.
-- Em título de cartão use dois-pontos, não travessão ("Unidade 204-B: sentença transitada em \
-julgado")."""
 
 INSTRUCAO_ENTREGA ="""Sobre o acervo do escritório e a entrega da peça:
 - Se você recebeu acima modelos do escritório ou trechos de conhecimento recuperado, baseie a peça \
@@ -424,6 +404,7 @@ async def gerar_resposta_stream(
     buscar_conhecimento: Callable[[str], Awaitable[str]] | None = None,
     diretrizes: str | None = None,
     memoria: str | None = None,
+    aprendizados: str | None = None,
 ) -> AsyncIterator[str]:
     """Gera a resposta em streaming, roteando quando o alvo é o Supervisor.
 
@@ -514,6 +495,12 @@ async def gerar_resposta_stream(
         bloco = bloco_diretrizes(diretrizes)
         referencia = f"{referencia}\n\n{bloco}" if referencia else bloco
 
+    # O que o escritório ensinou em conversa vem por último entre as regras dele:
+    # é a palavra mais recente e corrige tanto o padrão da casa quanto o dossiê.
+    if aprendizados and aprendizados.strip():
+        licoes = aprendizados.strip()
+        referencia = f"{referencia}\n\n{licoes}" if referencia else licoes
+
     referencia = f"{referencia}\n\n{INSTRUCAO_OPCOES}" if referencia else INSTRUCAO_OPCOES
     referencia = f"{referencia}\n\n{INSTRUCAO_ESTILO}\n\n{INSTRUCAO_MEMORIA}"
     if slug == "supervisor":
@@ -535,6 +522,20 @@ async def gerar_resposta_stream(
     )
     if mcpai_disponivel:
         referencia = f"{referencia}\n\n{INSTRUCAO_MCPAI}"
+
+    # Dossiê da tratativa → o agente abre a pasta do condomínio antes de escrever.
+    tem_dossie = executar_ferramenta is not None and any(
+        t.get("name") in NOMES_DOSSIE for t in (ferramentas_especialista or [])
+    )
+    if tem_dossie:
+        referencia = f"{referencia}\n\n{INSTRUCAO_DOSSIE}"
+
+    # Ferramentas de aprendizado → o agente sabe que pode (e deve) guardar a ordem.
+    aprende = executar_ferramenta is not None and any(
+        t.get("name") in NOMES_APRENDIZADO for t in (ferramentas_especialista or [])
+    )
+    if aprende:
+        referencia = f"{referencia}\n\n{INSTRUCAO_APRENDIZADO}"
 
     # Gestão condominial (diário e cadastro do Hub) → o agente opera o Hub e é proativo.
     hub_disponivel = executar_ferramenta is not None and any(

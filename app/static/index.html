@@ -2061,6 +2061,14 @@ async function baixarArquivoGerado(botao, arquivo) {
   setTimeout(() => { botao.textContent = rotulo; }, 4000);
 }
 
+/* O que o arquivo é, dito na linguagem de quem vai abrir. */
+function legendaArquivo(nome) {
+  const n = (nome || '').toLowerCase();
+  if (n.endsWith('.xlsx')) return 'Planilha do Excel · com filtro e total somando por fórmula';
+  if (n.endsWith('.docx')) return 'Word com controle de alterações · abra e use "Aceitar todas"';
+  return 'Arquivo gerado pelo agente';
+}
+
 function renderArquivos(div, arquivos) {
   if (!arquivos.length) return;
   const caixa = document.createElement('div');
@@ -2068,7 +2076,7 @@ function renderArquivos(div, arquivos) {
   caixa.innerHTML = arquivos.map(a => `
     <div class="arq-item">
       <span class="arq-ic">${IC_DOWN}</span>
-      <div class="arq-txt"><b>${escapar(a.nome)}</b><small>Word com controle de alterações · abra e use "Aceitar todas"</small></div>
+      <div class="arq-txt"><b>${escapar(a.nome)}</b><small>${legendaArquivo(a.nome)}</small></div>
       <button class="g-btn pri" type="button">Baixar</button>
     </div>`).join('');
   caixa.querySelectorAll('button').forEach((b, i) => {
